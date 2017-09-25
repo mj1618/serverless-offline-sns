@@ -23,12 +23,17 @@ export class SNSAdapter implements ISNSAdapter {
 
     public async listSubscriptions(): Promise<ListSubscriptionsResponse> {
         this.debug("listing subs");
-        return await new Promise(res => {
-            this.sns.listSubscriptions({}, (subsErr, subs) => {
-                this.debug(JSON.stringify(subs));
-                res(subs);
-            });
-        });
+        const req = this.sns.listSubscriptions({});
+        this.debug(JSON.stringify(req.httpRequest));
+        req.send();
+        return req.promise();
+        // This code not working in travis
+        // return await new Promise(res => {
+        //     this.sns.listSubscriptions({}, (subsErr, subs) => {
+        //         this.debug(JSON.stringify(subs));
+        //         res(subs);
+        //     });
+        // });
     }
 
     public async unsubscribe(arn) {
