@@ -13,8 +13,10 @@ export class SNSAdapter implements ISNSAdapter {
         this.pluginDebug = debug;
         this.port = port;
         this.app = app;
+        const endpoint = snsEndpoint || `http://localhost:${port}`;
+        this.debug("using endpoint: " + endpoint);
         this.sns = new SNS({
-            endpoint: snsEndpoint || `http://localhost:${port}`,
+            endpoint,
             region,
         });
     }
