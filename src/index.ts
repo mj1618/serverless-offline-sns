@@ -121,7 +121,7 @@ class ServerlessOfflineSns {
     public async listen() {
         this.debug("starting plugin");
         return new Promise( res => {
-            this.server = this.app.listen(this.port, () => {
+            this.server = this.app.listen(this.port, "localhost", () => {
                 this.debug(`listening on ${this.port}`);
                 res();
             });
