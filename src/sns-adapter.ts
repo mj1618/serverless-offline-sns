@@ -101,10 +101,10 @@ export class SNSAdapter implements ISNSAdapter {
         });
     }
 
-    public async publish(topicArn, type, message) {
+    public async publish(topicArn: string, message: string, type: string = "json") {
         await new Promise(res => this.sns.publish({
-            Message: "STRING_VALUE",
-            MessageStructure: "json",
+            Message: message,
+            MessageStructure: type,
             TopicArn: topicArn,
         }, res));
     }
