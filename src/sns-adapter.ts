@@ -13,7 +13,7 @@ export class SNSAdapter implements ISNSAdapter {
         this.pluginDebug = debug;
         this.port = port;
         this.app = app;
-        const endpoint = snsEndpoint || `http://localhost:${port}`;
+        const endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
         this.debug("using endpoint: " + endpoint);
         this.sns = new SNS({
             endpoint,
@@ -64,7 +64,7 @@ export class SNSAdapter implements ISNSAdapter {
     }
 
     public async subscribe(fnName, handler, arn) {
-        const subscribeEndpoint = "http://localhost:" + this.port + "/" + fnName;
+        const subscribeEndpoint = "http://127.0.0.1:" + this.port + "/" + fnName;
         this.debug("subscribe: " + fnName + " " + arn);
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
         this.app.post("/" + fnName, (req, res) => {
