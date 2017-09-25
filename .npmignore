@@ -1,0 +1,6 @@
+src/
+tslint.json
+.travis.yml
+.vscode/
+coverage/
+.nyc_output/

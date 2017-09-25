@@ -1,0 +1,18 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "target": "es5",
+        "module": "commonjs",
+        "outDir": "../dist",
+        "lib": ["es5","es2015.promise", "es2017", "es2017.object", "dom"],
+        "allowUnreachableCode": true,
+        "noImplicitAny": false,
+        "declaration": false
+    },
+    "include": [
+        "**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
