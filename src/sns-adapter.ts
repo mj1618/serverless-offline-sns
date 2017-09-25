@@ -9,12 +9,12 @@ export class SNSAdapter implements ISNSAdapter {
     private server: any;
     private app: any;
 
-    constructor(port, region = "us-east-1", debug, app) {
+    constructor(port, region = "us-east-1", snsEndpoint, debug, app) {
         this.pluginDebug = debug;
         this.port = port;
         this.app = app;
         this.sns = new SNS({
-            endpoint: `http://localhost:${port}`,
+            endpoint: snsEndpoint || `http://localhost:${port}`,
             region,
         });
     }
