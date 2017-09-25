@@ -1,7 +1,7 @@
 {
   "name": "serverless-offline-sns",
   "version": "0.1.0",
-  "description": "Serverless plugin to run an SNS server and call lambdas with events notifications.",
+  "description": "Serverless plugin to run a local SNS server and call lambdas with events notifications.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc -p src",
@@ -18,7 +18,8 @@
     "serverless-plugin",
     "serverless",
     "sns",
-    "offline"
+    "offline",
+    "localstack"
   ],
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
