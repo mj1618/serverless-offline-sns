@@ -42,7 +42,7 @@ custom:
     port: 4002 # port for the sns server to run on
     serve: true # should start an offline SNS server? only need one of these
     debug: false
-    sns-endpoint: http://localhost:4567 # optional if you want to point at a different SNS endpoint
+    sns-endpoint: http://127.0.0.1:4567 # optional if you want to point at a different SNS endpoint
 ```
 
 ## Configure
@@ -74,7 +74,7 @@ Here's a demo of some code that will trigger this handler:
 ```javascript
 import AWS = require("aws-sdk");
 const sns = new AWS.SNS({
-    endpoint: "http://localhost:4002",
+    endpoint: "http://127.0.0.1:4002",
     region: "us-east-1",
 });
 sns.publish({
