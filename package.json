@@ -1,6 +1,6 @@
 {
   "name": "serverless-offline-sns",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Serverless plugin to run a local SNS server and call lambdas with events notifications.",
   "main": "dist/index.js",
   "scripts": {
@@ -21,7 +21,7 @@
     "offline",
     "localstack"
   ],
-  "publishConfig":{
+  "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
   "author": "Matthew James <matthew.stephen.james@gmail.com>",
