@@ -1,4 +1,4 @@
-import {SNS} from "aws-sdk";
+import {SNS, EventListeners} from "aws-sdk";
 import {ListSubscriptionsResponse, CreateTopicResponse} from "aws-sdk/clients/sns.d";
 import { ISNSAdapter, IDebug } from "./types";
 import fetch from "node-fetch";
@@ -26,19 +26,13 @@ export class SNSAdapter implements ISNSAdapter {
         this.debug("listing subs");
         const req = this.sns.listSubscriptions({});
         this.debug(JSON.stringify(req.httpRequest));
-
-        await fetch("http://127.0.0.1:4002", { method: "POST", body: "{Action:\"ListSubscriptions\"}" })
-            .then(res => this.debug(res.json()));
-
-        req.send();
-        return req.promise();
         // This code not working in travis
-        // return await new Promise(res => {
-        //     this.sns.listSubscriptions({}, (subsErr, subs) => {
-        //         this.debug(JSON.stringify(subs));
-        //         res(subs);
-        //     });
-        // });
+        return await new Promise(res => {
+            this.sns.listSubscriptions({}, (subsErr, subs) => {
+                this.debug(JSON.stringify(subs));
+                res(subs);
+            });
+        });
     }
 
     public async unsubscribe(arn) {

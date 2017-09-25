@@ -49,7 +49,11 @@ export class SNSServer implements ISNSServer {
         this.debug("configuring route");
         this.app.use(bodyParser.json()); // for parsing application/json
         this.app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
-
+        this.app.use((req, res, next) => {
+            res.header("Access-Control-Allow-Origin", "*");
+            res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+            next();
+        });
         this.app.all("/", (req, res) => {
             this.debug("hello");
             this.debug(req.body);
