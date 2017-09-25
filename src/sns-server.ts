@@ -46,6 +46,7 @@ export class SNSServer implements ISNSServer {
     }
 
     public routes() {
+        this.debug("configuring route");
         this.app.use(bodyParser.json()); // for parsing application/json
         this.app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 
