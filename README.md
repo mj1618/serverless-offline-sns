@@ -17,10 +17,7 @@ A serverless plugin to listen to offline SNS and call lambda fns with events.
 
 ## Prerequisites
 
-To use this plugin you will need an SNS endpoint. You can use your AWS account for SNS or you can use the built in SNS offline server -
-```bash
-serverless offline-sns serve
-```
+To use this plugin you will need an SNS endpoint. You can use your AWS account, [localstack's](https://github.com/localstack/localstack) SNS server endpoint or you can use the built in SNS offline server.
 
 ## Installation
 
@@ -43,6 +40,11 @@ custom:
     serve: true # should start an offline SNS server? only need one of these
     debug: false
     sns-endpoint: http://127.0.0.1:4567 # optional if you want to point at a different SNS endpoint
+```
+
+If you are using the [serverless-offline](https://github.com/dherault/serverless-offline) plugin serverless-offline-sns will start automatically. If you are not using this plugin you can run the following command instead:
+```bash
+serverless offline-sns start
 ```
 
 ## Configure
@@ -95,3 +97,4 @@ serverless offline-sns start
 
 ## Contributions and Issues
 
+Happy to accept contributions, [feature requests](https://github.com/mj1618/serverless-offline-sns/issues) and [issues](https://github.com/mj1618/serverless-offline-sns/issues).
