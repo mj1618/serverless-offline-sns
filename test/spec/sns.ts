@@ -56,7 +56,7 @@ const createServerless = () => {
     return {
         service: {
             custom: {
-                "offline-sns": {
+                "serverless-offline-sns": {
                     debug: true,
                     port: 4002,
                 },
@@ -95,7 +95,7 @@ const createServerlessBad = () => {
     return {
         service: {
             custom: {
-                "offline-sns": {
+                "serverless-offline-sns": {
                     debug: true,
                     port: 4002,
                 },
