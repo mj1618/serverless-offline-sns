@@ -58,7 +58,7 @@ const createServerless = () => {
             custom: {
                 "offline-sns": {
                     debug: true,
-                    port: 4003,
+                    port: 4002,
                 },
             },
             provider: {
@@ -97,7 +97,7 @@ const createServerlessBad = () => {
             custom: {
                 "offline-sns": {
                     debug: true,
-                    port: 4003,
+                    port: 4002,
                 },
             },
             provider: {
