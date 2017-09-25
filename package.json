@@ -21,6 +21,9 @@
     "offline",
     "localstack"
   ],
+  "publishConfig":{
+    "registry": "https://registry.npmjs.org/"
+  },
   "author": "Matthew James <matthew.stephen.james@gmail.com>",
   "license": "MIT",
   "bugs": {
