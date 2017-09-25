@@ -16,11 +16,13 @@ export class SNSAdapter implements ISNSAdapter {
         this.app = app;
         const endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
         this.debug("using endpoint: " + endpoint);
-        AWS.config.update({
-            accessKeyId: "AKID",
-            secretAccessKey: "SECRET",
-            region,
-        });
+        if (!AWS.config.credentials) {
+            AWS.config.update({
+                accessKeyId: "AKID",
+                secretAccessKey: "SECRET",
+                region,
+            });
+        }
         this.sns = new AWS.SNS({
             endpoint,
             region,
@@ -31,7 +33,7 @@ export class SNSAdapter implements ISNSAdapter {
         this.debug("listing subs");
         const req = this.sns.listSubscriptions({});
         this.debug(JSON.stringify(req.httpRequest));
-        // This code not working in travis
+
         return await new Promise(res => {
             this.sns.listSubscriptions({}, (subsErr, subs) => {
                 this.debug(JSON.stringify(subs));
