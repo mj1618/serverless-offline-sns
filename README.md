@@ -13,6 +13,7 @@ A serverless plugin to listen to offline SNS and call lambda fns with events.
 - [Installation](#installation)
 - [Configure](#configure)
 - [Usage](#usage)
+- [Contributions and Issues](#contributions-and-issues)
 
 ## Prerequisites
 
@@ -91,3 +92,6 @@ However if you don't use serverless-offline you can start this plugin manually w
 ```bash
 serverless offline-sns start
 ```
+
+## Contributions and Issues
+
