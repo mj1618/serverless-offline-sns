@@ -3,3 +3,9 @@ node_js:
   - "node"
 notifications:
   email: false
+install:
+  - DEBUG=true npm install
+script:
+  - npm run lint
+  - npm run test
+  - npm run build

@@ -83,8 +83,9 @@ const createServerless = () => {
         },
         cli: {
             log: (data) => {
-                // noop for log
-                // console.log(data);
+                if (process.env.DEBUG) {
+                    console.log(data);
+                }
             },
         },
     };
@@ -115,8 +116,9 @@ const createServerlessBad = () => {
         },
         cli: {
             log: (data) => {
-                // noop for log
-                // console.log(data);
+                if (process.env.DEBUG) {
+                    console.log(data);
+                }
             },
         },
     };
