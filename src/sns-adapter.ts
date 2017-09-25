@@ -30,6 +30,7 @@ export class SNSAdapter implements ISNSAdapter {
         return await new Promise(res => {
             this.sns.listSubscriptions({}, (subsErr, subs) => {
                 this.debug(JSON.stringify(subs));
+                this.debug(JSON.stringify(subsErr));
                 res(subs);
             });
         });
