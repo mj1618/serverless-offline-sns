@@ -1,10 +1,10 @@
-import {SNS, EventListeners} from "aws-sdk";
+import * as AWS from "aws-sdk";
 import {ListSubscriptionsResponse, CreateTopicResponse} from "aws-sdk/clients/sns.d";
 import { ISNSAdapter, IDebug } from "./types";
 import fetch from "node-fetch";
 
 export class SNSAdapter implements ISNSAdapter {
-    private sns: SNS;
+    private sns: AWS.SNS;
     private pluginDebug: IDebug;
     private port: number;
     private server: any;
@@ -16,7 +16,12 @@ export class SNSAdapter implements ISNSAdapter {
         this.app = app;
         const endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
         this.debug("using endpoint: " + endpoint);
-        this.sns = new SNS({
+        AWS.config.update({
+            accessKeyId: "AKID",
+            secretAccessKey: "SECRET",
+            region,
+        });
+        this.sns = new AWS.SNS({
             endpoint,
             region,
         });
