@@ -16,7 +16,7 @@ class ServerlessOfflineSns {
 
     constructor(serverless: any, options: any) {
         this.app = express();
-        this.config = serverless.service.custom["offline-sns"] || {};
+        this.config = serverless.service.custom["serverless-offline-sns"] || {};
         this.serverless = serverless;
         this.port = this.config.port || 4002;
         this.commands = {

@@ -38,7 +38,7 @@ plugins:
 Configure the plugin with your offline SNS endpoint and a free port the plugin can use.
 ```YAML
 custom:
-  offline-sns:
+  serverless-offline-sns:
     port: 4002 # port for the sns server to run on
     serve: true # should start an offline SNS server? only need one of these
     debug: false
