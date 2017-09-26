@@ -73,13 +73,13 @@ export class SNSAdapter implements ISNSAdapter {
         }));
     }
 
-    public async subscribe(fnName, handler, arn) {
+    public async subscribe(fnName, getHandler, arn) {
         const subscribeEndpoint = "http://127.0.0.1:" + this.port + "/" + fnName;
         this.debug("subscribe: " + fnName + " " + arn);
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
         this.app.post("/" + fnName, (req, res) => {
             this.debug("calling fn: " + fnName + " 1");
-            handler(req.body, {}, (data) => {
+            getHandler()(req.body, {}, (data) => {
                 res.send(data);
             });
         });
