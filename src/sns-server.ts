@@ -164,7 +164,7 @@ export class SNSServer implements ISNSServer {
         };
     }
 
-    public async publish(topicArn, message, messageType) {
+    public publish(topicArn, message, messageType) {
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
             this.debug("fetching: " + sub.Endpoint);
             return fetch(sub.Endpoint, { method: "POST", body: message })
