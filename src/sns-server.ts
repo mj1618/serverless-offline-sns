@@ -56,7 +56,8 @@ export class SNSServer implements ISNSServer {
         });
         this.app.all("/", (req, res) => {
             this.debug("hello");
-            this.debug(req.body);
+            this.debug(JSON.stringify(req.body));
+            this.debug(JSON.stringify(this.subscriptions));
             if (req.body.Action === "ListSubscriptions") {
                 this.debug("sending: " + xml(this.listSubscriptions(), {indent: "\t"}));
                 res.send(xml(this.listSubscriptions()));
@@ -76,6 +77,7 @@ export class SNSServer implements ISNSServer {
                     ],
                 }));
             }
+            this.debug(JSON.stringify(this.subscriptions));
         });
     }
 
