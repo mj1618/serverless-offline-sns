@@ -165,11 +165,17 @@ export class SNSServer implements ISNSServer {
     }
 
     public async publish(topicArn, message, messageType) {
-        return Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
+        Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
             this.debug("fetching: " + sub.Endpoint);
             return fetch(sub.Endpoint, { method: "POST", body: message })
                     .then(res => this.debug(res));
         }));
+        return {
+            PublishResponse: [
+                createAttr(),
+                createMetadata(),
+            ],
+        };
     }
 
     public debug(msg) {
