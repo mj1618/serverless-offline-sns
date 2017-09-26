@@ -82,15 +82,15 @@ class ServerlessOfflineSns {
         // arn = event.sns.arn ||
         // arn = event.sns.arn && topicName = event.sns.topicName
         const fn = this.serverless.service.functions[fnName];
-        const handler = this.createHandler(fn);
+        const getHandler = () => this.createHandler(fn);
 
         if (typeof snsConfig === "string") {
             this.log(`Creating topic: "${snsConfig}" for fn "${fnName}"`);
             const data = await this.snsAdapter.createTopic(snsConfig);
             this.debug("topic: " + JSON.stringify(data));
-            await this.snsAdapter.subscribe(fnName, handler, data.TopicArn);
+            await this.snsAdapter.subscribe(fnName, () => this.createHandler(fn), data.TopicArn);
         } else if (typeof snsConfig.arn === "string") {
-            await this.snsAdapter.subscribe(fnName, handler, snsConfig.arn);
+            await this.snsAdapter.subscribe(fnName, () => this.createHandler(fn), snsConfig.arn);
         } else {
             this.log("unsupported config: " + snsConfig);
             return Promise.resolve("unsupported config: " + snsConfig);
