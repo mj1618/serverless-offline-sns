@@ -77,6 +77,7 @@ functions:
 Here's a demo of some code that will trigger this handler:
 
 ```javascript
+var AWS = require("aws-sdk"); // must be npm installed to use
 var sns = new AWS.SNS({
   endpoint: "http://127.0.0.1:4002",
   region: "us-east-1",
