@@ -50,6 +50,7 @@ class ServerlessOfflineSns {
         await this.listen();
         await this.serve();
         await this.subscribeAll();
+        return this.snsAdapter;
     }
 
     public async waitForSigint() {
