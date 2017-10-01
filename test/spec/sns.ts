@@ -20,7 +20,7 @@ describe("test", () => {
 
     it("should start on command start", async () => {
         plugin = new ServerlessOfflineSns(createServerless(), {});
-        await plugin.hooks["offline-sns:start:init"]();
+        plugin.hooks["offline-sns:start:init"]();
         await plugin.hooks["offline-sns:start:end"]();
     });
 
