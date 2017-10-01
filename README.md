@@ -92,8 +92,6 @@ sns.publish({
 
 ## Usage
 
-
-
 If you use [serverless-offline](https://github.com/dherault/serverless-offline) this plugin will start automatically.
 
 However if you don't use serverless-offline you can start this plugin manually with -
