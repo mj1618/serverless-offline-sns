@@ -15,6 +15,8 @@ A serverless plugin to listen to offline SNS and call lambda fns with events.
 - [Usage](#usage)
 - [Contributions and Issues](#contributions-and-issues)
 
+For an example of a working application please see [serverless-offline-sns-example](https://github.com/mj1618/serverless-offline-sns-example)
+
 ## Prerequisites
 
 This plugin provides an SNS server configured automatically without you specifying an endpoint.
@@ -40,7 +42,7 @@ custom:
   serverless-offline-sns:
     port: 4002 # a free port for the sns server to run on
     debug: false
-    sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom endpoint
+    # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom endpoint
 ```
 
 If you are using the [serverless-offline](https://github.com/dherault/serverless-offline) plugin serverless-offline-sns will start automatically. If you are not using this plugin you can run the following command instead:
@@ -57,7 +59,7 @@ Here's an example `serverless.yml` config which calls a function on an SNS notif
 ```YAML
 functions:
   pong:
-    handler: dist/services/hello/index.pong
+    handler: handler.pong
     events:
       - sns: test-topic
 ```
@@ -66,7 +68,7 @@ Or you can use the exact ARN of the topic:
 ```YAML
 functions:
   pong:
-    handler: dist/services/hello/index.pong
+    handler: handler.pong
     events:
       - sns:
         arn: "arn:aws:sns:us-east-1:123456789012:test-topic"
@@ -75,19 +77,22 @@ functions:
 Here's a demo of some code that will trigger this handler:
 
 ```javascript
-import AWS = require("aws-sdk");
-const sns = new AWS.SNS({
-    endpoint: "http://127.0.0.1:4002",
-    region: "us-east-1",
+var sns = new AWS.SNS({
+  endpoint: "http://127.0.0.1:4002",
+  region: "us-east-1",
 });
 sns.publish({
-    Message: "hello!",
-    MessageStructure: "json",
-    TopicArn: "arn:aws:sns:us-east-1:123456789012:test-topic",
+  Message: "hello!",
+  MessageStructure: "json",
+  TopicArn: "arn:aws:sns:us-east-1:123456789012:test-topic",
+}, () => {
+  console.log("ping");
 });
 ```
 
 ## Usage
+
+
 
 If you use [serverless-offline](https://github.com/dherault/serverless-offline) this plugin will start automatically.
 
