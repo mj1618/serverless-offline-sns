@@ -28,7 +28,7 @@ describe("test", () => {
     it("should send event", async () => {
         plugin = new ServerlessOfflineSns(createServerless(), {});
         const snsAdapter = await plugin.start();
-        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "hello");
+        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(2);
     });
@@ -38,7 +38,7 @@ describe("test", () => {
         const snsAdapter = await plugin.start();
         const err = await plugin.subscribe("badPong", createServerlessBad().service.functions.badPong );
         expect(err.indexOf("unsupported config:")).to.be.greaterThan(-1);
-        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "hello");
+        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(0);
     });
@@ -47,7 +47,7 @@ describe("test", () => {
         plugin = new ServerlessOfflineSns(createServerless(), {});
         const snsAdapter = await plugin.start();
         await plugin.unsubscribeAll();
-        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "hello");
+        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(0);
     });
