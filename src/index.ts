@@ -1,7 +1,7 @@
-import {SNSAdapter} from "./sns-adapter";
+import { SNSAdapter } from "./sns-adapter";
 import * as express from "express";
 import { ISNSAdapter } from "./types";
-import {SNSServer} from "./sns-server";
+import { SNSServer } from "./sns-server";
 
 class ServerlessOfflineSns {
     private config: any;
@@ -37,9 +37,11 @@ class ServerlessOfflineSns {
         this.hooks = {
             "before:offline:start:init": () => this.start(),
             "after:offline:start:end": () => this.stop(),
-            "offline-sns:start:init": () => this.start(),
+            "offline-sns:start:init": () => {
+                this.start();
+                return this.waitForSigint();
+            },
             "offline-sns:start:end": () => this.stop(),
-
         };
     }
 
@@ -48,7 +50,15 @@ class ServerlessOfflineSns {
         await this.listen();
         await this.serve();
         await this.subscribeAll();
-        return this.snsAdapter;
+    }
+
+    public async waitForSigint() {
+        return new Promise(res => {
+            process.on("SIGINT", () => {
+                this.log("Halting offline-sns server");
+                res();
+            });
+        });
     }
 
     public async serve() {
@@ -120,7 +130,7 @@ class ServerlessOfflineSns {
 
     public async listen() {
         this.debug("starting plugin");
-        return new Promise( res => {
+        return new Promise(res => {
             this.server = this.app.listen(this.port, "127.0.0.1", () => {
                 this.debug(`listening on 127.0.0.1:${this.port}`);
                 res();
