@@ -93,7 +93,6 @@ class ServerlessOfflineSns {
         // arn = event.sns.arn ||
         // arn = event.sns.arn && topicName = event.sns.topicName
         const fn = this.serverless.service.functions[fnName];
-        const getHandler = () => this.createHandler(fn);
 
         if (typeof snsConfig === "string") {
             this.log(`Creating topic: "${snsConfig}" for fn "${fnName}"`);

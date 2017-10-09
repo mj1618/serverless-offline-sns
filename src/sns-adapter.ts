@@ -1,7 +1,32 @@
 import * as AWS from "aws-sdk";
-import {ListSubscriptionsResponse, CreateTopicResponse} from "aws-sdk/clients/sns.d";
+import { ListSubscriptionsResponse, CreateTopicResponse } from "aws-sdk/clients/sns.d";
 import { ISNSAdapter, IDebug } from "./types";
 import fetch from "node-fetch";
+
+const createLambdaContext = (fun, cb?) => {
+    const functionName = fun.name;
+    const endTime = new Date().getTime() + (fun.timeout ? fun.timeout * 1000 : 6000);
+    const done = typeof cb === "function" ? cb : ((x, y) => x || y); // eslint-disable-line no-extra-parens
+
+    return {
+        /* Methods */
+        done,
+        succeed: res => done(null, res),
+        fail: err => done(err, null),
+        getRemainingTimeInMillis: () => endTime - new Date().getTime(),
+
+        /* Properties */
+        functionName,
+        memoryLimitInMB: fun.memorySize || 1536,
+        functionVersion: `offline_functionVersion_for_${functionName}`,
+        invokedFunctionArn: `offline_invokedFunctionArn_for_${functionName}`,
+        awsRequestId: `offline_awsRequestId_${Math.random().toString(10).slice(2)}`,
+        logGroupName: `offline_logGroupName_for_${functionName}`,
+        logStreamName: `offline_logStreamName_for_${functionName}`,
+        identity: {},
+        clientContext: {},
+    };
+};
 
 export class SNSAdapter implements ISNSAdapter {
     private sns: AWS.SNS;
@@ -79,7 +104,7 @@ export class SNSAdapter implements ISNSAdapter {
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
         this.app.post("/" + fnName, (req, res) => {
             this.debug("calling fn: " + fnName + " 1");
-            getHandler()(req.body, {}, (data) => {
+            getHandler()(req.body, createLambdaContext({name: fnName}), (data) => {
                 res.send(data);
             });
         });
