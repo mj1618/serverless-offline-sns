@@ -13,12 +13,12 @@ class ServerlessOfflineSns {
     private app: any;
     private snsServer: any;
     private server: any;
+    private options: any;
 
     constructor(serverless: any, options: any) {
         this.app = express();
-        this.config = serverless.service.custom["serverless-offline-sns"] || {};
+        this.options = options;
         this.serverless = serverless;
-        this.port = this.config.port || 4002;
         this.commands = {
             "offline-sns": {
                 usage: "Listens to offline SNS events and passes them to configured Lambda fns",
@@ -46,7 +46,12 @@ class ServerlessOfflineSns {
     }
 
     public async start() {
-        this.debug("starting plugin");
+        const inited = await this.serverless.service.load({
+            stage: this.options.stage,
+            region: this.options.region,
+        });
+        this.config = inited.custom["serverless-offline-sns"] || {};
+        this.port = this.config.port || 4002;
         await this.listen();
         await this.serve();
         await this.subscribeAll();
