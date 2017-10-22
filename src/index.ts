@@ -52,7 +52,6 @@ class ServerlessOfflineSns {
         });
         this.config = inited.custom["serverless-offline-sns"] || {};
         this.port = this.config.port || 4002;
-        this.debug = this.config.debug || false;
     }
 
     public async start() {
