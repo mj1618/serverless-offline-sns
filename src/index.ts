@@ -129,7 +129,7 @@ class ServerlessOfflineSns {
     }
 
     public debug(msg, context?: string) {
-        if (this.debug) {
+        if (this.config.debug) {
             if (context) {
                 this.log(msg, `DEBUG[serverless-offline-sns][${context}]: `);
             } else {
