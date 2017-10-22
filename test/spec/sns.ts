@@ -56,15 +56,11 @@ describe("test", () => {
 const createServerless = () => {
     return {
         service: {
-            load: () => {
-                return {
-                    custom: {
-                        "serverless-offline-sns": {
-                            debug: true,
-                            port: 4002,
-                        },
-                    },
-                };
+            custom: {
+                "serverless-offline-sns": {
+                    debug: true,
+                    port: 4002,
+                },
             },
             provider: {
                 region: "us-east-1",
@@ -99,15 +95,11 @@ const createServerless = () => {
 const createServerlessBad = () => {
     return {
         service: {
-            load: () => {
-                return {
-                    custom: {
-                        "serverless-offline-sns": {
-                            debug: true,
-                            port: 4002,
-                        },
-                    },
-                };
+            custom: {
+                "serverless-offline-sns": {
+                    debug: true,
+                    port: 4002,
+                },
             },
             provider: {
                 region: "us-east-1",

@@ -45,17 +45,13 @@ class ServerlessOfflineSns {
         };
     }
 
-    public async init() {
-        const inited = await this.serverless.service.load({
-            stage: this.options.stage,
-            region: this.options.region,
-        });
-        this.config = inited.custom["serverless-offline-sns"] || {};
+    public init() {
+        this.config = this.serverless.service.custom["serverless-offline-sns"] || {};
         this.port = this.config.port || 4002;
     }
 
     public async start() {
-        await this.init();
+        this.init();
         await this.listen();
         await this.serve();
         await this.subscribeAll();
@@ -148,7 +144,7 @@ class ServerlessOfflineSns {
     }
 
     public async stop() {
-        await this.init();
+        this.init();
         this.debug("stopping plugin");
         if (this.server) {
             this.server.close();
