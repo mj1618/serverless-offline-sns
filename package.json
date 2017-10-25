@@ -8,8 +8,7 @@
     "watch": "tsc -p src -w",
     "test": "nyc ts-mocha \"test/**/*.ts\" -p src/",
     "lint": "tslint -p src/",
-    "prepare": "npm run lint && npm run test && npm run build",
-    "postinstall": "postinstall-build dist"
+    "prepare": "npm run lint && npm run test && npm run build"
   },
   "repository": {
     "type": "git",
@@ -36,7 +35,6 @@
     "body-parser": "^1.18.2",
     "express": "^4.15.4",
     "node-fetch": "^1.7.3",
-    "postinstall-build": "^5.0.1",
     "uuid": "^3.1.0",
     "xml": "^1.0.1"
   },
