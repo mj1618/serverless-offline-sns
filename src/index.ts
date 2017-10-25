@@ -135,7 +135,7 @@ class ServerlessOfflineSns {
 
     public async listen() {
         this.debug("starting plugin");
-        let host = '127.0.0.1';
+        let host = "127.0.0.1";
         if (this.config.host) {
             this.debug(`using specified host ${this.config.host}`);
             host = this.config.host;
