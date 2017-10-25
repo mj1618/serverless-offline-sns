@@ -36,12 +36,13 @@ plugins:
   - serverless-offline-sns
 ```
 
-Configure the plugin with your offline SNS endpoint and a free port the plugin can use.
+Configure the plugin with your offline SNS endpoint, host to listen on, and a free port the plugin can use.
 ```YAML
 custom:
   serverless-offline-sns:
     port: 4002 # a free port for the sns server to run on
     debug: false
+    # host: 0.0.0.0 # Optional, defaults to 127.0.0.1. Useful for Docker on OSX
     # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom endpoint
 ```
 
