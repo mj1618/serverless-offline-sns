@@ -47,9 +47,7 @@ custom:
     # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom endpoint
 ```
 
-In normal operation, if the *--host* option is provided when starting serverless-offline, then the plugin will also use that host. The *host* parameter as shown above may be provided to override this behavior.
-
-If running under Docker on OSX, the *--host* option to serverless-offline should be set to the "any" host (0.0.0.0), as open ports on the container are not routed internally to 127.0.0.1 (localhost). This is generally safe, as open container ports are only visible to the host system via localhost.
+In normal operation, the plugin will use the same *--host* option as provided to serverless-offline. The *host* parameter as shown above overrides this setting.
 
 If you are using the [serverless-offline](https://github.com/dherault/serverless-offline) plugin serverless-offline-sns will start automatically. If you are not using this plugin you can run the following command instead:
 ```bash
