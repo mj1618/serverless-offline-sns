@@ -43,11 +43,11 @@ custom:
   serverless-offline-sns:
     port: 4002 # a free port for the sns server to run on
     debug: false
-    # host: 0.0.0.0 # Optional, defaults to 127.0.0.1. Useful for Docker on OSX
+    # host: 0.0.0.0 # Optional, defaults to 127.0.0.1 if not provided to serverless-offline
     # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom endpoint
 ```
 
-If setting the *host* parameter as above, follow best security practice and ensure that your port is only visible to trusted programs. If using Docker on OSX, this will be the case in most circumstances.
+In normal operation, the plugin will use the same *--host* option as provided to serverless-offline. The *host* parameter as shown above overrides this setting.
 
 If you are using the [serverless-offline](https://github.com/dherault/serverless-offline) plugin serverless-offline-sns will start automatically. If you are not using this plugin you can run the following command instead:
 ```bash

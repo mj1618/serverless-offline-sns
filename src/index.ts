@@ -139,6 +139,9 @@ class ServerlessOfflineSns {
         if (this.config.host) {
             this.debug(`using specified host ${this.config.host}`);
             host = this.config.host;
+        } else if (this.options.host) {
+            this.debug(`using offline specified host ${this.options.host}`);
+            host = this.options.host;
         }
         return new Promise(res => {
             this.server = this.app.listen(this.port, host, () => {
