@@ -14,11 +14,13 @@ class ServerlessOfflineSns {
     private snsServer: any;
     private server: any;
     private options: any;
+    private location: string;
 
     constructor(serverless: any, options: any) {
         this.app = express();
         this.options = options;
         this.serverless = serverless;
+
         this.commands = {
             "offline-sns": {
                 usage: "Listens to offline SNS events and passes them to configured Lambda fns",
@@ -48,6 +50,8 @@ class ServerlessOfflineSns {
     public init() {
         this.config = this.serverless.service.custom["serverless-offline-sns"] || {};
         this.port = this.config.port || 4002;
+        const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};
+        this.location = offlineConfig.location || ".";
     }
 
     public async start() {
@@ -114,8 +118,8 @@ class ServerlessOfflineSns {
 
     public createHandler(fn) {
         this.debug(process.cwd());
-        this.debug("require(" + process.cwd() + "/" + fn.handler.split(".")[0] + ")[" + fn.handler.split("/").pop().split(".")[1] + "]");
-        const handler = require(process.cwd() + "/" + fn.handler.split(".")[0])[fn.handler.split("/").pop().split(".")[1]];
+        this.debug("require(" + process.cwd() + "/" + this.location + "/" + fn.handler.split(".")[0] + ")[" + fn.handler.split("/").pop().split(".")[1] + "]");
+        const handler = require(process.cwd() + "/" + this.location + "/" + fn.handler.split(".")[0])[fn.handler.split("/").pop().split(".")[1]];
         return handler;
     }
 
