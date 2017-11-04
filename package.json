@@ -34,9 +34,9 @@
     "aws-sdk": "^2.41.0",
     "body-parser": "^1.18.2",
     "express": "^4.15.4",
+    "node-fetch": "^1.7.3",
     "uuid": "^3.1.0",
-    "xml": "^1.0.1",
-    "node-fetch": "^1.7.3"
+    "xml": "^1.0.1"
   },
   "devDependencies": {
     "@types/chai": "^4.0.4",

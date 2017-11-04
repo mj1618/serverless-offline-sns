@@ -139,9 +139,17 @@ class ServerlessOfflineSns {
 
     public async listen() {
         this.debug("starting plugin");
+        let host = "127.0.0.1";
+        if (this.config.host) {
+            this.debug(`using specified host ${this.config.host}`);
+            host = this.config.host;
+        } else if (this.options.host) {
+            this.debug(`using offline specified host ${this.options.host}`);
+            host = this.options.host;
+        }
         return new Promise(res => {
-            this.server = this.app.listen(this.port, "127.0.0.1", () => {
-                this.debug(`listening on 127.0.0.1:${this.port}`);
+            this.server = this.app.listen(this.port, host, () => {
+                this.debug(`listening on ${host}:${this.port}`);
                 res();
             });
         });
