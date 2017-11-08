@@ -76,7 +76,7 @@ class ServerlessOfflineSns {
     }
 
     public async subscribeAll() {
-        this.snsAdapter = new SNSAdapter(this.port, this.serverless.service.provider.region, this.config["sns-endpoint"], (msg, ctx) => this.debug(msg, ctx), this.app);
+        this.snsAdapter = new SNSAdapter(this.port, this.serverless.service.provider.region, this.config["sns-endpoint"], (msg, ctx) => this.debug(msg, ctx), this.app, this.serverless.service.service, this.serverless.service.provider.stage);
         await this.unsubscribeAll();
         this.debug("subscribing");
         await Promise.all(Object.keys(this.serverless.service.functions).map(fnName => {
