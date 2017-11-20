@@ -51,7 +51,12 @@ class ServerlessOfflineSns {
         this.config = this.serverless.service.custom["serverless-offline-sns"] || {};
         this.port = this.config.port || 4002;
         const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};
-        this.location = offlineConfig.location || ".";
+        this.location = process.cwd();
+        if (offlineConfig.location) {
+            this.location = process.cwd() + "/" + offlineConfig.location;
+        } else if (this.serverless.config.servicePath) {
+            this.location = this.serverless.config.servicePath;
+        }
     }
 
     public async start() {
@@ -118,8 +123,8 @@ class ServerlessOfflineSns {
 
     public createHandler(fn) {
         this.debug(process.cwd());
-        this.debug("require(" + process.cwd() + "/" + this.location + "/" + fn.handler.split(".")[0] + ")[" + fn.handler.split("/").pop().split(".")[1] + "]");
-        const handler = require(process.cwd() + "/" + this.location + "/" + fn.handler.split(".")[0])[fn.handler.split("/").pop().split(".")[1]];
+        this.debug("require(" + this.location + "/" + fn.handler.split(".")[0] + ")[" + fn.handler.split("/").pop().split(".")[1] + "]");
+        const handler = require(this.location + "/" + fn.handler.split(".")[0])[fn.handler.split("/").pop().split(".")[1]];
         return handler;
     }
 
