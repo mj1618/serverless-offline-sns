@@ -55,6 +55,7 @@ describe("test", () => {
 
 const createServerless = () => {
     return {
+        config: {},
         service: {
             custom: {
                 "serverless-offline-sns": {
@@ -94,6 +95,7 @@ const createServerless = () => {
 
 const createServerlessBad = () => {
     return {
+        config: {},
         service: {
             custom: {
                 "serverless-offline-sns": {
