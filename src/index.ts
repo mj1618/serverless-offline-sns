@@ -115,7 +115,7 @@ class ServerlessOfflineSns {
             if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
                 topicName = snsConfig.topicName;
             }
-            const data = await this.snsAdapter.createTopic(snsConfig);
+            const data = await this.snsAdapter.createTopic(topicName);
             this.debug("topic: " + JSON.stringify(data));
             await this.snsAdapter.subscribe(fnName, () => this.createHandler(fn), data.TopicArn);
         } else if (typeof snsConfig.arn === "string") {
