@@ -1,4 +1,5 @@
 # serverless-offline-sns
+[![All Contributors](https://img.shields.io/badge/all_contributors-0-orange.svg?style=flat-square)](#contributors)
 A serverless plugin to listen to offline SNS and call lambda fns with events.
 
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
@@ -104,6 +105,12 @@ However if you don't use serverless-offline you can start this plugin manually w
 serverless offline-sns start
 ```
 
-## Contributions and Issues
+## Contributors
 
 Happy to accept contributions, [feature requests](https://github.com/mj1618/serverless-offline-sns/issues) and [issues](https://github.com/mj1618/serverless-offline-sns/issues).
+
+Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section --><!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!
