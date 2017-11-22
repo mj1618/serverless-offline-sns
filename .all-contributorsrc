@@ -6,5 +6,41 @@
   ],
   "imageSize": 100,
   "commit": false,
-  "contributors": []
+  "contributors": [
+    {
+      "login": "mj1618",
+      "name": "Matthew James",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/6138817?v=4",
+      "profile": "https://github.com/mj1618",
+      "contributions": [
+        "question",
+        "code",
+        "design",
+        "doc",
+        "example"
+      ]
+    },
+    {
+      "login": "darbio",
+      "name": "darbio",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/517620?v=4",
+      "profile": "https://github.com/darbio",
+      "contributions": [
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "TiVoMaker",
+      "name": "TiVoMaker",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/5116271?v=4",
+      "profile": "https://github.com/TiVoMaker",
+      "contributions": [
+        "bug",
+        "code",
+        "design",
+        "doc"
+      ]
+    }
+  ]
 }
