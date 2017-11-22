@@ -1,5 +1,5 @@
 # serverless-offline-sns
-[![All Contributors](https://img.shields.io/badge/all_contributors-0-orange.svg?style=flat-square)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors)
 A serverless plugin to listen to offline SNS and call lambda fns with events.
 
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
@@ -111,6 +111,9 @@ Happy to accept contributions, [feature requests](https://github.com/mj1618/serv
 
 Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
 
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section --><!-- ALL-CONTRIBUTORS-LIST:END -->
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+| [<img src="https://avatars0.githubusercontent.com/u/6138817?v=4" width="100px;"/><br /><sub><b>Matthew James</b></sub>](https://github.com/mj1618)<br />[💬](#question-mj1618 "Answering Questions") [💻](https://github.com/mj1618/serverless-offline-sns/commits?author=mj1618 "Code") [🎨](#design-mj1618 "Design") [📖](https://github.com/mj1618/serverless-offline-sns/commits?author=mj1618 "Documentation") [💡](#example-mj1618 "Examples") | [<img src="https://avatars0.githubusercontent.com/u/517620?v=4" width="100px;"/><br /><sub><b>darbio</b></sub>](https://github.com/darbio)<br />[🐛](https://github.com/mj1618/serverless-offline-sns/issues?q=author%3Adarbio "Bug reports") [💻](https://github.com/mj1618/serverless-offline-sns/commits?author=darbio "Code") | [<img src="https://avatars2.githubusercontent.com/u/5116271?v=4" width="100px;"/><br /><sub><b>TiVoMaker</b></sub>](https://github.com/TiVoMaker)<br />[🐛](https://github.com/mj1618/serverless-offline-sns/issues?q=author%3ATiVoMaker "Bug reports") [💻](https://github.com/mj1618/serverless-offline-sns/commits?author=TiVoMaker "Code") [🎨](#design-TiVoMaker "Design") [📖](https://github.com/mj1618/serverless-offline-sns/commits?author=TiVoMaker "Documentation") |
+| :---: | :---: | :---: |
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!
