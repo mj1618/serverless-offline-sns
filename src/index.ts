@@ -15,6 +15,7 @@ class ServerlessOfflineSns {
     private server: any;
     private options: any;
     private location: string;
+    private region: string;
 
     constructor(serverless: any, options: any) {
         this.app = express();
@@ -57,6 +58,11 @@ class ServerlessOfflineSns {
         } else if (this.serverless.config.servicePath) {
             this.location = this.serverless.config.servicePath;
         }
+        if (this.serverless.service.provider.region) {
+            this.region = this.serverless.service.provider.region;
+        } else {
+            this.region = "us-east-1";
+        }
     }
 
     public async start() {
@@ -77,7 +83,7 @@ class ServerlessOfflineSns {
     }
 
     public async serve() {
-        this.snsServer = new SNSServer((msg, ctx) => this.debug(msg, ctx), this.app);
+        this.snsServer = new SNSServer((msg, ctx) => this.debug(msg, ctx), this.app, this.region);
     }
 
     public async subscribeAll() {

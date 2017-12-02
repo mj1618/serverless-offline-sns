@@ -36,12 +36,14 @@ export class SNSServer implements ISNSServer {
     private port: number;
     private server: any;
     private app: any;
+    private region: string;
 
-    constructor(debug, app) {
+    constructor(debug, app, region) {
         this.pluginDebug = debug;
         this.topics = [];
         this.subscriptions = [];
         this.app = app;
+        this.region = region;
         this.routes();
     }
 
@@ -124,7 +126,7 @@ export class SNSServer implements ISNSServer {
 
     public createTopic(topicName) {
         const topic = {
-            TopicArn: "arn:aws:sns:us-east-1:123456789012:" + topicName,
+            TopicArn: `arn:aws:sns:${this.region}:123456789012:${topicName}`,
         };
         this.topics.push(topic);
         return {
