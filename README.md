@@ -96,6 +96,8 @@ sns.publish({
 });
 ```
 
+Note the region that offline-sns will listen on is what is configured in your serverless.yml provider.
+
 ## Usage
 
 If you use [serverless-offline](https://github.com/dherault/serverless-offline) this plugin will start automatically.
