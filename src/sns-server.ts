@@ -57,7 +57,7 @@ export class SNSServer implements ISNSServer {
             next();
         });
         this.app.all("/", (req, res) => {
-            this.debug("hello");
+            this.debug("hello request");
             this.debug(JSON.stringify(req.body));
             this.debug(JSON.stringify(this.subscriptions));
             if (req.body.Action === "ListSubscriptions") {
@@ -203,7 +203,7 @@ export class SNSServer implements ISNSServer {
                 body: event,
                 headers: {
                     "Content-Type": "application/json",
-                    "Content-Length": event.length,
+                    "Content-Length": Buffer.byteLength(event),
                 },
             }).then(res => this.debug(res));
         }));
