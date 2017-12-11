@@ -123,9 +123,9 @@ class ServerlessOfflineSns {
             }
             const data = await this.snsAdapter.createTopic(topicName);
             this.debug("topic: " + JSON.stringify(data));
-            await this.snsAdapter.subscribe(fnName, () => this.createHandler(fn), data.TopicArn);
+            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), data.TopicArn);
         } else if (typeof snsConfig.arn === "string") {
-            await this.snsAdapter.subscribe(fnName, () => this.createHandler(fn), snsConfig.arn);
+            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), snsConfig.arn);
         } else {
             this.log("unsupported config: " + snsConfig);
             return Promise.resolve("unsupported config: " + snsConfig);

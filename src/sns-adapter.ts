@@ -77,13 +77,13 @@ export class SNSAdapter implements ISNSAdapter {
         }));
     }
 
-    public async subscribe(fnName, getHandler, arn) {
-        const subscribeEndpoint = "http://127.0.0.1:" + this.port + "/" + fnName;
-        this.debug("subscribe: " + fnName + " " + arn);
+    public async subscribe(fn, getHandler, arn) {
+        const subscribeEndpoint = "http://127.0.0.1:" + this.port + "/" + fn.name;
+        this.debug("subscribe: " + fn.name + " " + arn);
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
-        this.app.post("/" + fnName, (req, res) => {
-            this.debug("calling fn: " + fnName + " 1");
-            getHandler()(req.body, this.createLambdaContext({name: fnName}), (data) => {
+        this.app.post("/" + fn.name, (req, res) => {
+            this.debug("calling fn: " + fn.name + " 1");
+            getHandler()(req.body, this.createLambdaContext(fn), (data) => {
                 res.send(data);
             });
         });
@@ -98,7 +98,7 @@ export class SNSAdapter implements ISNSAdapter {
                 if (err) {
                     this.debug(err, err.stack);
                 } else {
-                    this.debug(`successfully subscribed fn "${fnName}" to topic: "${arn}"`);
+                    this.debug(`successfully subscribed fn "${fn.name}" to topic: "${arn}"`);
                 }
                 res();
             });
