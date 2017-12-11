@@ -14,7 +14,7 @@ A serverless plugin to listen to offline SNS and call lambda fns with events.
 - [Installation](#installation)
 - [Configure](#configure)
 - [Usage](#usage)
-- [Contributions and Issues](#contributions-and-issues)
+- [Contributors](#contributors)
 
 For an example of a working application please see [serverless-offline-sns-example](https://github.com/mj1618/serverless-offline-sns-example)
 
