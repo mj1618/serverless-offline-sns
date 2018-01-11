@@ -6,6 +6,7 @@ let plugin;
 describe("test", () => {
     beforeEach(() => {
         handler.resetPongs();
+        handler.resetEvent();
     });
 
     afterEach(() => {
@@ -31,6 +32,33 @@ describe("test", () => {
         await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(2);
+    });
+
+    it("should send event with MessageAttributes", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish(
+            "arn:aws:sns:us-east-1:123456789012:test-topic",
+            "message with attributes",
+            "raw",
+            {
+                with: { DataType: "String", StringValue: "attributes" },
+            },
+        );
+        await new Promise(res => setTimeout(res, 100));
+        const event = handler.getEvent();
+        const record = event.Records[0];
+        expect(record).to.include.keys("Sns");
+        expect(record.Sns).to.have.property("Message", "message with attributes");
+        expect(record.Sns).to.have.deep.property(
+            "MessageAttributes",
+            {
+                with: {
+                    Type: "String",
+                    Value: "attributes",
+                },
+            }
+        );
     });
 
     it("should error", async () => {
