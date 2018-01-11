@@ -60,6 +60,17 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "jbreckel",
+      "name": "Julius Breckel",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/9253219?v=4",
+      "profile": "https://github.com/jbreckel",
+      "contributions": [
+        "code",
+        "example",
+        "test"
+      ]
     }
   ]
 }
