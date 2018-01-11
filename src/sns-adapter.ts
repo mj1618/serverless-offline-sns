@@ -1,5 +1,5 @@
 import * as AWS from "aws-sdk";
-import { ListSubscriptionsResponse, CreateTopicResponse } from "aws-sdk/clients/sns.d";
+import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap } from "aws-sdk/clients/sns.d";
 import { ISNSAdapter, IDebug } from "./types";
 import fetch from "node-fetch";
 
@@ -105,11 +105,12 @@ export class SNSAdapter implements ISNSAdapter {
         });
     }
 
-    public async publish(topicArn: string, message: string, type: string = "json") {
+    public async publish(topicArn: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
         await new Promise(res => this.sns.publish({
             Message: message,
             MessageStructure: type,
             TopicArn: topicArn,
+            MessageAttributes: messageAttributes,
         }, res));
     }
 

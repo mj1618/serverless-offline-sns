@@ -29,6 +29,34 @@ const arrayify = obj => {
     });
 };
 
+const parseMessageAttributes = body => {
+    if (body.MessageStructure !== "raw") {
+        return {};
+    }
+
+    const entries = Object.keys(body)
+        .filter(key => key.startsWith("MessageAttributes.entry"))
+        .reduce(
+            (prev, key) => {
+                const index = key.replace("MessageAttributes.entry.", "").match(/.*?(?=\.|$)/i)[0];
+                return prev.includes(index) ? prev : [...prev, index];
+            },
+            [],
+        );
+    return entries
+        .map(index => `MessageAttributes.entry.${index}`)
+        .reduce(
+            (prev, baseKey) => ({
+                ...prev,
+                [`${body[`${baseKey}.Name`]}`]: {
+                    Type: body[`${baseKey}.Value.DataType`],
+                    Value: body[`${baseKey}.Value.BinaryValue`] || body[`${baseKey}.Value.StringValue`],
+                },
+            }),
+            {},
+        );
+};
+
 export class SNSServer implements ISNSServer {
     private topics: TopicsList;
     private subscriptions: Subscription[];
@@ -68,7 +96,17 @@ export class SNSServer implements ISNSServer {
             } else if (req.body.Action === "Subscribe") {
                 res.send(xml(this.subscribe(req.body.Endpoint, req.body.Protocol, req.body.TopicArn)));
             } else if (req.body.Action === "Publish") {
-                res.send(xml(this.publish(req.body.TopicArn, req.body.subject, req.body.Message, req.body.MessageStructure)));
+                res.send(
+                    xml(
+                        this.publish(
+                            req.body.TopicArn,
+                            req.body.subject,
+                            req.body.Message,
+                            req.body.MessageStructure,
+                            parseMessageAttributes(req.body),
+                        ),
+                    ),
+                );
             } else if (req.body.Action === "Unsubscribe") {
                 res.send(xml(this.unsubscribe(req.body.SubscriptionArn)));
             } else {
@@ -168,7 +206,7 @@ export class SNSServer implements ISNSServer {
         };
     }
 
-    public createEvent(topicArn, subscriptionArn, subject, message) {
+    public createEvent(topicArn, subscriptionArn, subject, message, messageAttributes?) {
         return {
             Records: [
                 {
@@ -182,7 +220,7 @@ export class SNSServer implements ISNSServer {
                         SigningCertUrl: "EXAMPLE",
                         MessageId: uuid(),
                         Message: message,
-                        MessageAttributes: {},
+                        MessageAttributes: messageAttributes || {},
                         Type: "Notification",
                         UnsubscribeUrl: "EXAMPLE",
                         TopicArn: topicArn,
@@ -193,10 +231,10 @@ export class SNSServer implements ISNSServer {
         };
     }
 
-    public publish(topicArn, subject, message, messageType) {
+    public publish(topicArn, subject, message, messageType, messageAttributes) {
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
             this.debug("fetching: " + sub.Endpoint);
-            const event = JSON.stringify(this.createEvent(topicArn, sub.SubscriptionArn, subject, message));
+            const event = JSON.stringify(this.createEvent(topicArn, sub.SubscriptionArn, subject, message, messageAttributes));
             this.debug("event: " + event);
             return fetch(sub.Endpoint, {
                 method: "POST",
