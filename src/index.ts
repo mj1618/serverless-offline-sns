@@ -29,11 +29,13 @@ class ServerlessOfflineSns {
                 lifecycleEvents: [
                     "start",
                 ],
-                start: {
-                    lifecycleEvents: [
-                        "init",
-                        "end",
-                    ],
+                commands: {
+                    start: {
+                        lifecycleEvents: [
+                            "init",
+                            "end",
+                        ],
+                    },
                 },
             },
         };
