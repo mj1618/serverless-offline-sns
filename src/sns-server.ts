@@ -30,10 +30,6 @@ const arrayify = obj => {
 };
 
 const parseMessageAttributes = body => {
-    if (body.MessageStructure !== "raw") {
-        return {};
-    }
-
     const entries = Object.keys(body)
         .filter(key => key.startsWith("MessageAttributes.entry"))
         .reduce(
