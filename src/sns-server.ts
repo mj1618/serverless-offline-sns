@@ -30,6 +30,10 @@ const arrayify = obj => {
 };
 
 const parseMessageAttributes = body => {
+    if (body.MessageStructure === "json") {
+        return {};
+    }
+
     const entries = Object.keys(body)
         .filter(key => key.startsWith("MessageAttributes.entry"))
         .reduce(
