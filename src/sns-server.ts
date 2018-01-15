@@ -30,7 +30,7 @@ const arrayify = obj => {
 };
 
 const parseMessageAttributes = body => {
-    if (body.MessageStructure !== "raw") {
+    if (body.MessageStructure === "json") {
         return {};
     }
 
