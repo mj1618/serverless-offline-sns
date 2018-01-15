@@ -81,6 +81,15 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "jamiel",
+      "name": "Jamie Learmonth",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/33498?v=4",
+      "profile": "http://www.boxlightmedia.com",
+      "contributions": [
+        "bug"
+      ]
     }
   ]
 }
