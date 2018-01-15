@@ -2,6 +2,7 @@ import { SNSAdapter } from "./sns-adapter";
 import * as express from "express";
 import { ISNSAdapter } from "./types";
 import { SNSServer } from "./sns-server";
+import * as _ from "lodash";
 
 class ServerlessOfflineSns {
     private config: any;
@@ -49,6 +50,7 @@ class ServerlessOfflineSns {
     }
 
     public init() {
+        process.env = _.extend({}, this.serverless.service.provider.environment, process.env);
         this.config = this.serverless.service.custom["serverless-offline-sns"] || {};
         this.port = this.config.port || 4002;
         const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};

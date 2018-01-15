@@ -7,6 +7,7 @@ describe("test", () => {
     beforeEach(() => {
         handler.resetPongs();
         handler.resetEvent();
+        handler.resetResult();
     });
 
     afterEach(() => {
@@ -57,7 +58,7 @@ describe("test", () => {
                     Type: "String",
                     Value: "attributes",
                 },
-            }
+            },
         );
     });
 
@@ -79,9 +80,17 @@ describe("test", () => {
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(0);
     });
+
+    it("should read env variable", async () => {
+        plugin = new ServerlessOfflineSns(createServerless("envHandler"), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "{}");
+        await new Promise(res => setTimeout(res, 100));
+        expect(handler.getResult()).to.eq("MY_VAL");
+    });
 });
 
-const createServerless = () => {
+const createServerless = (handlerName: string = "pongHandler") => {
     return {
         config: {},
         service: {
@@ -93,16 +102,19 @@ const createServerless = () => {
             },
             provider: {
                 region: "us-east-1",
+                environment: {
+                    MY_VAR: "MY_VAL",
+                },
             },
             functions: {
                 pong: {
-                    handler: "test/mock/handler.pongHandler",
+                    handler: "test/mock/handler." + handlerName,
                     events: [{
                         sns: "test-topic",
                     }],
                 },
                 pong2: {
-                    handler: "test/mock/handler.pongHandler",
+                    handler: "test/mock/handler." + handlerName,
                     events: [{
                         sns: {
                             arn: "arn:aws:sns:us-east-1:123456789012:test-topic",
