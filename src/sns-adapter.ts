@@ -2,6 +2,7 @@ import * as AWS from "aws-sdk";
 import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap } from "aws-sdk/clients/sns.d";
 import { ISNSAdapter, IDebug } from "./types";
 import fetch from "node-fetch";
+import * as _ from "lodash";
 
 export class SNSAdapter implements ISNSAdapter {
     private sns: AWS.SNS;
@@ -84,8 +85,11 @@ export class SNSAdapter implements ISNSAdapter {
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
         this.app.post("/" + fn.name, (req, res) => {
             this.debug("calling fn: " + fn.name + " 1");
+            const oldEnv = _.extend({}, process.env);
+            process.env = _.extend({}, fn.environment, process.env);
             getHandler()(req.body, this.createLambdaContext(fn), (data) => {
                 res.send(data);
+                process.env = oldEnv;
             });
         });
         const params = {
