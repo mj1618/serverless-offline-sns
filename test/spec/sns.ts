@@ -88,6 +88,14 @@ describe("test", () => {
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getResult()).to.eq("MY_VAL");
     });
+
+    it("should read env variable for function", async () => {
+        plugin = new ServerlessOfflineSns(createServerless("envHandler"), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic-2", "{}");
+        await new Promise(res => setTimeout(res, 100));
+        expect(handler.getResult()).to.eq("TEST");
+    });
 });
 
 const createServerless = (handlerName: string = "pongHandler") => {
@@ -118,6 +126,18 @@ const createServerless = (handlerName: string = "pongHandler") => {
                     events: [{
                         sns: {
                             arn: "arn:aws:sns:us-east-1:123456789012:test-topic",
+                        },
+                    }],
+                },
+                pong3: {
+                    name: 'this-is-auto-created-when-using-serverless',
+                    handler: "test/mock/handler." + handlerName,
+                    environment: {
+                        MY_VAR: "TEST",
+                    },
+                    events: [{
+                        sns: {
+                            arn: "arn:aws:sns:us-east-1:123456789012:test-topic-2",
                         },
                     }],
                 },

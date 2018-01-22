@@ -84,9 +84,10 @@ export class SNSAdapter implements ISNSAdapter {
         this.debug("subscribe: " + fn.name + " " + arn);
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
         this.app.post("/" + fn.name, (req, res) => {
+
             this.debug("calling fn: " + fn.name + " 1");
             const oldEnv = _.extend({}, process.env);
-            process.env = _.extend({}, fn.environment, process.env);
+            process.env = _.extend({}, process.env, fn.environment);
             getHandler()(req.body, this.createLambdaContext(fn), (data) => {
                 res.send(data);
                 process.env = oldEnv;
