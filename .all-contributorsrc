@@ -100,6 +100,17 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "idmontie",
+      "name": "Ivan Montiel",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/412382?v=4",
+      "profile": "https://idmontie.github.io",
+      "contributions": [
+        "bug",
+        "code",
+        "test"
+      ]
     }
   ]
 }
