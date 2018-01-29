@@ -13,6 +13,7 @@ export class SNSAdapter implements ISNSAdapter {
     private serviceName: string;
     private stage: string;
     private endpoint: string;
+    private adapterEndpoint: string;
 
     constructor(port, region, snsEndpoint, debug, app, serviceName, stage) {
         this.pluginDebug = debug;
@@ -20,6 +21,7 @@ export class SNSAdapter implements ISNSAdapter {
         this.app = app;
         this.serviceName = serviceName;
         this.stage = stage;
+        this.adapterEndpoint = `http://127.0.0.1:${port}`;
         this.endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
         this.debug("using endpoint: " + this.endpoint);
         if (!AWS.config.credentials) {
@@ -80,7 +82,7 @@ export class SNSAdapter implements ISNSAdapter {
     }
 
     public async subscribe(fn, getHandler, arn) {
-        const subscribeEndpoint = this.endpoint + "/" + fn.name;
+        const subscribeEndpoint = this.adapterEndpoint + "/" + fn.name;
         this.debug("subscribe: " + fn.name + " " + arn);
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
         this.app.post("/" + fn.name, (req, res) => {
