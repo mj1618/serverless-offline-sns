@@ -37,6 +37,14 @@ plugins:
   - serverless-offline-sns
 ```
 
+Note that ordering matters when used with serverless-offline and serverless-webpack. This is the correct ordering:
+```YAML
+plugins:
+  - serverless-webpack
+  - serverless-offline
+  - serverless-offline-sns
+```
+
 Configure the plugin with your offline SNS endpoint, host to listen on, and a free port the plugin can use.
 
 ```YAML
