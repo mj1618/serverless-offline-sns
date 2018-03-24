@@ -65,14 +65,16 @@ export class SNSServer implements ISNSServer {
     private server: any;
     private app: any;
     private region: string;
+    private accountId: string;
 
-    constructor(debug, app, region) {
+    constructor(debug, app, region, accountId) {
         this.pluginDebug = debug;
         this.topics = [];
         this.subscriptions = [];
         this.app = app;
         this.region = region;
         this.routes();
+        this.accountId = accountId;
     }
 
     public routes() {
@@ -164,7 +166,7 @@ export class SNSServer implements ISNSServer {
 
     public createTopic(topicName) {
         const topic = {
-            TopicArn: `arn:aws:sns:${this.region}:123456789012:${topicName}`,
+            TopicArn: `arn:aws:sns:${this.region}:${this.accountId}:${topicName}`,
         };
         this.topics.push(topic);
         return {
@@ -183,6 +185,7 @@ export class SNSServer implements ISNSServer {
     }
 
     public subscribe(endpoint, protocol, arn) {
+        arn = this.convertPsuedoParams(arn);
         const sub = {
             SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
             Protocol: protocol,
@@ -232,6 +235,7 @@ export class SNSServer implements ISNSServer {
     }
 
     public publish(topicArn, subject, message, messageType, messageAttributes) {
+        topicArn = this.convertPsuedoParams(topicArn);
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
             this.debug("fetching: " + sub.Endpoint);
             const event = JSON.stringify(this.createEvent(topicArn, sub.SubscriptionArn, subject, message, messageAttributes));
@@ -251,6 +255,11 @@ export class SNSServer implements ISNSServer {
                 createMetadata(),
             ],
         };
+    }
+
+    public convertPsuedoParams(topicArn) {
+        const awsRegex = /#{AWS::([a-zA-Z]+)}/g;
+        return topicArn.replace(awsRegex, this.accountId);
     }
 
     public debug(msg) {
