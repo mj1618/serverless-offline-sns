@@ -14,8 +14,9 @@ export class SNSAdapter implements ISNSAdapter {
     private stage: string;
     private endpoint: string;
     private adapterEndpoint: string;
+    private accountId: string;
 
-    constructor(port, region, snsEndpoint, debug, app, serviceName, stage) {
+    constructor(port, region, snsEndpoint, debug, app, serviceName, stage, accountId) {
         this.pluginDebug = debug;
         this.port = port;
         this.app = app;
@@ -24,6 +25,7 @@ export class SNSAdapter implements ISNSAdapter {
         this.adapterEndpoint = `http://127.0.0.1:${port}`;
         this.endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
         this.debug("using endpoint: " + this.endpoint);
+        this.accountId = accountId;
         if (!AWS.config.credentials) {
             AWS.config.update({
                 accessKeyId: "AKID",
@@ -82,6 +84,7 @@ export class SNSAdapter implements ISNSAdapter {
     }
 
     public async subscribe(fn, getHandler, arn) {
+        arn = this.convertPsuedoParams(arn);
         const subscribeEndpoint = this.adapterEndpoint + "/" + fn.name;
         this.debug("subscribe: " + fn.name + " " + arn);
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
@@ -113,7 +116,13 @@ export class SNSAdapter implements ISNSAdapter {
         });
     }
 
+    public convertPsuedoParams(topicArn) {
+        const awsRegex = /#{AWS::([a-zA-Z]+)}/g;
+        return topicArn.replace(awsRegex, this.accountId);
+    }
+
     public async publish(topicArn: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
+        topicArn = this.convertPsuedoParams(topicArn);
         await new Promise(res => this.sns.publish({
             Message: message,
             MessageStructure: type,

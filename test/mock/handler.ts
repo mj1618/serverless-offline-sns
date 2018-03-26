@@ -18,3 +18,8 @@ export const envHandler = (evt, ctx, cb) => {
     result = process.env["MY_VAR"];
     cb("{}");
 };
+
+export const psuedoHandler = (evt, ctx, cb) => {
+    result = evt.Records[0].Sns.TopicArn;
+    cb("{}");
+};

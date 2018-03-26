@@ -48,6 +48,7 @@ custom:
     debug: false
     # host: 0.0.0.0 # Optional, defaults to 127.0.0.1 if not provided to serverless-offline
     # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom endpoint
+    # accountId: 123456789012 # Optional
 ```
 
 In normal operation, the plugin will use the same *--host* option as provided to serverless-offline. The *host* parameter as shown above overrides this setting.
