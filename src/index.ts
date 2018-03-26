@@ -17,6 +17,7 @@ class ServerlessOfflineSns {
     private options: any;
     private location: string;
     private region: string;
+    private accountId: string;
 
     constructor(serverless: any, options: any) {
         this.app = express();
@@ -55,6 +56,7 @@ class ServerlessOfflineSns {
         process.env = _.extend({}, this.serverless.service.provider.environment, process.env);
         this.config = this.serverless.service.custom["serverless-offline-sns"] || {};
         this.port = this.config.port || 4002;
+        this.accountId = this.config.accountId || "123456789012";
         const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};
         this.location = process.cwd();
         if (offlineConfig.location) {
@@ -87,11 +89,11 @@ class ServerlessOfflineSns {
     }
 
     public async serve() {
-        this.snsServer = new SNSServer((msg, ctx) => this.debug(msg, ctx), this.app, this.region);
+        this.snsServer = new SNSServer((msg, ctx) => this.debug(msg, ctx), this.app, this.region, this.accountId);
     }
 
     public async subscribeAll() {
-        this.snsAdapter = new SNSAdapter(this.port, this.serverless.service.provider.region, this.config["sns-endpoint"], (msg, ctx) => this.debug(msg, ctx), this.app, this.serverless.service.service, this.serverless.service.provider.stage);
+        this.snsAdapter = new SNSAdapter(this.port, this.serverless.service.provider.region, this.config["sns-endpoint"], (msg, ctx) => this.debug(msg, ctx), this.app, this.serverless.service.service, this.serverless.service.provider.stage, this.accountId);
         await this.unsubscribeAll();
         this.debug("subscribing");
         await Promise.all(Object.keys(this.serverless.service.functions).map(fnName => {

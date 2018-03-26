@@ -4,7 +4,9 @@ import handler = require("../mock/handler");
 let plugin;
 
 describe("test", () => {
+    let accountId;
     beforeEach(() => {
+        accountId = Math.floor(Math.random() * (100000000 - 1));
         handler.resetPongs();
         handler.resetEvent();
         handler.resetResult();
@@ -15,31 +17,39 @@ describe("test", () => {
     });
 
     it("should start on offline start", async () => {
-        plugin = new ServerlessOfflineSns(createServerless(), {});
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
         await plugin.hooks["before:offline:start:init"]();
         await plugin.hooks["after:offline:start:end"]();
     });
 
     it("should start on command start", async () => {
-        plugin = new ServerlessOfflineSns(createServerless(), {});
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
         plugin.hooks["offline-sns:start:init"]();
         await new Promise(res => setTimeout(res, 100));
         await plugin.hooks["offline-sns:start:end"]();
     });
 
     it("should send event", async () => {
-        plugin = new ServerlessOfflineSns(createServerless(), {});
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
         const snsAdapter = await plugin.start();
-        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "{}");
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
+        await new Promise(res => setTimeout(res, 100));
+        expect(handler.getPongs()).to.eq(2);
+    });
+
+    it("should send event with psuedo parameters", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish("arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic", "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(2);
     });
 
     it("should send event with MessageAttributes", async () => {
-        plugin = new ServerlessOfflineSns(createServerless(), {});
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(
-            "arn:aws:sns:us-east-1:123456789012:test-topic",
+            `arn:aws:sns:us-east-1:${accountId}:test-topic`,
             "message with attributes",
             "raw",
             {
@@ -63,42 +73,50 @@ describe("test", () => {
     });
 
     it("should error", async () => {
-        plugin = new ServerlessOfflineSns(createServerlessBad(), {});
+        plugin = new ServerlessOfflineSns(createServerlessBad(accountId), {});
         const snsAdapter = await plugin.start();
-        const err = await plugin.subscribe("badPong", createServerlessBad().service.functions.badPong );
+        const err = await plugin.subscribe("badPong", createServerlessBad(accountId).service.functions.badPong );
         expect(err.indexOf("unsupported config:")).to.be.greaterThan(-1);
-        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "{}");
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(0);
     });
-
+    
     it("should unsubscribe", async () => {
-        plugin = new ServerlessOfflineSns(createServerless(), {});
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
         const snsAdapter = await plugin.start();
         await plugin.unsubscribeAll();
-        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "{}");
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(0);
     });
-
+    
     it("should read env variable", async () => {
-        plugin = new ServerlessOfflineSns(createServerless("envHandler"), {});
+        plugin = new ServerlessOfflineSns(createServerless(accountId, "envHandler"), {});
         const snsAdapter = await plugin.start();
-        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic", "{}");
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getResult()).to.eq("MY_VAL");
     });
-
+    
     it("should read env variable for function", async () => {
-        plugin = new ServerlessOfflineSns(createServerless("envHandler"), {});
+        plugin = new ServerlessOfflineSns(createServerless(accountId, "envHandler"), {});
         const snsAdapter = await plugin.start();
-        await snsAdapter.publish("arn:aws:sns:us-east-1:123456789012:test-topic-2", "{}");
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic-2`, "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getResult()).to.eq("TEST");
     });
+    
+    it("should convert psuedo param on load", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId, "psuedoHandler"), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish("arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-3", "{}");
+        await new Promise(res => setTimeout(res, 100));
+        expect(handler.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-3`);
+    });
 });
 
-const createServerless = (handlerName: string = "pongHandler") => {
+const createServerless = (accountId: number, handlerName: string = "pongHandler") => {
     return {
         config: {},
         service: {
@@ -106,6 +124,7 @@ const createServerless = (handlerName: string = "pongHandler") => {
                 "serverless-offline-sns": {
                     debug: true,
                     port: 4002,
+                    accountId: accountId
                 },
             },
             provider: {
@@ -125,7 +144,7 @@ const createServerless = (handlerName: string = "pongHandler") => {
                     handler: "test/mock/handler." + handlerName,
                     events: [{
                         sns: {
-                            arn: "arn:aws:sns:us-east-1:123456789012:test-topic",
+                            arn: `arn:aws:sns:us-east-1:${accountId}:test-topic`,
                         },
                     }],
                 },
@@ -137,7 +156,15 @@ const createServerless = (handlerName: string = "pongHandler") => {
                     },
                     events: [{
                         sns: {
-                            arn: "arn:aws:sns:us-east-1:123456789012:test-topic-2",
+                            arn: `arn:aws:sns:us-east-1:${accountId}:test-topic-2`,
+                        },
+                    }],
+                },
+                pong4: {
+                    handler: "test/mock/handler." + handlerName,
+                    events: [{
+                        sns: {
+                            arn: `arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-3`,
                         },
                     }],
                 },
@@ -153,7 +180,7 @@ const createServerless = (handlerName: string = "pongHandler") => {
     };
 };
 
-const createServerlessBad = () => {
+const createServerlessBad = (accountId: number) => {
     return {
         config: {},
         service: {
@@ -161,6 +188,7 @@ const createServerlessBad = () => {
                 "serverless-offline-sns": {
                     debug: true,
                     port: 4002,
+                    accountId: accountId
                 },
             },
             provider: {
@@ -171,7 +199,7 @@ const createServerlessBad = () => {
                     handler: "test/mock/handler.pongHandler",
                     events: [{
                         sns: {
-                            topicArn: "arn:aws:sns:us-east-1:123456789012:test-topic",
+                            topicArn: `arn:aws:sns:us-east-1:${accountId}:test-topic`,
                         },
                     }],
                 },
