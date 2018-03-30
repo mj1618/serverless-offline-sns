@@ -1,5 +1,6 @@
 const ServerlessOfflineSns = require("../../src/index");
 import {expect} from "chai";
+import { URL } from 'url';
 import handler = require("../mock/handler");
 let plugin;
 
@@ -81,6 +82,17 @@ describe("test", () => {
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(0);
     });
+
+    it("should use the custom host for subscription urls", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId, "pongHandler", "0.0.0.0"), {});
+        const snsAdapter = await plugin.start();
+        const response = await snsAdapter.listSubscriptions();
+
+        response.Subscriptions.forEach(sub => {
+            const url = new URL(sub.Endpoint)
+            expect(url.hostname).to.eq('0.0.0.0')
+        });
+    });
     
     it("should unsubscribe", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId), {});
@@ -116,7 +128,7 @@ describe("test", () => {
     });
 });
 
-const createServerless = (accountId: number, handlerName: string = "pongHandler") => {
+const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null) => {
     return {
         config: {},
         service: {
@@ -124,7 +136,8 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
                 "serverless-offline-sns": {
                     debug: true,
                     port: 4002,
-                    accountId: accountId
+                    accountId: accountId,
+                    host: host
                 },
             },
             provider: {

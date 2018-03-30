@@ -16,13 +16,13 @@ export class SNSAdapter implements ISNSAdapter {
     private adapterEndpoint: string;
     private accountId: string;
 
-    constructor(port, region, snsEndpoint, debug, app, serviceName, stage, accountId) {
+    constructor(port, region, snsEndpoint, debug, app, serviceName, stage, accountId, host) {
         this.pluginDebug = debug;
         this.port = port;
         this.app = app;
         this.serviceName = serviceName;
         this.stage = stage;
-        this.adapterEndpoint = `http://127.0.0.1:${port}`;
+        this.adapterEndpoint = `http://${host || "127.0.0.1"}:${port}`;
         this.endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
         this.debug("using endpoint: " + this.endpoint);
         this.accountId = accountId;
