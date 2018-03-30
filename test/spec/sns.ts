@@ -1,6 +1,5 @@
 const ServerlessOfflineSns = require("../../src/index");
 import {expect} from "chai";
-import { URL } from 'url';
 import handler = require("../mock/handler");
 let plugin;
 
@@ -89,11 +88,10 @@ describe("test", () => {
         const response = await snsAdapter.listSubscriptions();
 
         response.Subscriptions.forEach(sub => {
-            const url = new URL(sub.Endpoint)
-            expect(url.hostname).to.eq('0.0.0.0')
+            expect(sub.Endpoint.startsWith("http://0.0.0.0:4002")).to.be.true;
         });
     });
-    
+
     it("should unsubscribe", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId), {});
         const snsAdapter = await plugin.start();
@@ -102,7 +100,7 @@ describe("test", () => {
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getPongs()).to.eq(0);
     });
-    
+
     it("should read env variable", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId, "envHandler"), {});
         const snsAdapter = await plugin.start();
@@ -110,7 +108,7 @@ describe("test", () => {
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getResult()).to.eq("MY_VAL");
     });
-    
+
     it("should read env variable for function", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId, "envHandler"), {});
         const snsAdapter = await plugin.start();
@@ -118,7 +116,7 @@ describe("test", () => {
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getResult()).to.eq("TEST");
     });
-    
+
     it("should convert psuedo param on load", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId, "psuedoHandler"), {});
         const snsAdapter = await plugin.start();
