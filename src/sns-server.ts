@@ -2,60 +2,15 @@ import { SNS } from "aws-sdk";
 import { Topic, TopicsList, Subscription, ListSubscriptionsResponse, CreateTopicResponse } from "aws-sdk/clients/sns.d";
 import fetch from "node-fetch";
 import { IDebug, ISNSServer } from "./types";
-import bodyParser = require("body-parser");
-import { v4 as uuid } from "uuid";
+import * as bodyParser from "body-parser";
 import * as xml from "xml";
-const createAttr = () => {
-    return {
-        _attr: {
-            xmlns: "http://sns.amazonaws.com/doc/2010-03-31/",
-        },
-    };
-};
-
-const createMetadata = () => {
-    return {
-        ResponseMetadata: [{
-            RequestId: uuid(),
-        }],
-    };
-};
-
-const arrayify = obj => {
-    return Object.keys(obj).map(key => {
-        const x = {};
-        x[key] = obj[key];
-        return x;
-    });
-};
-
-const parseMessageAttributes = body => {
-    if (body.MessageStructure === "json") {
-        return {};
-    }
-
-    const entries = Object.keys(body)
-        .filter(key => key.startsWith("MessageAttributes.entry"))
-        .reduce(
-            (prev, key) => {
-                const index = key.replace("MessageAttributes.entry.", "").match(/.*?(?=\.|$)/i)[0];
-                return prev.includes(index) ? prev : [...prev, index];
-            },
-            [],
-        );
-    return entries
-        .map(index => `MessageAttributes.entry.${index}`)
-        .reduce(
-            (prev, baseKey) => ({
-                ...prev,
-                [`${body[`${baseKey}.Name`]}`]: {
-                    Type: body[`${baseKey}.Value.DataType`],
-                    Value: body[`${baseKey}.Value.BinaryValue`] || body[`${baseKey}.Value.StringValue`],
-                },
-            }),
-            {},
-        );
-};
+import { 
+    arrayify,
+    createAttr,
+    createMetadata,
+    createSnsEvent,
+    parseMessageAttributes
+} from "./helpers";
 
 export class SNSServer implements ISNSServer {
     private topics: TopicsList;
@@ -209,36 +164,11 @@ export class SNSServer implements ISNSServer {
         };
     }
 
-    public createEvent(topicArn, subscriptionArn, subject, message, messageAttributes?) {
-        return {
-            Records: [
-                {
-                    EventVersion: "1.0",
-                    EventSubscriptionArn: subscriptionArn,
-                    EventSource: "aws:sns",
-                    Sns: {
-                        SignatureVersion: "1",
-                        Timestamp: new Date().toISOString(),
-                        Signature: "EXAMPLE",
-                        SigningCertUrl: "EXAMPLE",
-                        MessageId: uuid(),
-                        Message: message,
-                        MessageAttributes: messageAttributes || {},
-                        Type: "Notification",
-                        UnsubscribeUrl: "EXAMPLE",
-                        TopicArn: topicArn,
-                        Subject: subject,
-                    },
-                },
-            ],
-        };
-    }
-
     public publish(topicArn, subject, message, messageType, messageAttributes) {
         topicArn = this.convertPsuedoParams(topicArn);
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
             this.debug("fetching: " + sub.Endpoint);
-            const event = JSON.stringify(this.createEvent(topicArn, sub.SubscriptionArn, subject, message, messageAttributes));
+            const event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageAttributes));
             this.debug("event: " + event);
             return fetch(sub.Endpoint, {
                 method: "POST",
