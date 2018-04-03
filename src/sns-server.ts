@@ -9,7 +9,7 @@ import {
     createAttr,
     createMetadata,
     createSnsEvent,
-    parseMessageAttributes
+    parseMessageAttributes,
 } from "./helpers";
 
 export class SNSServer implements ISNSServer {
