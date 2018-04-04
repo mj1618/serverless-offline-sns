@@ -3,6 +3,7 @@ import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap } f
 import { ISNSAdapter, IDebug } from "./types";
 import fetch from "node-fetch";
 import * as _ from "lodash";
+import { createSnsEvent } from "./helpers";
 
 export class SNSAdapter implements ISNSAdapter {
     private sns: AWS.SNS;
@@ -93,7 +94,12 @@ export class SNSAdapter implements ISNSAdapter {
             this.debug("calling fn: " + fn.name + " 1");
             const oldEnv = _.extend({}, process.env);
             process.env = _.extend({}, process.env, fn.environment);
-            getHandler()(req.body, this.createLambdaContext(fn), (data) => {
+
+            let event = req.body;
+            if (req.is("text/plain")) {
+                event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, event.MessageAttributes || {});
+            }
+            getHandler()(event, this.createLambdaContext(fn), (data) => {
                 res.send(data);
                 process.env = oldEnv;
             });
