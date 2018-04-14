@@ -4,7 +4,7 @@ import fetch from "node-fetch";
 import { IDebug, ISNSServer } from "./types";
 import * as bodyParser from "body-parser";
 import * as xml from "xml";
-import { 
+import {
     arrayify,
     createAttr,
     createMetadata,
@@ -173,6 +173,7 @@ export class SNSServer implements ISNSServer {
             return fetch(sub.Endpoint, {
                 method: "POST",
                 body: event,
+                timeout: 0,
                 headers: {
                     "Content-Type": "application/json",
                     "Content-Length": Buffer.byteLength(event),
