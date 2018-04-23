@@ -3,7 +3,7 @@ import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap } f
 import { ISNSAdapter, IDebug } from "./types";
 import fetch from "node-fetch";
 import * as _ from "lodash";
-import { createSnsEvent } from "./helpers";
+import { createSnsEvent, createMessageId } from "./helpers";
 
 export class SNSAdapter implements ISNSAdapter {
     private sns: AWS.SNS;
@@ -97,7 +97,7 @@ export class SNSAdapter implements ISNSAdapter {
 
             let event = req.body;
             if (req.is("text/plain")) {
-                event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, event.MessageAttributes || {});
+                event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
             getHandler()(event, this.createLambdaContext(fn), (data) => {
                 res.send(data);
@@ -129,12 +129,14 @@ export class SNSAdapter implements ISNSAdapter {
 
     public async publish(topicArn: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
         topicArn = this.convertPsuedoParams(topicArn);
-        await new Promise(res => this.sns.publish({
+        return await new Promise((resolve, reject) => this.sns.publish({
             Message: message,
             MessageStructure: type,
             TopicArn: topicArn,
             MessageAttributes: messageAttributes,
-        }, res));
+        }, (err, result) => {
+            resolve(result);
+        }));
     }
 
     public debug(msg, stack?: any) {
