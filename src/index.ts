@@ -4,6 +4,7 @@ import * as bodyParser from "body-parser";
 import { ISNSAdapter } from "./types";
 import { SNSServer } from "./sns-server";
 import * as _ from "lodash";
+import * as AWS from "aws-sdk";
 
 class ServerlessOfflineSns {
     private config: any;
@@ -71,6 +72,12 @@ class ServerlessOfflineSns {
         } else {
             this.region = "us-east-1";
         }
+
+        // Congure SNS client to be able to find us.
+        AWS.config.sns = {
+            endpoint: "http://127.0.0.1:" + this.port,
+            region: this.region,
+        };
     }
 
     public async start() {
