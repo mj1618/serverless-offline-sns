@@ -10,6 +10,7 @@ import {
     createMetadata,
     createSnsEvent,
     parseMessageAttributes,
+    createMessageId,
 } from "./helpers";
 
 export class SNSServer implements ISNSServer {
@@ -166,9 +167,10 @@ export class SNSServer implements ISNSServer {
 
     public publish(topicArn, subject, message, messageType, messageAttributes) {
         topicArn = this.convertPsuedoParams(topicArn);
+        const messageId = createMessageId();
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
             this.debug("fetching: " + sub.Endpoint);
-            const event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageAttributes));
+            const event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
             this.debug("event: " + event);
             return fetch(sub.Endpoint, {
                 method: "POST",
@@ -183,6 +185,13 @@ export class SNSServer implements ISNSServer {
         return {
             PublishResponse: [
                 createAttr(),
+                {
+                    PublishResult: [
+                        {
+                            MessageId: messageId,
+                        },
+                    ],
+                },
                 createMetadata(),
             ],
         };
