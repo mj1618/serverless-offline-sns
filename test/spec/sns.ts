@@ -72,6 +72,19 @@ describe("test", () => {
         );
     });
 
+    it("should return a valid response to publish", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
+        const snsAdapter = await plugin.start();
+        const snsResponse = await snsAdapter.publish(
+            `arn:aws:sns:us-east-1:${accountId}:test-topic`,
+            "'a simple message'"
+        );
+        await new Promise(res => setTimeout(res, 100));
+        expect(snsResponse).to.have.property('ResponseMetadata')
+        expect(snsResponse.ResponseMetadata).to.have.property('RequestId');
+        expect(snsResponse).to.have.property('MessageId');
+    });
+
     it("should error", async () => {
         plugin = new ServerlessOfflineSns(createServerlessBad(accountId), {});
         const snsAdapter = await plugin.start();

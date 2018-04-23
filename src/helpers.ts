@@ -52,7 +52,7 @@ export function parseMessageAttributes(body) {
         );
 }
 
-export function createSnsEvent(topicArn, subscriptionArn, subject, message, messageAttributes?) {
+export function createSnsEvent(topicArn, subscriptionArn, subject, message, messageId, messageAttributes?) {
     return {
         Records: [
             {
@@ -64,7 +64,7 @@ export function createSnsEvent(topicArn, subscriptionArn, subject, message, mess
                     Timestamp: new Date().toISOString(),
                     Signature: "EXAMPLE",
                     SigningCertUrl: "EXAMPLE",
-                    MessageId: uuid(),
+                    MessageId: messageId,
                     Message: message,
                     MessageAttributes: messageAttributes || {},
                     Type: "Notification",
@@ -75,4 +75,8 @@ export function createSnsEvent(topicArn, subscriptionArn, subject, message, mess
             },
         ],
     };
+}
+
+export function createMessageId() {
+    return uuid();
 }
