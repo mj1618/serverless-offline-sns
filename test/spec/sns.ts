@@ -1,6 +1,7 @@
 const ServerlessOfflineSns = require("../../src/index");
 import {expect} from "chai";
 import handler = require("../mock/handler");
+import state = require("../mock/mock.state");
 import * as multiDotHandler from "../mock/multi.dot.handler";
 
 let plugin;
@@ -10,8 +11,8 @@ describe("test", () => {
     beforeEach(() => {
         accountId = Math.floor(Math.random() * (100000000 - 1));
         handler.resetPongs();
-        handler.resetEvent();
-        handler.resetResult();
+        state.resetEvent();
+        state.resetResult();
     });
 
     afterEach(() => {
@@ -36,7 +37,7 @@ describe("test", () => {
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
-        expect(handler.getPongs()).to.eq(2);
+        expect(state.getPongs()).to.eq(2);
     });
 
     it("should send event with psuedo parameters", async () => {
@@ -44,7 +45,7 @@ describe("test", () => {
         const snsAdapter = await plugin.start();
         await snsAdapter.publish("arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic", "{}");
         await new Promise(res => setTimeout(res, 100));
-        expect(handler.getPongs()).to.eq(2);
+        expect(state.getPongs()).to.eq(2);
     });
 
     it("should send event with MessageAttributes", async () => {
@@ -59,7 +60,7 @@ describe("test", () => {
             },
         );
         await new Promise(res => setTimeout(res, 100));
-        const event = handler.getEvent();
+        const event = state.getEvent();
         const record = event.Records[0];
         expect(record).to.include.keys("Sns");
         expect(record.Sns).to.have.property("Message", "message with attributes");
@@ -94,7 +95,7 @@ describe("test", () => {
         expect(err.indexOf("unsupported config:")).to.be.greaterThan(-1);
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
-        expect(handler.getPongs()).to.eq(0);
+        expect(state.getPongs()).to.eq(0);
     });
 
     it("should use the custom host for subscription urls", async () => {
@@ -113,7 +114,7 @@ describe("test", () => {
         await plugin.unsubscribeAll();
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
-        expect(handler.getPongs()).to.eq(0);
+        expect(state.getPongs()).to.eq(0);
     });
 
     it("should read env variable", async () => {
@@ -121,7 +122,7 @@ describe("test", () => {
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
-        expect(handler.getResult()).to.eq("MY_VAL");
+        expect(state.getResult()).to.eq("MY_VAL");
     });
 
     it("should read env variable for function", async () => {
@@ -129,7 +130,7 @@ describe("test", () => {
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic-2`, "{}");
         await new Promise(res => setTimeout(res, 100));
-        expect(handler.getResult()).to.eq("TEST");
+        expect(state.getResult()).to.eq("TEST");
     });
 
     it("should convert psuedo param on load", async () => {
@@ -137,7 +138,19 @@ describe("test", () => {
         const snsAdapter = await plugin.start();
         await snsAdapter.publish("arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-3", "{}");
         await new Promise(res => setTimeout(res, 100));
-        expect(handler.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-3`);
+        expect(state.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-3`);
+    });
+
+    it("should completely reload the module every time if cache invalidation is enabled", async () => {
+        plugin = new ServerlessOfflineSns(createServerlessCacheInvalidation(accountId), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
+        await new Promise(res => setTimeout(res, 100));
+        expect(state.getPongs()).to.eq(1, "wrong number of pongs (first check)");
+
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
+        await new Promise(res => setTimeout(res, 100));
+        expect(state.getPongs(), "wrong number of pongs (second check)").to.eq(1);
     });
 
     it("should send event to handlers with more than one dot in the filename", async () => {
@@ -145,13 +158,15 @@ describe("test", () => {
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:multi-dot-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
-        expect(multiDotHandler.getHits()).to.eq(1);
+        expect(state.getPongs()).to.eq(1);
     });
 });
 
 const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null) => {
     return {
-        config: {},
+        config: {
+            skipCacheInvalidation: true,
+        },
         service: {
             custom: {
                 "serverless-offline-sns": {
@@ -214,9 +229,53 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
     };
 };
 
+const createServerlessCacheInvalidation = (accountId: number, handlerName: string = "pongHandler", host: string = null) => {
+    return {
+        config: {
+            skipCacheInvalidation: [
+                /mock\.state/,
+            ],
+        },
+        service: {
+            custom: {
+                "serverless-offline-sns": {
+                    debug: true,
+                    port: 4002,
+                    accountId,
+                    host,
+                    invalidateCache: true,
+                },
+            },
+            provider: {
+                region: "us-east-1",
+                environment: {
+                    MY_VAR: "MY_VAL",
+                },
+            },
+            functions: {
+                pong: {
+                    handler: "test/mock/handler." + handlerName,
+                    events: [{
+                        sns: "test-topic",
+                    }],
+                },
+            },
+        },
+        cli: {
+            log: (data) => {
+                if (process.env.DEBUG) {
+                    console.log(data);
+                }
+            },
+        },
+    };
+};
+
 const createServerlessMultiDot = (accountId: number, handlerName: string = "pongHandler", host: string = null) => {
     return {
-        config: {},
+        config: {
+            skipCacheInvalidation: true,
+        },
         service: {
             custom: {
                 "serverless-offline-sns": {
@@ -253,7 +312,9 @@ const createServerlessMultiDot = (accountId: number, handlerName: string = "pong
 
 const createServerlessBad = (accountId: number) => {
     return {
-        config: {},
+        config: {
+            skipCacheInvalidation: true,
+        },
         service: {
             custom: {
                 "serverless-offline-sns": {

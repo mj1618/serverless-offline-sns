@@ -1,25 +1,25 @@
-let nPongs = 0;
-let event;
-let result = "";
+import { setEvent, setPongs, setResult } from "./mock.state";
 
-export const resetResult = () => result = "";
-export const getResult = () => result;
-export const getPongs = () => nPongs;
-export const resetPongs = () => nPongs = 0;
-export const getEvent = () => event;
-export const resetEvent = () => event = undefined;
+let nPongs = 0;
+
+export const resetPongs = () => {
+    nPongs = 0;
+    setPongs(0);
+};
+
 export const pongHandler = (evt, ctx, cb) => {
     nPongs += 1;
-    event = evt;
+    setPongs(nPongs);
+    setEvent(evt);
     cb("{}");
 };
 
 export const envHandler = (evt, ctx, cb) => {
-    result = process.env["MY_VAR"];
+    setResult(process.env["MY_VAR"]);
     cb("{}");
 };
 
 export const psuedoHandler = (evt, ctx, cb) => {
-    result = evt.Records[0].Sns.TopicArn;
+    setResult(evt.Records[0].Sns.TopicArn);
     cb("{}");
 };

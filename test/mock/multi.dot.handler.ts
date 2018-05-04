@@ -1,9 +1,9 @@
-let hits = 0;
+import { setPongs } from "./mock.state";
 
-export const resetHits = () => hits = 0;
-export const getHits = () => hits;
+let nPongs = 0;
 
 export const itsGotDots = (evt, ctx, cb) => {
-    hits += 1;
+    nPongs += 1;
+    setPongs(nPongs);
     cb("{}");
 };
