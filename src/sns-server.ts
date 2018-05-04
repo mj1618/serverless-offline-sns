@@ -1,6 +1,7 @@
-import { SNS } from "aws-sdk";
-import { Topic, TopicsList, Subscription, ListSubscriptionsResponse, CreateTopicResponse } from "aws-sdk/clients/sns.d";
+import { SQS } from "aws-sdk";
+import { TopicsList, Subscription } from "aws-sdk/clients/sns";
 import fetch from "node-fetch";
+import { URL } from "url";
 import { IDebug, ISNSServer } from "./types";
 import * as bodyParser from "body-parser";
 import * as xml from "xml";
@@ -165,6 +166,28 @@ export class SNSServer implements ISNSServer {
         };
     }
 
+    private publishHttp(event, sub) {
+        return fetch(sub.Endpoint, {
+            method: "POST",
+            body: event,
+            timeout: 0,
+            headers: {
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.byteLength(event),
+            },
+        }).then(res => this.debug(res));
+    }
+
+    private publishSqs(event, sub) {
+        const subEndpointUrl = new URL(sub.Endpoint);
+        const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
+        const sqs = new SQS({ endpoint: sqsEndpoint, region: this.region });
+        return sqs.sendMessage({
+            QueueUrl: sub.Endpoint,
+            MessageBody: event,
+        }).promise();
+    }
+
     public publish(topicArn, subject, message, messageType, messageAttributes) {
         topicArn = this.convertPsuedoParams(topicArn);
         const messageId = createMessageId();
@@ -172,15 +195,17 @@ export class SNSServer implements ISNSServer {
             this.debug("fetching: " + sub.Endpoint);
             const event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
             this.debug("event: " + event);
-            return fetch(sub.Endpoint, {
-                method: "POST",
-                body: event,
-                timeout: 0,
-                headers: {
-                    "Content-Type": "application/json",
-                    "Content-Length": Buffer.byteLength(event),
-                },
-            }).then(res => this.debug(res));
+            if (!sub.Protocol) {
+                sub.Protocol = "http";
+            }
+            const protocol = sub.Protocol.toLowerCase();
+            if (protocol === "http") {
+                return this.publishHttp(event, sub);
+            }
+            if (protocol === "sqs") {
+                return this.publishSqs(event, sub);
+            }
+            throw new Error(`Protocol '${protocol}' is not supported by serverless-offline-sns`);
         }));
         return {
             PublishResponse: [
