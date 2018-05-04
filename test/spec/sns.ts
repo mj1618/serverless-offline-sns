@@ -1,6 +1,8 @@
 const ServerlessOfflineSns = require("../../src/index");
 import {expect} from "chai";
 import handler = require("../mock/handler");
+import * as multiDotHandler from "../mock/multi.dot.handler";
+
 let plugin;
 
 describe("test", () => {
@@ -137,6 +139,14 @@ describe("test", () => {
         await new Promise(res => setTimeout(res, 100));
         expect(handler.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-3`);
     });
+
+    it("should send event to handlers with more than one dot in the filename", async () => {
+        plugin = new ServerlessOfflineSns(createServerlessMultiDot(accountId), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:multi-dot-topic`, "{}");
+        await new Promise(res => setTimeout(res, 100));
+        expect(multiDotHandler.getHits()).to.eq(1);
+    });
 });
 
 const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null) => {
@@ -190,6 +200,43 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
                         sns: {
                             arn: `arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-3`,
                         },
+                    }],
+                },
+            },
+        },
+        cli: {
+            log: (data) => {
+                if (process.env.DEBUG) {
+                    console.log(data);
+                }
+            },
+        },
+    };
+};
+
+const createServerlessMultiDot = (accountId: number, handlerName: string = "pongHandler", host: string = null) => {
+    return {
+        config: {},
+        service: {
+            custom: {
+                "serverless-offline-sns": {
+                    debug: true,
+                    port: 4002,
+                    accountId,
+                    host,
+                },
+            },
+            provider: {
+                region: "us-east-1",
+                environment: {
+                    MY_VAR: "MY_VAL",
+                },
+            },
+            functions: {
+                multiDot: {
+                    handler: "test/mock/multi.dot.handler.itsGotDots",
+                    events: [{
+                        sns: `multi-dot-topic`,
                     }],
                 },
             },

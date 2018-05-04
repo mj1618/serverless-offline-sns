@@ -5,6 +5,7 @@ import { ISNSAdapter } from "./types";
 import { SNSServer } from "./sns-server";
 import * as _ from "lodash";
 import * as AWS from "aws-sdk";
+import { resolve } from "path";
 
 class ServerlessOfflineSns {
     private config: any;
@@ -159,8 +160,12 @@ class ServerlessOfflineSns {
 
     public createHandler(fn) {
         this.debug(process.cwd());
-        this.debug("require(" + this.location + "/" + fn.handler.split(".")[0] + ")[" + fn.handler.split("/").pop().split(".")[1] + "]");
-        const handler = require(this.location + "/" + fn.handler.split(".")[0])[fn.handler.split("/").pop().split(".")[1]];
+        const handlerFnNameIndex = fn.handler.lastIndexOf(".");
+        const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
+        const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
+        const fullHandlerPath = resolve(this.location, handlerPath);
+        this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
+        const handler = require(fullHandlerPath)[handlerFnName];
         return handler;
     }
 
