@@ -149,6 +149,18 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "DanielSchaffer",
+      "name": "Daniel",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/334487?v=4",
+      "profile": "http://dandoes.net",
+      "contributions": [
+        "bug",
+        "code",
+        "design"
+      ]
     }
-  ]
+  ],
+  "repoType": "github"
 }
