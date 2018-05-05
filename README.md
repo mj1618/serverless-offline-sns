@@ -37,7 +37,7 @@ plugins:
   - serverless-offline-sns
 ```
 
-Note that ordering matters when used with serverless-offline and serverless-webpack. serverless-webpack must be specified at the start of the list of plugins. 
+Note that ordering matters when used with serverless-offline and serverless-webpack. serverless-webpack must be specified at the start of the list of plugins.
 
 Configure the plugin with your offline SNS endpoint, host to listen on, and a free port the plugin can use.
 
@@ -108,6 +108,24 @@ If you use [serverless-offline](https://github.com/dherault/serverless-offline) 
 However if you don't use serverless-offline you can start this plugin manually with -
 ```bash
 serverless offline-sns start
+```
+
+### Subscribing
+
+`serverless-offline-sns` supports `http`, `https`, and `sqs` subscriptions. `email`, `email-json`,
+`sms`, `application`, and `lambda` protocols are not supported at this time.
+
+When using `sqs` the `Endpoint` for the subscription must be the full `QueueUrl` returned from
+the SQS service when creating the queue or listing with `ListQueues`:
+
+```javascript
+// async
+const queue = await sqs.createQueue({ QueueName: 'my-queue' }).promise();
+const subscription = await sns.subscribe({
+    TopicArn: myTopicArn,
+    Protocol: 'sqs',
+    Endpoint: queue.QueueUrl,
+}).promise();
 ```
 
 ## Contributors

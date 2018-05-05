@@ -33,7 +33,7 @@
   },
   "homepage": "https://github.com/mj1618/serverless-offline-sns#readme",
   "dependencies": {
-    "aws-sdk": "^2.41.0",
+    "aws-sdk": "^2.233.1",
     "body-parser": "^1.18.2",
     "express": "^4.15.4",
     "lodash": "^4.17.4",
