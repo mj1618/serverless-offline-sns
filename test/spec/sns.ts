@@ -108,6 +108,16 @@ describe("test", () => {
         });
     });
 
+    it("should use the custom subscribe endpoint for subscription urls", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId, "pongHandler", "0.0.0.0", "anotherHost"), {});
+        const snsAdapter = await plugin.start();
+        const response = await snsAdapter.listSubscriptions();
+
+        response.Subscriptions.forEach(sub => {
+            expect(sub.Endpoint.startsWith("http://anotherHost:4002")).to.be.true;
+        });
+    });
+
     it("should unsubscribe", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId), {});
         const snsAdapter = await plugin.start();
@@ -162,7 +172,7 @@ describe("test", () => {
     });
 });
 
-const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null) => {
+const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null, subscribeEndpoint = null) => {
     return {
         config: {
             skipCacheInvalidation: true,
@@ -173,7 +183,8 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
                     debug: true,
                     port: 4002,
                     accountId: accountId,
-                    host: host
+                    host: host,
+                    'sns-subscribe-endpoint': subscribeEndpoint,
                 },
             },
             provider: {

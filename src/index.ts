@@ -113,6 +113,7 @@ class ServerlessOfflineSns {
             this.serverless.service.provider.stage,
             this.accountId,
             this.config.host,
+            this.config["sns-subscribe-endpoint"],
         );
         await this.unsubscribeAll();
         this.debug("subscribing");
