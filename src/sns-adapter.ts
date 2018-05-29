@@ -15,15 +15,17 @@ export class SNSAdapter implements ISNSAdapter {
     private stage: string;
     private endpoint: string;
     private adapterEndpoint: string;
+    private baseSubscribeEndpoint: string;
     private accountId: string;
 
-    constructor(port, region, snsEndpoint, debug, app, serviceName, stage, accountId, host) {
+    constructor(port, region, snsEndpoint, debug, app, serviceName, stage, accountId, host, subscribeEndpoint) {
         this.pluginDebug = debug;
         this.port = port;
         this.app = app;
         this.serviceName = serviceName;
         this.stage = stage;
         this.adapterEndpoint = `http://${host || "127.0.0.1"}:${port}`;
+        this.baseSubscribeEndpoint = subscribeEndpoint ? `http://${subscribeEndpoint}:${port}` : this.adapterEndpoint;
         this.endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
         this.debug("using endpoint: " + this.endpoint);
         this.accountId = accountId;
@@ -86,7 +88,7 @@ export class SNSAdapter implements ISNSAdapter {
 
     public async subscribe(fn, getHandler, arn) {
         arn = this.convertPsuedoParams(arn);
-        const subscribeEndpoint = this.adapterEndpoint + "/" + fn.name;
+        const subscribeEndpoint = this.baseSubscribeEndpoint + "/" + fn.name;
         this.debug("subscribe: " + fn.name + " " + arn);
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
         this.app.post("/" + fn.name, (req, res) => {
