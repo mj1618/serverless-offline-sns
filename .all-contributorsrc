@@ -160,6 +160,15 @@
         "code",
         "design"
       ]
+    },
+    {
+      "login": "byF",
+      "name": "Zdenek Farana",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/592682?v=4",
+      "profile": "https://zdenekfarana.com/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "repoType": "github"
