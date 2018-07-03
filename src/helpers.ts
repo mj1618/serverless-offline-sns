@@ -80,3 +80,12 @@ export function createSnsEvent(topicArn, subscriptionArn, subject, message, mess
 export function createMessageId() {
     return uuid();
 }
+
+const phoneNumberValidator = /^\++?[1-9]\d{1,14}$/;
+
+export function validatePhoneNumber(phoneNumber) {
+    if (!phoneNumberValidator.test(phoneNumber)) {
+        throw new Error(`PhoneNumber ${phoneNumber} is not valid to publish`);
+    }
+    return phoneNumber;
+}
