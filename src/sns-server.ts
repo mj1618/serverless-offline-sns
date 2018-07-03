@@ -12,6 +12,7 @@ import {
     createSnsEvent,
     parseMessageAttributes,
     createMessageId,
+    validatePhoneNumber,
 } from "./helpers";
 
 export class SNSServer implements ISNSServer {
@@ -55,10 +56,11 @@ export class SNSServer implements ISNSServer {
             } else if (req.body.Action === "Subscribe") {
                 res.send(xml(this.subscribe(req.body.Endpoint, req.body.Protocol, req.body.TopicArn)));
             } else if (req.body.Action === "Publish") {
+                const target = this.extractTarget(req.body);
                 res.send(
                     xml(
                         this.publish(
-                            req.body.TopicArn,
+                            target,
                             req.body.subject,
                             req.body.Message,
                             req.body.MessageStructure,
@@ -142,7 +144,7 @@ export class SNSServer implements ISNSServer {
     }
 
     public subscribe(endpoint, protocol, arn) {
-        arn = this.convertPsuedoParams(arn);
+        arn = this.convertPseudoParams(arn);
         const sub = {
             SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
             Protocol: protocol,
@@ -189,7 +191,6 @@ export class SNSServer implements ISNSServer {
     }
 
     public publish(topicArn, subject, message, messageType, messageAttributes) {
-        topicArn = this.convertPsuedoParams(topicArn);
         const messageId = createMessageId();
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
             this.debug("fetching: " + sub.Endpoint);
@@ -222,7 +223,19 @@ export class SNSServer implements ISNSServer {
         };
     }
 
-    public convertPsuedoParams(topicArn) {
+    public extractTarget(body) {
+        if (!body.PhoneNumber) {
+            const target = body.TopicArn || body.TargetArn;
+            if (!target) {
+                throw new Error("TopicArn or TargetArn is missing");
+            }
+            return this.convertPseudoParams(target);
+        } else {
+            return validatePhoneNumber(body.PhoneNumber);
+        }
+    }
+
+    public convertPseudoParams(topicArn) {
         const awsRegex = /#{AWS::([a-zA-Z]+)}/g;
         return topicArn.replace(awsRegex, this.accountId);
     }

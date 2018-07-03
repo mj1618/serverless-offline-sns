@@ -32,7 +32,7 @@ describe("test", () => {
         await plugin.hooks["offline-sns:start:end"]();
     });
 
-    it("should send event", async () => {
+    it("should send event to topic ARN", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId), {});
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
@@ -40,7 +40,15 @@ describe("test", () => {
         expect(state.getPongs()).to.eq(2);
     });
 
-    it("should send event with psuedo parameters", async () => {
+    it("should send event to target ARN", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publishToTargetArn(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
+        await new Promise(res => setTimeout(res, 100));
+        expect(state.getPongs()).to.eq(2);
+    });
+
+    it("should send event with pseudo parameters", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId), {});
         const snsAdapter = await plugin.start();
         await snsAdapter.publish("arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic", "{}");
@@ -80,12 +88,22 @@ describe("test", () => {
         const snsAdapter = await plugin.start();
         const snsResponse = await snsAdapter.publish(
             `arn:aws:sns:us-east-1:${accountId}:test-topic`,
-            "'a simple message'"
+            "'a simple message'",
         );
         await new Promise(res => setTimeout(res, 100));
-        expect(snsResponse).to.have.property('ResponseMetadata')
-        expect(snsResponse.ResponseMetadata).to.have.property('RequestId');
-        expect(snsResponse).to.have.property('MessageId');
+        expect(snsResponse).to.have.property("ResponseMetadata");
+        expect(snsResponse.ResponseMetadata).to.have.property("RequestId");
+        expect(snsResponse).to.have.property("MessageId");
+    });
+
+    it("should send a message to a E.164 phone number", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
+        const snsAdapter = await plugin.start();
+        const snsResponse = await snsAdapter.publishToPhoneNumber(`+10000000000`, "{}");
+        await new Promise(res => setTimeout(res, 100));
+        expect(snsResponse).to.have.property("ResponseMetadata");
+        expect(snsResponse.ResponseMetadata).to.have.property("RequestId");
+        expect(snsResponse).to.have.property("MessageId");
     });
 
     it("should error", async () => {
@@ -143,8 +161,8 @@ describe("test", () => {
         expect(state.getResult()).to.eq("TEST");
     });
 
-    it("should convert psuedo param on load", async () => {
-        plugin = new ServerlessOfflineSns(createServerless(accountId, "psuedoHandler"), {});
+    it("should convert pseudo param on load", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId, "pseudoHandler"), {});
         const snsAdapter = await plugin.start();
         await snsAdapter.publish("arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-3", "{}");
         await new Promise(res => setTimeout(res, 100));
@@ -180,11 +198,11 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
         service: {
             custom: {
                 "serverless-offline-sns": {
-                    debug: true,
-                    port: 4002,
-                    accountId: accountId,
-                    host: host,
-                    'sns-subscribe-endpoint': subscribeEndpoint,
+                    "debug": true,
+                    "port": 4002,
+                    "accountId": accountId,
+                    "host": host,
+                    "sns-subscribe-endpoint": subscribeEndpoint,
                 },
             },
             provider: {
@@ -209,7 +227,7 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
                     }],
                 },
                 pong3: {
-                    name: 'this-is-auto-created-when-using-serverless',
+                    name: "this-is-auto-created-when-using-serverless",
                     handler: "test/mock/handler." + handlerName,
                     environment: {
                         MY_VAR: "TEST",
@@ -331,7 +349,7 @@ const createServerlessBad = (accountId: number) => {
                 "serverless-offline-sns": {
                     debug: true,
                     port: 4002,
-                    accountId: accountId
+                    accountId,
                 },
             },
             provider: {

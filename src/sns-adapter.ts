@@ -87,7 +87,7 @@ export class SNSAdapter implements ISNSAdapter {
     }
 
     public async subscribe(fn, getHandler, arn) {
-        arn = this.convertPsuedoParams(arn);
+        arn = this.convertPseudoParams(arn);
         const subscribeEndpoint = this.baseSubscribeEndpoint + "/" + fn.name;
         this.debug("subscribe: " + fn.name + " " + arn);
         this.debug("subscribeEndpoint: " + subscribeEndpoint);
@@ -124,17 +124,40 @@ export class SNSAdapter implements ISNSAdapter {
         });
     }
 
-    public convertPsuedoParams(topicArn) {
+    public convertPseudoParams(topicArn) {
         const awsRegex = /#{AWS::([a-zA-Z]+)}/g;
         return topicArn.replace(awsRegex, this.accountId);
     }
 
     public async publish(topicArn: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
-        topicArn = this.convertPsuedoParams(topicArn);
+        topicArn = this.convertPseudoParams(topicArn);
         return await new Promise((resolve, reject) => this.sns.publish({
             Message: message,
             MessageStructure: type,
             TopicArn: topicArn,
+            MessageAttributes: messageAttributes,
+        }, (err, result) => {
+            resolve(result);
+        }));
+    }
+
+    public async publishToTargetArn(targetArn: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
+        targetArn = this.convertPseudoParams(targetArn);
+        return await new Promise((resolve, reject) => this.sns.publish({
+            Message: message,
+            MessageStructure: type,
+            TargetArn: targetArn,
+            MessageAttributes: messageAttributes,
+        }, (err, result) => {
+            resolve(result);
+        }));
+    }
+
+    public async publishToPhoneNumber(phoneNumber: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
+        return await new Promise((resolve, reject) => this.sns.publish({
+            Message: message,
+            MessageStructure: type,
+            PhoneNumber: phoneNumber,
             MessageAttributes: messageAttributes,
         }, (err, result) => {
             resolve(result);

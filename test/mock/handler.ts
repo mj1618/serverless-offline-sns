@@ -19,7 +19,7 @@ export const envHandler = (evt, ctx, cb) => {
     cb("{}");
 };
 
-export const psuedoHandler = (evt, ctx, cb) => {
+export const pseudoHandler = (evt, ctx, cb) => {
     setResult(evt.Records[0].Sns.TopicArn);
     cb("{}");
 };
