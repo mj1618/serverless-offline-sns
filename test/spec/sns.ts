@@ -80,12 +80,12 @@ describe("test", () => {
         const snsAdapter = await plugin.start();
         const snsResponse = await snsAdapter.publish(
             `arn:aws:sns:us-east-1:${accountId}:test-topic`,
-            "'a simple message'"
+            "'a simple message'",
         );
         await new Promise(res => setTimeout(res, 100));
-        expect(snsResponse).to.have.property('ResponseMetadata')
-        expect(snsResponse.ResponseMetadata).to.have.property('RequestId');
-        expect(snsResponse).to.have.property('MessageId');
+        expect(snsResponse).to.have.property("ResponseMetadata");
+        expect(snsResponse.ResponseMetadata).to.have.property("RequestId");
+        expect(snsResponse).to.have.property("MessageId");
     });
 
     it("should error", async () => {
@@ -180,11 +180,11 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
         service: {
             custom: {
                 "serverless-offline-sns": {
-                    debug: true,
-                    port: 4002,
-                    accountId: accountId,
-                    host: host,
-                    'sns-subscribe-endpoint': subscribeEndpoint,
+                    "debug": true,
+                    "port": 4002,
+                    "accountId": accountId,
+                    "host": host,
+                    "sns-subscribe-endpoint": subscribeEndpoint,
                 },
             },
             provider: {
@@ -209,7 +209,7 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
                     }],
                 },
                 pong3: {
-                    name: 'this-is-auto-created-when-using-serverless',
+                    name: "this-is-auto-created-when-using-serverless",
                     handler: "test/mock/handler." + handlerName,
                     environment: {
                         MY_VAR: "TEST",
@@ -331,7 +331,7 @@ const createServerlessBad = (accountId: number) => {
                 "serverless-offline-sns": {
                     debug: true,
                     port: 4002,
-                    accountId: accountId
+                    accountId,
                 },
             },
             provider: {
