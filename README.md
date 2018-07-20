@@ -101,6 +101,17 @@ sns.publish({
 
 Note the region that offline-sns will listen on is what is configured in your serverless.yml provider.
 
+## Localstack docker configuration
+In order to listen to localstack SNS event, if localstack is started with docker, you need the following:
+```YAML
+custom:
+  serverless-offline-sns:
+    host: 0.0.0.0 # Enable plugin to listen on every local address
+    sns-subscribe-endpoint: 192.168.1.225 #Host ip address
+    sns-endpoint: http://localhost:4575 # Default localstack sns endpoint
+```
+What happens is that the container running localstack will execute a POST request to the plugin, but to reach outside the container, it needs to use the host ip address.
+
 ## Usage
 
 If you use [serverless-offline](https://github.com/dherault/serverless-offline) this plugin will start automatically.
