@@ -1,5 +1,6 @@
 import { SNSAdapter } from "./sns-adapter";
 import * as express from "express";
+import * as cors from "cors";
 import * as bodyParser from "body-parser";
 import { ISNSAdapter } from "./types";
 import { SNSServer } from "./sns-server";
@@ -24,6 +25,7 @@ class ServerlessOfflineSns {
 
     constructor(serverless: any, options: any) {
         this.app = express();
+        this.app.use(cors());
         this.app.use(bodyParser.json({ type: ["application/json", "text/plain"] }));
         this.options = options;
         this.serverless = serverless;
