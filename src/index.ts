@@ -1,5 +1,6 @@
 import { SNSAdapter } from "./sns-adapter";
 import * as express from "express";
+import * as cors from "cors";
 import * as bodyParser from "body-parser";
 import { ISNSAdapter } from "./types";
 import { SNSServer } from "./sns-server";
@@ -24,6 +25,7 @@ class ServerlessOfflineSns {
 
     constructor(serverless: any, options: any) {
         this.app = express();
+        this.app.use(cors());
         this.app.use(bodyParser.json({ type: ["application/json", "text/plain"] }));
         this.options = options;
         this.serverless = serverless;
@@ -63,8 +65,9 @@ class ServerlessOfflineSns {
         this.accountId = this.config.accountId || "123456789012";
         const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};
         this.location = process.cwd();
-        if (offlineConfig.location) {
-            this.location = process.cwd() + "/" + offlineConfig.location;
+        const locationRelativeToCwd = this.options.location || offlineConfig.location;
+        if (locationRelativeToCwd) {
+            this.location = process.cwd() + "/" + locationRelativeToCwd;
         } else if (this.serverless.config.servicePath) {
             this.location = this.serverless.config.servicePath;
         }
