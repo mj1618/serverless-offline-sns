@@ -169,6 +169,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "woss",
+      "name": "Daniel Maricic",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/80440?v=4",
+      "profile": "https://woss.io",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "BrandonE",
+      "name": "Brandon Evans",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/542245?v=4",
+      "profile": "http://www.brandonmevans.com",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "repoType": "github"
