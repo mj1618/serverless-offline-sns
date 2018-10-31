@@ -1,10 +1,16 @@
 let nPongs = 0;
 let event;
-let result = "";
+let _resolve;
+let _deferred;
 
-export const resetResult = () => result = "";
-export const getResult = () => result;
-export const setResult = value => result = value;
+export const resetResult = () =>
+    _deferred = new Promise(res =>
+        _resolve = (result) => res(result)
+    )
+export const getResult = () => _deferred;
+export const setResult = value => {
+    _resolve(value)
+};
 export const getPongs = () => nPongs;
 export const setPongs = value => nPongs = value;
 export const getEvent = () => event;
