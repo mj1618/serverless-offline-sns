@@ -149,24 +149,21 @@ describe("test", () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId, "envHandler"), {});
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
-        await new Promise(res => setTimeout(res, 100));
-        expect(state.getResult()).to.eq("MY_VAL");
+        expect(await state.getResult()).to.eq("MY_VAL");
     });
 
     it("should read env variable for function", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId, "envHandler"), {});
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic-2`, "{}");
-        await new Promise(res => setTimeout(res, 100));
-        expect(state.getResult()).to.eq("TEST");
+        expect(await state.getResult()).to.eq("TEST");
     });
 
     it("should convert pseudo param on load", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId, "pseudoHandler"), {});
         const snsAdapter = await plugin.start();
         await snsAdapter.publish("arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-3", "{}");
-        await new Promise(res => setTimeout(res, 100));
-        expect(state.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-3`);
+        expect(await state.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-3`);
     });
 
     it("should completely reload the module every time if cache invalidation is enabled", async () => {
@@ -187,6 +184,14 @@ describe("test", () => {
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:multi-dot-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(state.getPongs()).to.eq(1);
+    });
+
+    it("should support async handlers with no callback", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId, "asyncHandler"), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic-async`, "{}");
+        expect(await state.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-async`);
+        expect(await snsAdapter.Deferred).to.eq("{}");
     });
 });
 
@@ -243,6 +248,14 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
                     events: [{
                         sns: {
                             arn: `arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-3`,
+                        },
+                    }],
+                },
+                pong5: {
+                    handler: "test/mock/handler." + handlerName,
+                    events: [{
+                        sns: {
+                            arn: `arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-async`,
                         },
                     }],
                 },

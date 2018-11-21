@@ -86,6 +86,9 @@ export class SNSAdapter implements ISNSAdapter {
         }));
     }
 
+    private sent: (data) => void;
+    public Deferred = new Promise(res => this.sent = res);
+
     public async subscribe(fn, getHandler, arn) {
         arn = this.convertPseudoParams(arn);
         const subscribeEndpoint = this.baseSubscribeEndpoint + "/" + fn.name;
@@ -101,10 +104,15 @@ export class SNSAdapter implements ISNSAdapter {
             if (req.is("text/plain")) {
                 event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
-            getHandler()(event, this.createLambdaContext(fn), (data) => {
+            const sendIt = (data) => {
                 res.send(data);
                 process.env = oldEnv;
-            });
+                this.sent(data);
+            };
+            const maybePromise = getHandler()(event, this.createLambdaContext(fn), sendIt);
+            if (maybePromise && maybePromise.then) {
+                maybePromise.then(sendIt);
+            }
         });
         const params = {
             Protocol: "http",
