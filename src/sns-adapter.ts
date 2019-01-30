@@ -89,7 +89,7 @@ export class SNSAdapter implements ISNSAdapter {
     private sent: (data) => void;
     public Deferred = new Promise(res => this.sent = res);
 
-    public async subscribe(fn, getHandler, arn) {
+    public async subscribe(fn, getHandler, arn, policies) {
         arn = this.convertPseudoParams(arn);
         const subscribeEndpoint = this.baseSubscribeEndpoint + "/" + fn.name;
         this.debug("subscribe: " + fn.name + " " + arn);
@@ -101,6 +101,7 @@ export class SNSAdapter implements ISNSAdapter {
             process.env = _.extend({}, process.env, fn.environment);
 
             let event = req.body;
+            let messageAttrs = event.Records[0].Sns.MessageAttributes;
             if (req.is("text/plain")) {
                 event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
@@ -111,6 +112,22 @@ export class SNSAdapter implements ISNSAdapter {
             };
             const maybePromise = getHandler()(event, this.createLambdaContext(fn), sendIt);
             if (maybePromise && maybePromise.then) {
+                if (policies) {
+                    for (let [k,v] of Object.entries(policies)) {
+                        if (!messageAttrs[k]) return
+                        let attrs
+                        if (messageAttrs[k].Type.endsWith('.Array')) {
+                            attrs = JSON.parse(messageAttrs[k].Value)
+                        } else {
+                            attrs = [messageAttrs[k].Value]
+                        }
+                        if(_.intersection(v, attrs).length > 0) {
+                            maybePromise.then(sendIt);
+                        }
+                    }
+                    return
+                }
+                console.log("SENDING IT OUTSIDE")
                 maybePromise.then(sendIt);
             }
         });
