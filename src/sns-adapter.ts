@@ -113,7 +113,6 @@ export class SNSAdapter implements ISNSAdapter {
             const maybePromise = getHandler()(event, this.createLambdaContext(fn), sendIt);
             if (maybePromise && maybePromise.then) {
                 if (policies) {
-                    console.log("HAS POLICIES");
                     for (const [k, v] of Object.entries(policies)) {
                         if (!messageAttrs[k]) { return; }
                         let attrs;
@@ -123,7 +122,6 @@ export class SNSAdapter implements ISNSAdapter {
                             attrs = [messageAttrs[k].Value];
                         }
                         if (_.intersection(v, attrs).length > 0) {
-                            console.log("SENDING IT TO: ", fn);
                             maybePromise.then(sendIt);
                         }
                     }

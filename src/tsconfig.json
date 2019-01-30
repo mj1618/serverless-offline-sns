@@ -3,7 +3,7 @@
         "allowJs": true,
         "target": "es5",
         "module": "commonjs",
-        "outDir": "../dist",
+        "outDir": "/Users/aaronstuyvenberg/sportngin/commander_q/node_modules/serverless-offline-sns/dist",
         "lib": ["es5","es2015.promise", "es2017", "es2017.object", "dom"],
         "allowUnreachableCode": true,
         "noImplicitAny": false,
