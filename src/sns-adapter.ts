@@ -101,7 +101,7 @@ export class SNSAdapter implements ISNSAdapter {
             process.env = _.extend({}, process.env, fn.environment);
 
             let event = req.body;
-            let messageAttrs = event.Records[0].Sns.MessageAttributes;
+            const messageAttrs = event.Records[0].Sns.MessageAttributes;
             if (req.is("text/plain")) {
                 event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
@@ -113,21 +113,22 @@ export class SNSAdapter implements ISNSAdapter {
             const maybePromise = getHandler()(event, this.createLambdaContext(fn), sendIt);
             if (maybePromise && maybePromise.then) {
                 if (policies) {
-                    for (let [k,v] of Object.entries(policies)) {
-                        if (!messageAttrs[k]) return
-                        let attrs
-                        if (messageAttrs[k].Type.endsWith('.Array')) {
-                            attrs = JSON.parse(messageAttrs[k].Value)
+                    console.log("HAS POLICIES");
+                    for (const [k, v] of Object.entries(policies)) {
+                        if (!messageAttrs[k]) { return; }
+                        let attrs;
+                        if (messageAttrs[k].Type.endsWith(".Array")) {
+                            attrs = JSON.parse(messageAttrs[k].Value);
                         } else {
-                            attrs = [messageAttrs[k].Value]
+                            attrs = [messageAttrs[k].Value];
                         }
-                        if(_.intersection(v, attrs).length > 0) {
+                        if (_.intersection(v, attrs).length > 0) {
+                            console.log("SENDING IT TO: ", fn);
                             maybePromise.then(sendIt);
                         }
                     }
-                    return
+                    return;
                 }
-                console.log("SENDING IT OUTSIDE")
                 maybePromise.then(sendIt);
             }
         });
