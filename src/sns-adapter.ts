@@ -122,9 +122,11 @@ export class SNSAdapter implements ISNSAdapter {
                             attrs = [messageAttrs[k].Value];
                         }
                         if (_.intersection(v, attrs).length > 0) {
+                            this.debug("filterPolicy Passed: " + v + " matched message attrs: " + attrs);
                             maybePromise.then(sendIt);
                         }
                     }
+                    this.debug("filterPolicy Failed: " + policies + " did not match message attrs: " + messageAttrs);
                     return;
                 }
                 maybePromise.then(sendIt);

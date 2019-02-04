@@ -123,7 +123,7 @@ class ServerlessOfflineSns {
         await Promise.all(Object.keys(this.serverless.service.functions).map(fnName => {
             const fn = this.serverless.service.functions[fnName];
             return Promise.all(fn.events.filter(event => event.sns != null).map(event => {
-                return this.subscribe(fnName, event.sns, event.filterPolicy);
+                return this.subscribe(fnName, event.sns, event.sns.filterPolicy);
             }));
         }));
     }
