@@ -100,11 +100,11 @@ export class SNSAdapter implements ISNSAdapter {
                 attrs = [messageAttrs[k].Value];
             }
             if (_.intersection(v, attrs).length > 0) {
-                this.debug("filterPolicy Passed: " + v + " matched message attrs: " + attrs);
+                this.debug("filterPolicy Passed: " + v + " matched message attrs: " + JSON.stringify(attrs));
                 return shouldSend = true;
             }
         }
-        if (!shouldSend) { this.debug("filterPolicy Failed: " + policies + " did not match message attrs: " + messageAttrs); }
+        if (!shouldSend) { this.debug("filterPolicy Failed: " + JSON.stringify(policies) + " did not match message attrs: " + JSON.stringify(messageAttrs)); }
 
         return shouldSend;
     }
@@ -122,6 +122,10 @@ export class SNSAdapter implements ISNSAdapter {
 
             let event = req.body;
             const messageAttrs = event.Records[0].Sns.MessageAttributes;
+            if (policies && !this.evaluatePolicies(policies, messageAttrs)) {
+                this.debug("Filter policies failed. Skipping.");
+                return;
+            }
             if (req.is("text/plain")) {
                 event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
@@ -132,15 +136,7 @@ export class SNSAdapter implements ISNSAdapter {
             };
             const maybePromise = getHandler()(event, this.createLambdaContext(fn), sendIt);
             if (maybePromise && maybePromise.then) {
-                if (policies) {
-                    if (this.evaluatePolicies(policies, messageAttrs)) {
-                        console.log("filters passed, sending it");
-                        maybePromise.then(sendIt);
-                    }
-                } else {
-                    this.debug("No policies. Sending it to: " + fn);
-                    maybePromise.then(sendIt);
-                }
+                maybePromise.then(sendIt);
             }
         });
         const params = {
