@@ -451,7 +451,7 @@ const createServerlessWithFilterPolicies = (accountId: number, handlerName: stri
                             topicName: "test-topic-policies",
                             displayName: "test-topic-policies",
                             filterPolicy: {
-                                foo: ["bar"],
+                                foo: ["bar", "blah"],
                             },
                         },
                     }],
