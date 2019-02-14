@@ -123,7 +123,7 @@ class ServerlessOfflineSns {
         await Promise.all(Object.keys(this.serverless.service.functions).map(fnName => {
             const fn = this.serverless.service.functions[fnName];
             return Promise.all(fn.events.filter(event => event.sns != null).map(event => {
-                return this.subscribe(fnName, event.sns, event.sns.filterPolicy);
+                return this.subscribe(fnName, event.sns);
             }));
         }));
     }
@@ -137,7 +137,7 @@ class ServerlessOfflineSns {
                 .map(sub => this.snsAdapter.unsubscribe(sub.SubscriptionArn)));
     }
 
-    public async subscribe(fnName, snsConfig, policies) {
+    public async subscribe(fnName, snsConfig) {
         this.debug("subscribe: " + fnName);
         // name = event.sns ||
         // name = event.sns.topicName ||
@@ -152,9 +152,9 @@ class ServerlessOfflineSns {
             }
             const data = await this.snsAdapter.createTopic(topicName);
             this.debug("topic: " + JSON.stringify(data));
-            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), data.TopicArn, policies);
+            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), data.TopicArn, snsConfig.filterPolicy);
         } else if (typeof snsConfig.arn === "string") {
-            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), snsConfig.arn, policies);
+            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), snsConfig.arn, snsConfig.filterPolicy);
         } else {
             this.log("unsupported config: " + snsConfig);
             return Promise.resolve("unsupported config: " + snsConfig);
