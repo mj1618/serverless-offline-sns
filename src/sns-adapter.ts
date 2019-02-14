@@ -89,26 +89,6 @@ export class SNSAdapter implements ISNSAdapter {
     private sent: (data) => void;
     public Deferred = new Promise(res => this.sent = res);
 
-    public evaluatePolicies(policies: any, messageAttrs: any): boolean {
-        let shouldSend: boolean = false;
-        for (const [k, v] of Object.entries(policies)) {
-            if (!messageAttrs[k]) { return shouldSend = true; }
-            let attrs;
-            if (messageAttrs[k].Type.endsWith(".Array")) {
-                attrs = JSON.parse(messageAttrs[k].Value);
-            } else {
-                attrs = [messageAttrs[k].Value];
-            }
-            if (_.intersection(v, attrs).length > 0) {
-                this.debug("filterPolicy Passed: " + v + " matched message attrs: " + JSON.stringify(attrs));
-                return shouldSend = true;
-            }
-        }
-        if (!shouldSend) { this.debug("filterPolicy Failed: " + JSON.stringify(policies) + " did not match message attrs: " + JSON.stringify(messageAttrs)); }
-
-        return shouldSend;
-    }
-
     public async subscribe(fn, getHandler, arn, policies) {
         arn = this.convertPseudoParams(arn);
         const subscribeEndpoint = this.baseSubscribeEndpoint + "/" + fn.name;
@@ -121,11 +101,6 @@ export class SNSAdapter implements ISNSAdapter {
             process.env = _.extend({}, process.env, fn.environment);
 
             let event = req.body;
-            const messageAttrs = event.Records[0].Sns.MessageAttributes;
-            if (policies && !this.evaluatePolicies(policies, messageAttrs)) {
-                this.debug("Filter policies failed. Skipping.");
-                return;
-            }
             if (req.is("text/plain")) {
                 event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
@@ -143,6 +118,9 @@ export class SNSAdapter implements ISNSAdapter {
             Protocol: "http",
             TopicArn: arn,
             Endpoint: subscribeEndpoint,
+            Attributes: {
+                FilterPolicy: JSON.stringify(policies),
+            },
         };
 
         await new Promise(res => {

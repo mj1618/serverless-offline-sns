@@ -52,6 +52,23 @@ export function parseMessageAttributes(body) {
         );
 }
 
+export function parseFilterPolicies(body) {
+    const entries = Object.keys(body)
+        .filter(key => key.startsWith("Attributes.entry"))
+        .reduce(
+            (prev, key) => {
+                const index = key.replace("Attributes.entry.", "").match(/.*?(?=\.|$)/i)[0];
+                return prev.includes(index) ? prev : [...prev, index];
+            },
+            [],
+        );
+    for (const key of entries.map(index => `Attributes.entry.${index}`)) {
+        if ((body[`${key}.key`]) === "FilterPolicy") {
+            return JSON.parse(body[`${key}.value`]);
+        }
+    }
+}
+
 export function createSnsEvent(topicArn, subscriptionArn, subject, message, messageId, messageAttributes?) {
     return {
         Records: [
