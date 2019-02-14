@@ -118,11 +118,12 @@ export class SNSAdapter implements ISNSAdapter {
             Protocol: "http",
             TopicArn: arn,
             Endpoint: subscribeEndpoint,
+            Attributes: {},
         };
 
         if (policies) {
-            params["Attributes"] = {
-                FilterPolicy: JSON.stringify(policies)
+            params.Attributes = {
+                FilterPolicy: JSON.stringify(policies),
             };
         }
 

@@ -193,6 +193,38 @@ describe("test", () => {
         expect(await state.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-async`);
         expect(await snsAdapter.Deferred).to.eq("{}");
     });
+
+    it("should not send event when filter policies exist and fail", async () => {
+        plugin = new ServerlessOfflineSns(createServerlessWithFilterPolicies(accountId), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish(
+            `arn:aws:sns:us-east-1:${accountId}:test-topic-policies`,
+            "message with filter params",
+            "raw",
+            {
+                foo: { DataType: "String", StringValue: "no" },
+            },
+        );
+        await new Promise(res => setTimeout(res, 100));
+        expect(state.getPongs()).to.eq(0);
+    });
+
+    it("should send event when filter policies exist and pass", async () => {
+        plugin = new ServerlessOfflineSns(createServerlessWithFilterPolicies(accountId), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish(
+            `arn:aws:sns:us-east-1:${accountId}:test-topic-policies`,
+            "message with filter params",
+            "raw",
+            {
+                foo: { DataType: "String", StringValue: "bar" },
+            },
+        );
+        await new Promise(res => setTimeout(res, 100));
+        const event = state.getEvent();
+        const record = event.Records[0];
+        expect(record).to.exist;
+    });
 });
 
 const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null, subscribeEndpoint = null) => {
@@ -374,6 +406,53 @@ const createServerlessBad = (accountId: number) => {
                     events: [{
                         sns: {
                             topicArn: `arn:aws:sns:us-east-1:${accountId}:test-topic`,
+                        },
+                    }],
+                },
+            },
+        },
+        cli: {
+            log: (data) => {
+                if (process.env.DEBUG) {
+                    console.log(data);
+                }
+            },
+        },
+    };
+};
+
+const createServerlessWithFilterPolicies = (accountId: number, handlerName: string = "pongHandler", host: string = null, subscribeEndpoint = null) => {
+    return {
+        config: {
+            skipCacheInvalidation: true,
+        },
+        service: {
+            custom: {
+                "serverless-offline-sns": {
+                    "debug": true,
+                    "port": 4002,
+                    "accountId": accountId,
+                    "host": host,
+                    "sns-subscribe-endpoint": subscribeEndpoint,
+                },
+            },
+            provider: {
+                region: "us-east-1",
+                environment: {
+                    MY_VAR: "MY_VAL",
+                },
+            },
+            functions: {
+                pong: {
+                    name: "some-name",
+                    handler: "test/mock/handler." + handlerName,
+                    events: [{
+                        sns: {
+                            topicName: "test-topic-policies",
+                            displayName: "test-topic-policies",
+                            filterPolicy: {
+                                foo: ["bar"],
+                            },
                         },
                     }],
                 },
