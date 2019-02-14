@@ -217,7 +217,7 @@ export class SNSServer implements ISNSServer {
         const messageId = createMessageId();
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
             if (sub["Policies"] && !this.evaluatePolicies(sub["Policies"], messageAttributes)) {
-                this.debug("Filter policies failed. Skipping ARN: " + topicArn);
+                this.debug("Filter policies failed. Skipping subscription: " + sub.Endpoint);
                 return;
             }
             this.debug("fetching: " + sub.Endpoint);
