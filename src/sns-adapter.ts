@@ -89,6 +89,26 @@ export class SNSAdapter implements ISNSAdapter {
     private sent: (data) => void;
     public Deferred = new Promise(res => this.sent = res);
 
+    public evaluatePolicies(policies: any, messageAttrs: any): boolean {
+        let shouldSend: boolean = false;
+        for (const [k, v] of Object.entries(policies)) {
+            if (!messageAttrs[k]) { return shouldSend = true; }
+            let attrs;
+            if (messageAttrs[k].Type.endsWith(".Array")) {
+                attrs = JSON.parse(messageAttrs[k].Value);
+            } else {
+                attrs = [messageAttrs[k].Value];
+            }
+            if (_.intersection(v, attrs).length > 0) {
+                this.debug("filterPolicy Passed: " + v + " matched message attrs: " + attrs);
+                return shouldSend = true;
+            }
+        }
+        if (!shouldSend) { this.debug("filterPolicy Failed: " + policies + " did not match message attrs: " + messageAttrs); }
+
+        return shouldSend;
+    }
+
     public async subscribe(fn, getHandler, arn, policies) {
         arn = this.convertPseudoParams(arn);
         const subscribeEndpoint = this.baseSubscribeEndpoint + "/" + fn.name;
@@ -113,23 +133,14 @@ export class SNSAdapter implements ISNSAdapter {
             const maybePromise = getHandler()(event, this.createLambdaContext(fn), sendIt);
             if (maybePromise && maybePromise.then) {
                 if (policies) {
-                    for (const [k, v] of Object.entries(policies)) {
-                        if (!messageAttrs[k]) { return; }
-                        let attrs;
-                        if (messageAttrs[k].Type.endsWith(".Array")) {
-                            attrs = JSON.parse(messageAttrs[k].Value);
-                        } else {
-                            attrs = [messageAttrs[k].Value];
-                        }
-                        if (_.intersection(v, attrs).length > 0) {
-                            this.debug("filterPolicy Passed: " + v + " matched message attrs: " + attrs);
-                            maybePromise.then(sendIt);
-                        }
+                    if (this.evaluatePolicies(policies, messageAttrs)) {
+                        console.log("filters passed, sending it");
+                        maybePromise.then(sendIt);
                     }
-                    this.debug("filterPolicy Failed: " + policies + " did not match message attrs: " + messageAttrs);
-                    return;
+                } else {
+                    this.debug("No policies. Sending it to: " + fn);
+                    maybePromise.then(sendIt);
                 }
-                maybePromise.then(sendIt);
             }
         });
         const params = {
