@@ -121,7 +121,7 @@ export class SNSAdapter implements ISNSAdapter {
         };
 
         if (policies) {
-            params['Attributes'] = {
+            params["Attributes"] = {
                 FilterPolicy: JSON.stringify(policies)
             };
         }
