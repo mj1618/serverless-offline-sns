@@ -118,10 +118,13 @@ export class SNSAdapter implements ISNSAdapter {
             Protocol: "http",
             TopicArn: arn,
             Endpoint: subscribeEndpoint,
-            Attributes: {
-                FilterPolicy: JSON.stringify(policies),
-            },
         };
+
+        if (policies) {
+            params['Attributes'] = {
+                FilterPolicy: JSON.stringify(policies)
+            };
+        }
 
         await new Promise(res => {
             this.sns.subscribe(params, (err, data) => {
