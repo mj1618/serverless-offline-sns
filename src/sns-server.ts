@@ -174,7 +174,10 @@ export class SNSServer implements ISNSServer {
     private evaluatePolicies(policies: any, messageAttrs: any): boolean {
         let shouldSend: boolean = false;
         for (const [k, v] of Object.entries(policies)) {
-            if (!messageAttrs[k]) { shouldSend = false; }
+            if (!messageAttrs[k]) {
+                shouldSend = false;
+                break;
+            }
             let attrs;
             if (messageAttrs[k].Type.endsWith(".Array")) {
                 attrs = JSON.parse(messageAttrs[k].Value);

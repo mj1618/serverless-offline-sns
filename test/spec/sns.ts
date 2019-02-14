@@ -225,6 +225,21 @@ describe("test", () => {
         const record = event.Records[0];
         expect(record).to.exist;
     });
+
+    it("should not send event when multiple filter policies exist and the message only satisfies one", async () => {
+        plugin = new ServerlessOfflineSns(createServerlessWithFilterPolicies(accountId), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish(
+            `arn:aws:sns:us-east-1:${accountId}:test-topic-policies-multiple`,
+            "message with filter params",
+            "raw",
+            {
+                foo: { DataType: "String", StringValue: "bar" },
+            },
+        );
+        await new Promise(res => setTimeout(res, 100));
+        expect(state.getPongs()).to.eq(0);
+    });
 });
 
 const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null, subscribeEndpoint = null) => {
@@ -452,6 +467,20 @@ const createServerlessWithFilterPolicies = (accountId: number, handlerName: stri
                             displayName: "test-topic-policies",
                             filterPolicy: {
                                 foo: ["bar", "blah"],
+                            },
+                        },
+                    }],
+                },
+                pong2: {
+                    name: "some-name2",
+                    handler: "test/mock/handler." + handlerName,
+                    events: [{
+                        sns: {
+                            topicName: "test-topic-policies-multiple",
+                            displayName: "test-topic-policies-multiple",
+                            filterPolicy: {
+                                foo: ["bar", "blah"],
+                                second: ["policy"],
                             },
                         },
                     }],
