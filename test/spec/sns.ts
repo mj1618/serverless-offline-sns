@@ -252,11 +252,7 @@ describe("test", () => {
             '{"message":"hello"}',
         );
         await new Promise(res => setTimeout(res, 100));
-        const event = state.getEvent();
-      console.log(event)
-        const record = event.Records[0];
-        expect(record).to.not.be.undefined
-        expect(record.body).to.eq('{"message":"hello"}')
+        expect(state.getEvent()).to.eql({ message: "hello" })
     })
 });
 

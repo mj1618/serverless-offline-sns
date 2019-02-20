@@ -229,7 +229,7 @@ export class SNSServer implements ISNSServer {
             this.debug("fetching: " + sub.Endpoint);
             let event;
             if (sub["Attributes"]["RawMessageDelivery"] === "true") {
-                event = JSON.stringify({ Records: [{ body: message }]});
+                event = message;
             } else {
                 event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
             }
