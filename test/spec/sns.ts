@@ -240,6 +240,24 @@ describe("test", () => {
         await new Promise(res => setTimeout(res, 100));
         expect(state.getPongs()).to.eq(0);
     });
+
+    it("should not wrap the event when the sub's raw message delivery is true", async () => {
+        let serverless = createServerless(accountId);
+        serverless.service.functions.pong4.events[0].sns['rawMessageDelivery'] = 'true';
+        plugin = new ServerlessOfflineSns(serverless, {});
+
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish(
+            `arn:aws:sns:us-east-1:${accountId}:test-topic-3`,
+            '{"message":"hello"}',
+        );
+        await new Promise(res => setTimeout(res, 100));
+        const event = state.getEvent();
+      console.log(event)
+        const record = event.Records[0];
+        expect(record).to.not.be.undefined
+        expect(record.body).to.eq('{"message":"hello"}')
+    })
 });
 
 const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null, subscribeEndpoint = null) => {

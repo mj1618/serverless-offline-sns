@@ -52,8 +52,8 @@ export function parseMessageAttributes(body) {
         );
 }
 
-export function parseFilterPolicies(body) {
-    const entries = Object.keys(body)
+export function parseAttributes(body) {
+    const indices = Object.keys(body)
         .filter(key => key.startsWith("Attributes.entry"))
         .reduce(
             (prev, key) => {
@@ -62,11 +62,11 @@ export function parseFilterPolicies(body) {
             },
             [],
         );
-    for (const key of entries.map(index => `Attributes.entry.${index}`)) {
-        if ((body[`${key}.key`]) === "FilterPolicy") {
-            return JSON.parse(body[`${key}.value`]);
-        }
+    let attrs = {};
+    for (const key of indices.map(index => `Attributes.entry.${index}`)) {
+        attrs[body[`${key}.key`]] = body[`${key}.value`];
     }
+    return attrs;
 }
 
 export function createSnsEvent(topicArn, subscriptionArn, subject, message, messageId, messageAttributes?) {
