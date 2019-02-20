@@ -12,7 +12,7 @@ import {
     createMetadata,
     createSnsEvent,
     parseMessageAttributes,
-    parseFilterPolicies,
+    parseAttributes,
     createMessageId,
     validatePhoneNumber,
 } from "./helpers";
@@ -56,7 +56,7 @@ export class SNSServer implements ISNSServer {
             } else if (req.body.Action === "CreateTopic") {
                 res.send(xml(this.createTopic(req.body.Name)));
             } else if (req.body.Action === "Subscribe") {
-                res.send(xml(this.subscribe(req.body.Endpoint, req.body.Protocol, req.body.TopicArn, parseFilterPolicies(req.body))));
+                res.send(xml(this.subscribe(req.body.Endpoint, req.body.Protocol, req.body.TopicArn, req.body)));
             } else if (req.body.Action === "Publish") {
                 const target = this.extractTarget(req.body);
                 res.send(
@@ -145,7 +145,9 @@ export class SNSServer implements ISNSServer {
         };
     }
 
-    public subscribe(endpoint, protocol, arn, policies) {
+    public subscribe(endpoint, protocol, arn, body) {
+        const attributes = parseAttributes(body);
+        const filterPolicies = attributes["FilterPolicy"] && JSON.parse(attributes["FilterPolicy"]);
         arn = this.convertPseudoParams(arn);
         const sub = {
             SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
@@ -153,7 +155,8 @@ export class SNSServer implements ISNSServer {
             TopicArn: arn,
             Endpoint: endpoint,
             Owner: "",
-            Policies: policies,
+            Attributes: attributes,
+            Policies: filterPolicies,
         };
         this.subscriptions.push(sub);
         return {
@@ -224,7 +227,12 @@ export class SNSServer implements ISNSServer {
                 return;
             }
             this.debug("fetching: " + sub.Endpoint);
-            const event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
+            let event;
+            if (sub["Attributes"]["RawMessageDelivery"] === "true") {
+                event = message;
+            } else {
+                event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
+            }
             this.debug("event: " + event);
             if (!sub.Protocol) {
                 sub.Protocol = "http";
