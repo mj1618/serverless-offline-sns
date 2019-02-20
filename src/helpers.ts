@@ -62,7 +62,7 @@ export function parseAttributes(body) {
             },
             [],
         );
-    let attrs = {};
+    const attrs = {};
     for (const key of indices.map(index => `Attributes.entry.${index}`)) {
         attrs[body[`${key}.key`]] = body[`${key}.value`];
     }

@@ -121,11 +121,11 @@ export class SNSAdapter implements ISNSAdapter {
             Attributes: {},
         };
 
-        if (snsConfig.rawMessageDelivery === 'true') {
-            params.Attributes['RawMessageDelivery'] = 'true';
+        if (snsConfig.rawMessageDelivery === "true") {
+            params.Attributes["RawMessageDelivery"] = "true";
         }
         if (snsConfig.filterPolicy) {
-            params.Attributes['FilterPolicy'] = JSON.stringify(snsConfig.filterPolicy);
+            params.Attributes["FilterPolicy"] = JSON.stringify(snsConfig.filterPolicy);
         }
 
         await new Promise(res => {

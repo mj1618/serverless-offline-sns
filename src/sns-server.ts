@@ -147,7 +147,7 @@ export class SNSServer implements ISNSServer {
 
     public subscribe(endpoint, protocol, arn, body) {
         const attributes = parseAttributes(body);
-        const filterPolicies = attributes['FilterPolicy'] && JSON.parse(attributes['FilterPolicy']);
+        const filterPolicies = attributes["FilterPolicy"] && JSON.parse(attributes["FilterPolicy"]);
         arn = this.convertPseudoParams(arn);
         const sub = {
             SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
@@ -228,8 +228,8 @@ export class SNSServer implements ISNSServer {
             }
             this.debug("fetching: " + sub.Endpoint);
             let event;
-            if (sub['Attributes']['RawMessageDelivery'] === 'true') {
-                event = JSON.stringify({Records:[{body:message}]});
+            if (sub["Attributes"]["RawMessageDelivery"] === "true") {
+                event = JSON.stringify({ Records: [{ body: message }]});
             } else {
                 event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
             }
