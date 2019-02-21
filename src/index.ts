@@ -145,11 +145,11 @@ class ServerlessOfflineSns {
         // arn = event.sns.arn && topicName = event.sns.topicName
         const fn = this.serverless.service.functions[fnName];
         if (typeof snsConfig === "string" || typeof snsConfig.topicName === "string") {
-            this.log(`Creating topic: "${snsConfig}" for fn "${fnName}"`);
             let topicName = snsConfig;
             if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
                 topicName = snsConfig.topicName;
             }
+            this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
             const data = await this.snsAdapter.createTopic(topicName);
             this.debug("topic: " + JSON.stringify(data));
             await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), data.TopicArn, snsConfig);
