@@ -146,10 +146,23 @@ class ServerlessOfflineSns {
         const fn = this.serverless.service.functions[fnName];
 
         if (typeof snsConfig === "string" || typeof snsConfig.topicName === "string") {
-            let topicName = snsConfig;
-            if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
+            let topicName = "";
+            // According to Serverless docs, if the sns config is a string,
+            // that string must be the topic ARN:
+            // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic
+            if (typeof snsConfig === "string" && snsConfig.indexOf("arn:aws:sns") === 0) {
+                const snsConfigParts = snsConfig.split(":");
+                // the topics name is that last part of the ARN:
+                // arn:aws:sns:<REGION>:<ACCOUNT_ID>:<TOPIC_NAME>
+                topicName = snsConfigParts[snsConfigParts.length - 1];
+            } else if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
                 topicName = snsConfig.topicName;
             }
+
+            if (!topicName) {
+                return Promise.resolve(`Unable to create topic for "${fnName}". Please ensure the sns configuration is correct.`);
+            }
+
             this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
             const data = await this.snsAdapter.createTopic(topicName);
             this.debug("topic: " + JSON.stringify(data));
