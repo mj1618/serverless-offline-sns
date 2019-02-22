@@ -281,7 +281,7 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
                 pong: {
                     handler: "test/mock/handler." + handlerName,
                     events: [{
-                        sns: "test-topic",
+                        sns: `arn:aws:sns:us-east-1:${accountId}:test-topic`,
                     }],
                 },
                 pong2: {
@@ -359,7 +359,7 @@ const createServerlessCacheInvalidation = (accountId: number, handlerName: strin
                 pong: {
                     handler: "test/mock/handler." + handlerName,
                     events: [{
-                        sns: "test-topic",
+                        sns: `arn:aws:sns:us-west-2:${accountId}:test-topic`,
                     }],
                 },
             },
@@ -398,7 +398,7 @@ const createServerlessMultiDot = (accountId: number, handlerName: string = "pong
                 multiDot: {
                     handler: "test/mock/multi.dot.handler.itsGotDots",
                     events: [{
-                        sns: `multi-dot-topic`,
+                        sns: `arn:aws:sns:us-west-2:${accountId}:multi-dot-topic`,
                     }],
                 },
             },
