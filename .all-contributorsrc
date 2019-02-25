@@ -198,6 +198,16 @@
         "code",
         "test"
       ]
+    },
+    {
+      "login": "jkruse14",
+      "name": "justin.kruse",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/16331726?v=4",
+      "profile": "https://github.com/jkruse14",
+      "contributions": [
+        "test",
+        "code"
+      ]
     }
   ],
   "repoType": "github",
