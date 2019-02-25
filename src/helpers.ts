@@ -52,6 +52,23 @@ export function parseMessageAttributes(body) {
         );
 }
 
+export function parseAttributes(body) {
+    const indices = Object.keys(body)
+        .filter(key => key.startsWith("Attributes.entry"))
+        .reduce(
+            (prev, key) => {
+                const index = key.replace("Attributes.entry.", "").match(/.*?(?=\.|$)/i)[0];
+                return prev.includes(index) ? prev : [...prev, index];
+            },
+            [],
+        );
+    const attrs = {};
+    for (const key of indices.map(index => `Attributes.entry.${index}`)) {
+        attrs[body[`${key}.key`]] = body[`${key}.value`];
+    }
+    return attrs;
+}
+
 export function createSnsEvent(topicArn, subscriptionArn, subject, message, messageId, messageAttributes?) {
     return {
         Records: [
