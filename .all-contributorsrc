@@ -200,5 +200,6 @@
       ]
     }
   ],
-  "repoType": "github"
+  "repoType": "github",
+  "contributorsPerLine": 7
 }
