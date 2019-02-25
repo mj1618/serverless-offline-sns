@@ -89,7 +89,7 @@ export class SNSAdapter implements ISNSAdapter {
     private sent: (data) => void;
     public Deferred = new Promise(res => this.sent = res);
 
-    public async subscribe(fn, getHandler, arn) {
+    public async subscribe(fn, getHandler, arn, snsConfig) {
         arn = this.convertPseudoParams(arn);
         const subscribeEndpoint = this.baseSubscribeEndpoint + "/" + fn.name;
         this.debug("subscribe: " + fn.name + " " + arn);
@@ -118,7 +118,15 @@ export class SNSAdapter implements ISNSAdapter {
             Protocol: "http",
             TopicArn: arn,
             Endpoint: subscribeEndpoint,
+            Attributes: {},
         };
+
+        if (snsConfig.rawMessageDelivery === "true") {
+            params.Attributes["RawMessageDelivery"] = "true";
+        }
+        if (snsConfig.filterPolicy) {
+            params.Attributes["FilterPolicy"] = JSON.stringify(snsConfig.filterPolicy);
+        }
 
         await new Promise(res => {
             this.sns.subscribe(params, (err, data) => {

@@ -8,7 +8,7 @@ export interface ISNSAdapter {
     listSubscriptions(): Promise<ListSubscriptionsResponse>;
     unsubscribe(arn: string): Promise<void>;
     createTopic(topicName: string): Promise<CreateTopicResponse>;
-    subscribe(fnName: string, handler: SLSHandler, arn: string): Promise<void>;
+    subscribe(fnName: string, handler: SLSHandler, arn: string, snsConfig: any): Promise<void>;
     publish(topicArn: string, type: string, message: string): Promise<PublishResponse>;
 }
 export interface ISNSAdapterConstructable {

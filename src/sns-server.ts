@@ -4,6 +4,7 @@ import fetch from "node-fetch";
 import { URL } from "url";
 import { IDebug, ISNSServer } from "./types";
 import * as bodyParser from "body-parser";
+import * as _ from "lodash";
 import * as xml from "xml";
 import {
     arrayify,
@@ -11,6 +12,7 @@ import {
     createMetadata,
     createSnsEvent,
     parseMessageAttributes,
+    parseAttributes,
     createMessageId,
     validatePhoneNumber,
 } from "./helpers";
@@ -54,7 +56,7 @@ export class SNSServer implements ISNSServer {
             } else if (req.body.Action === "CreateTopic") {
                 res.send(xml(this.createTopic(req.body.Name)));
             } else if (req.body.Action === "Subscribe") {
-                res.send(xml(this.subscribe(req.body.Endpoint, req.body.Protocol, req.body.TopicArn)));
+                res.send(xml(this.subscribe(req.body.Endpoint, req.body.Protocol, req.body.TopicArn, req.body)));
             } else if (req.body.Action === "Publish") {
                 const target = this.extractTarget(req.body);
                 res.send(
@@ -143,7 +145,9 @@ export class SNSServer implements ISNSServer {
         };
     }
 
-    public subscribe(endpoint, protocol, arn) {
+    public subscribe(endpoint, protocol, arn, body) {
+        const attributes = parseAttributes(body);
+        const filterPolicies = attributes["FilterPolicy"] && JSON.parse(attributes["FilterPolicy"]);
         arn = this.convertPseudoParams(arn);
         const sub = {
             SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
@@ -151,6 +155,8 @@ export class SNSServer implements ISNSServer {
             TopicArn: arn,
             Endpoint: endpoint,
             Owner: "",
+            Attributes: attributes,
+            Policies: filterPolicies,
         };
         this.subscriptions.push(sub);
         return {
@@ -166,6 +172,29 @@ export class SNSServer implements ISNSServer {
                 },
             ],
         };
+    }
+
+    private evaluatePolicies(policies: any, messageAttrs: any): boolean {
+        let shouldSend: boolean = false;
+        for (const [k, v] of Object.entries(policies)) {
+            if (!messageAttrs[k]) {
+                shouldSend = false;
+                break;
+            }
+            let attrs;
+            if (messageAttrs[k].Type.endsWith(".Array")) {
+                attrs = JSON.parse(messageAttrs[k].Value);
+            } else {
+                attrs = [messageAttrs[k].Value];
+            }
+            if (_.intersection(v, attrs).length > 0) {
+                this.debug("filterPolicy Passed: " + v + " matched message attrs: " + JSON.stringify(attrs));
+                shouldSend = true;
+            }
+        }
+        if (!shouldSend) { this.debug("filterPolicy Failed: " + JSON.stringify(policies) + " did not match message attrs: " + JSON.stringify(messageAttrs)); }
+
+        return shouldSend;
     }
 
     private publishHttp(event, sub) {
@@ -193,8 +222,17 @@ export class SNSServer implements ISNSServer {
     public publish(topicArn, subject, message, messageType, messageAttributes) {
         const messageId = createMessageId();
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
+            if (sub["Policies"] && !this.evaluatePolicies(sub["Policies"], messageAttributes)) {
+                this.debug("Filter policies failed. Skipping subscription: " + sub.Endpoint);
+                return;
+            }
             this.debug("fetching: " + sub.Endpoint);
-            const event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
+            let event;
+            if (sub["Attributes"]["RawMessageDelivery"] === "true") {
+                event = message;
+            } else {
+                event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
+            }
             this.debug("event: " + event);
             if (!sub.Protocol) {
                 sub.Protocol = "http";
