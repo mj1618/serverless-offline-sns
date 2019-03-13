@@ -112,6 +112,36 @@ custom:
 ```
 What happens is that the container running localstack will execute a POST request to the plugin, but to reach outside the container, it needs to use the host ip address.
 
+## Hosted AWS SNS configuration
+In order to listen to a hosted SNS on AWS, you need the following:
+```YAML
+custom:
+  serverless-offline-sns:
+    localPort: ${env:LOCAL_PORT}
+    remotePort: ${env:SNS_SUBSCRIBE_REMOTE_PORT}
+    host: 0.0.0.0
+    sns-subscribe-endpoint: ${env:SNS_SUBSCRIBE_ENDPOINT}
+    sns-endpoint: ${env:SNS_ENDPOINT}```
+```
+
+You can use ngrok to forward your local server to the public internet. This is an example how to set the environment variables for the configuration above:
+```BASH
+export LOCAL_PORT=15000
+ngrok authtoken $NGROK_AUTH_TOKEN
+ngrok tcp ${LOCAL_PORT} -log "false" > /dev/null &
+sleep 1
+export SNS_SUBSCRIBE_ENDPOINT_AND_PORT=`curl localhost:4040/api/tunnels | jq '.tunnels[]|select(.config.addr=="localhost:'${LOCAL_PORT}'" and .proto=="tcp")|.public_url' -r | sed  's/tcp:\/\///g'`
+export SNS_SUBSCRIBE_ENDPOINT=`echo $SNS_SUBSCRIBE_ENDPOINT_AND_PORT | sed -r 's/(.*):(.*)/\1/g'`
+export SNS_SUBSCRIBE_REMOTE_PORT=`echo $SNS_SUBSCRIBE_ENDPOINT_AND_PORT | sed -r 's/(.*):(.*)/\2/g'`
+
+sls offline start
+```
+
+If you want to unsubscribe when you stop your server, then call `sls offline-sns cleanup` when the script exits. You can do that using a trap in your scripts:
+```
+trap "trap - SIGTERM && sls offline-sns cleanup" SIGINT SIGTERM EXIT
+```
+
 ## Usage
 
 If you use [serverless-offline](https://github.com/dherault/serverless-offline) this plugin will start automatically.
