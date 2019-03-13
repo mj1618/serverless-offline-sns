@@ -103,6 +103,15 @@ export class SNSAdapter implements ISNSAdapter {
             if (req.is("text/plain")) {
                 event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
+
+            if (req.body.SubscribeURL) {
+                this.debug("Visiting subscribe url: " + req.body.SubscribeURL);
+                return fetch(req.body.SubscribeURL, {
+                    method: "GET",
+                    timeout: 0,
+                }).then(fetchResponse => this.debug("Subscribed: " + fetchResponse));
+            }
+
             const sendIt = (data) => {
                 res.send(data);
                 process.env = oldEnv;
