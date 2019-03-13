@@ -36,12 +36,18 @@ class ServerlessOfflineSns {
                 usage: "Listens to offline SNS events and passes them to configured Lambda fns",
                 lifecycleEvents: [
                     "start",
+                    "cleanup",
                 ],
                 commands: {
                     start: {
                         lifecycleEvents: [
                             "init",
                             "end",
+                        ],
+                    },
+                    cleanup: {
+                        lifecycleEvents: [
+                            "init",
                         ],
                     },
                 },
@@ -54,6 +60,11 @@ class ServerlessOfflineSns {
             "offline-sns:start:init": () => {
                 this.start();
                 return this.waitForSigint();
+            },
+            "offline-sns:cleanup:init": async () => {
+                this.init();
+                this.setupSnsAdapter();
+                return this.unsubscribeAll();
             },
             "offline-sns:start:end": () => this.stop(),
         };
@@ -108,18 +119,7 @@ class ServerlessOfflineSns {
     }
 
     public async subscribeAll() {
-        this.snsAdapter = new SNSAdapter(
-            this.port,
-            this.serverless.service.provider.region,
-            this.config["sns-endpoint"],
-            (msg, ctx) => this.debug(msg, ctx),
-            this.app,
-            this.serverless.service.service,
-            this.serverless.service.provider.stage,
-            this.accountId,
-            this.config.host,
-            this.config["sns-subscribe-endpoint"],
-        );
+        this.setupSnsAdapter();
         await this.unsubscribeAll();
         this.debug("subscribing");
         await Promise.all(Object.keys(this.serverless.service.functions).map(fnName => {
@@ -245,6 +245,22 @@ class ServerlessOfflineSns {
         if (this.server) {
             this.server.close();
         }
+    }
+
+    private setupSnsAdapter() {
+        this.snsAdapter = new SNSAdapter(
+            this.localPort,
+            this.remotePort,
+            this.serverless.service.provider.region,
+            this.config["sns-endpoint"],
+            (msg, ctx) => this.debug(msg, ctx),
+            this.app,
+            this.serverless.service.service,
+            this.serverless.service.provider.stage,
+            this.accountId,
+            this.config.host,
+            this.config["sns-subscribe-endpoint"],
+        );
     }
 }
 
