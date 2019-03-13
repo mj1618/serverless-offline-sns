@@ -18,15 +18,14 @@ export class SNSAdapter implements ISNSAdapter {
     private baseSubscribeEndpoint: string;
     private accountId: string;
 
-    constructor(port, region, snsEndpoint, debug, app, serviceName, stage, accountId, host, subscribeEndpoint) {
+    constructor(localPort, remotePort, region, snsEndpoint, debug, app, serviceName, stage, accountId, host, subscribeEndpoint) {
         this.pluginDebug = debug;
-        this.port = port;
         this.app = app;
         this.serviceName = serviceName;
         this.stage = stage;
-        this.adapterEndpoint = `http://${host || "127.0.0.1"}:${port}`;
-        this.baseSubscribeEndpoint = subscribeEndpoint ? `http://${subscribeEndpoint}:${port}` : this.adapterEndpoint;
-        this.endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
+        this.adapterEndpoint = `http://${host || "127.0.0.1"}:${localPort}`;
+        this.baseSubscribeEndpoint = subscribeEndpoint ? `http://${subscribeEndpoint}:${remotePort}` : this.adapterEndpoint;
+        this.endpoint = snsEndpoint || `http://127.0.0.1:${localPort}`;
         this.debug("using endpoint: " + this.endpoint);
         this.accountId = accountId;
         if (!AWS.config.credentials) {

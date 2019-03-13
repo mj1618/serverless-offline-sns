@@ -12,7 +12,8 @@ class ServerlessOfflineSns {
     private config: any;
     private serverless: any;
     public commands: object;
-    private port: number;
+    private localPort: number;
+    private remotePort: number;
     public hooks: object;
     private snsAdapter: ISNSAdapter;
     private app: any;
@@ -61,7 +62,8 @@ class ServerlessOfflineSns {
     public init() {
         process.env = _.extend({}, this.serverless.service.provider.environment, process.env);
         this.config = this.serverless.service.custom["serverless-offline-sns"] || {};
-        this.port = this.config.port || 4002;
+        this.localPort = this.config.port || this.config.localPort || 4002;
+        this.remotePort = this.config.port || this.config.remotePort || 4002;
         this.accountId = this.config.accountId || "123456789012";
         const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};
         this.location = process.cwd();
@@ -79,7 +81,7 @@ class ServerlessOfflineSns {
 
         // Congure SNS client to be able to find us.
         AWS.config.sns = {
-            endpoint: "http://127.0.0.1:" + this.port,
+            endpoint: "http://127.0.0.1:" + this.localPort,
             region: this.region,
         };
     }
@@ -133,7 +135,7 @@ class ServerlessOfflineSns {
         this.debug("subs!: " + JSON.stringify(subs));
         await Promise.all(
             subs.Subscriptions
-                .filter(sub => sub.Endpoint.indexOf(":" + this.port) > -1)
+                .filter(sub => sub.Endpoint.indexOf(":" + this.remotePort) > -1)
                 .map(sub => this.snsAdapter.unsubscribe(sub.SubscriptionArn)));
     }
 
@@ -230,8 +232,8 @@ class ServerlessOfflineSns {
             host = this.options.host;
         }
         return new Promise(res => {
-            this.server = this.app.listen(this.port, host, () => {
-                this.debug(`listening on ${host}:${this.port}`);
+            this.server = this.app.listen(this.localPort, host, () => {
+                this.debug(`listening on ${host}:${this.localPort}`);
                 res();
             });
         });
