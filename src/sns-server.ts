@@ -213,10 +213,17 @@ export class SNSServer implements ISNSServer {
         const subEndpointUrl = new URL(sub.Endpoint);
         const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
         const sqs = new SQS({ endpoint: sqsEndpoint, region: this.region });
-        return sqs.sendMessage({
-            QueueUrl: sub.Endpoint,
-            MessageBody: event,
-        }).promise();
+        
+        const records = JSON.parse(event).Records;
+        const messagePromises = records.map(record => {
+            return sqs
+                .sendMessage({
+                    QueueUrl: sub.Endpoint,
+                    MessageBody: JSON.stringify(record.Sns),
+                })
+                .promise();
+        });
+        return Promise.all(messagePromises);
     }
 
     public publish(topicArn, subject, message, messageType, messageAttributes) {
