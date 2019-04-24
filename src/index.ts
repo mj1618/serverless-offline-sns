@@ -177,7 +177,7 @@ class ServerlessOfflineSns {
     public createHandler(fn) {
 
         // use the main serverless config since this behavior is already supported there
-        if (!this.serverless.config.skipCacheInvalidation || Array.isArray(this.serverless.config.skipCacheInvalidation)) {
+        if (!this.options.skipCacheInvalidation || Array.isArray(this.options.skipCacheInvalidation)) {
             for (const key in require.cache) {
 
                 // don't invalidate cached modules from node_modules ...
@@ -186,8 +186,8 @@ class ServerlessOfflineSns {
                 }
 
                 // if an array is provided to the serverless config, check the entries there too
-                if (Array.isArray(this.serverless.config.skipCacheInvalidation) &&
-                    this.serverless.config.skipCacheInvalidation.find(pattern => new RegExp(pattern).test(key))) {
+                if (Array.isArray(this.options.skipCacheInvalidation) &&
+                    this.options.skipCacheInvalidation.find(pattern => new RegExp(pattern).test(key))) {
                     continue;
                 }
 
