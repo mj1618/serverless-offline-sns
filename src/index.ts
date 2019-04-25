@@ -175,8 +175,9 @@ class ServerlessOfflineSns {
     }
 
     public createHandler(fn) {
-
-        // use the main serverless config since this behavior is already supported there
+        
+        // Options are passed from the command line in the options parameter
+        // ### OLD: use the main serverless config since this behavior is already supported there
         if (!this.options.skipCacheInvalidation || Array.isArray(this.options.skipCacheInvalidation)) {
             for (const key in require.cache) {
 
