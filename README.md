@@ -79,8 +79,8 @@ functions:
     handler: handler.pong
     events:
       - sns:
-         arn: "arn:aws:sns:us-east-1:123456789012:test-topic" // 1st way
-      - sns: "arn:aws:sns:us-east-1:123456789012:test-topic-two" // 2nd way
+         arn: "arn:aws:sns:us-east-1:123456789012:test-topic" # 1st way
+      - sns: "arn:aws:sns:us-east-1:123456789012:test-topic-two" # 2nd way
 ```
 
 Here's a demo of some code that will trigger this handler:
