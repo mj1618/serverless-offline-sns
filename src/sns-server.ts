@@ -15,6 +15,7 @@ import {
     parseAttributes,
     createMessageId,
     validatePhoneNumber,
+    topicArnFromName,
 } from "./helpers";
 
 export class SNSServer implements ISNSServer {
@@ -53,6 +54,9 @@ export class SNSServer implements ISNSServer {
             if (req.body.Action === "ListSubscriptions") {
                 this.debug("sending: " + xml(this.listSubscriptions(), { indent: "\t" }));
                 res.send(xml(this.listSubscriptions()));
+            } else if (req.body.Action === "ListTopics") {
+                this.debug("sending: " + xml(this.listTopics(), { indent: "\t" }));
+                res.send(xml(this.listTopics()));
             } else if (req.body.Action === "CreateTopic") {
                 res.send(xml(this.createTopic(req.body.Name)));
             } else if (req.body.Action === "Subscribe") {
@@ -82,6 +86,27 @@ export class SNSServer implements ISNSServer {
             }
             this.debug(JSON.stringify(this.subscriptions));
         });
+    }
+
+    public listTopics() {
+        this.debug("Topics: " + JSON.stringify(this.topics));
+        return {
+            ListTopicsResponse: [
+                createAttr(),
+                createMetadata(),
+                {
+                    ListTopicsResult: [{
+                        Topics: this.topics.map(topic => {
+                            return {
+                                member: arrayify({
+                                    TopicArn: topic.TopicArn,
+                                }),
+                            };
+                        }),
+                    }],
+                },
+            ],
+        };
     }
 
     public listSubscriptions() {
@@ -126,10 +151,13 @@ export class SNSServer implements ISNSServer {
     }
 
     public createTopic(topicName) {
+        const topicArn = topicArnFromName(topicName, this.region, this.accountId);
         const topic = {
-            TopicArn: `arn:aws:sns:${this.region}:${this.accountId}:${topicName}`,
+          TopicArn: topicArn,
         };
-        this.topics.push(topic);
+        if (!this.topics.find(({ TopicArn }) => TopicArn === topicArn)) {
+          this.topics.push(topic);
+        }
         return {
             CreateTopicResponse: [
                 createAttr(),
@@ -213,7 +241,7 @@ export class SNSServer implements ISNSServer {
         const subEndpointUrl = new URL(sub.Endpoint);
         const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
         const sqs = new SQS({ endpoint: sqsEndpoint, region: this.region });
-        
+
         const records = JSON.parse(event).Records;
         const messagePromises = records.map(record => {
             return sqs

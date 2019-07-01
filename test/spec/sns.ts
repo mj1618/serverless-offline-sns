@@ -253,7 +253,17 @@ describe("test", () => {
         );
         await new Promise(res => setTimeout(res, 100));
         expect(state.getEvent()).to.eql({ message: "hello" })
-    })
+    });
+
+    it("should list topics", async () => {
+        plugin = new ServerlessOfflineSns(createServerless(accountId), {});
+        const snsAdapter = await plugin.start();
+        const { Topics } = await snsAdapter.listTopics();
+        await new Promise(res => setTimeout(res, 100));
+        const topicArns = Topics.map(topic => topic.TopicArn);
+        expect(Topics.length).to.eq(4);
+        expect(topicArns).to.include(`arn:aws:sns:us-east-1:${accountId}:test-topic`);
+    });
 });
 
 const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null, subscribeEndpoint = null) => {

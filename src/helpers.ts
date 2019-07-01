@@ -106,3 +106,12 @@ export function validatePhoneNumber(phoneNumber) {
     }
     return phoneNumber;
 }
+
+// the topics name is that last part of the ARN:
+// arn:aws:sns:<REGION>:<ACCOUNT_ID>:<TOPIC_NAME>
+export const topicNameFromArn = arn => {
+    const arnParts = arn.split(":");
+    return arnParts[arnParts.length - 1];
+};
+
+export const topicArnFromName = (name, region, accountId) => `arn:aws:sns:${region}:${accountId}:${name}`;

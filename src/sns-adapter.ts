@@ -1,5 +1,5 @@
 import * as AWS from "aws-sdk";
-import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap } from "aws-sdk/clients/sns.d";
+import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap, ListTopicsResponse } from "aws-sdk/clients/sns.d";
 import { ISNSAdapter, IDebug } from "./types";
 import fetch from "node-fetch";
 import * as _ from "lodash";
@@ -40,6 +40,23 @@ export class SNSAdapter implements ISNSAdapter {
             endpoint: this.endpoint,
             region,
         });
+    }
+
+    public async listTopics(): Promise<ListTopicsResponse> {
+      this.debug("listing topics");
+      const req = this.sns.listTopics({});
+      this.debug(JSON.stringify(req.httpRequest));
+
+      return await new Promise(res => {
+        this.sns.listTopics({}, (err, topics) => {
+          if (err) {
+            this.debug(err, err.stack);
+          } else {
+            this.debug(JSON.stringify(topics));
+          }
+          res(topics);
+        });
+      });
     }
 
     public async listSubscriptions(): Promise<ListSubscriptionsResponse> {

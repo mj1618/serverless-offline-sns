@@ -7,6 +7,7 @@ import { SNSServer } from "./sns-server";
 import * as _ from "lodash";
 import * as AWS from "aws-sdk";
 import { resolve } from "path";
+import { topicNameFromArn } from "./helpers";
 
 class ServerlessOfflineSns {
     private config: any;
@@ -147,18 +148,20 @@ class ServerlessOfflineSns {
         if (typeof snsConfig === "string" || typeof snsConfig.topicName === "string") {
             let topicName = "";
             // According to Serverless docs, if the sns config is a string,
-            // that string must be the topic ARN:
-            // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic
-            if (typeof snsConfig === "string" && snsConfig.indexOf("arn:aws:sns") === 0) {
-                const snsConfigParts = snsConfig.split(":");
-                // the topics name is that last part of the ARN:
-                // arn:aws:sns:<REGION>:<ACCOUNT_ID>:<TOPIC_NAME>
-                topicName = snsConfigParts[snsConfigParts.length - 1];
+            // that string can be a topic Name or a topic ARN (to use an existing topic):
+            // https://serverless.com/framework/docs/providers/aws/events/sns
+            if (typeof snsConfig === "string") {
+                if (snsConfig.indexOf("arn:aws:sns") === 0) {
+                    topicName = topicNameFromArn(snsConfig);
+                } else {
+                    topicName = snsConfig;
+                }
             } else if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
                 topicName = snsConfig.topicName;
             }
 
             if (!topicName) {
+                this.log(`Unable to create topic for "${fnName}". Please ensure the sns configuration is correct.`);
                 return Promise.resolve(`Unable to create topic for "${fnName}". Please ensure the sns configuration is correct.`);
             }
 
@@ -167,6 +170,9 @@ class ServerlessOfflineSns {
             this.debug("topic: " + JSON.stringify(data));
             await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), data.TopicArn, snsConfig);
         } else if (typeof snsConfig.arn === "string") {
+            const topicName = topicNameFromArn(snsConfig.arn);
+            this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
+            await this.snsAdapter.createTopic(topicName);
             await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), snsConfig.arn, snsConfig);
         } else {
             this.log("unsupported config: " + snsConfig);
