@@ -126,10 +126,16 @@ export class SNSServer implements ISNSServer {
     }
 
     public createTopic(topicName) {
-        const topic = {
-            TopicArn: `arn:aws:sns:${this.region}:${this.accountId}:${topicName}`,
-        };
-        this.topics.push(topic);
+        const topicArn = `arn:aws:sns:${this.region}:${this.accountId}:${topicName}`;
+        const existingTopic = this.topics.find(topic => {
+            return topic.TopicArn === topicArn;
+        });
+        if (existingTopic) {
+            const topic = {
+                TopicArn: topicArn,
+            };
+            this.topics.push(topic);
+        }
         return {
             CreateTopicResponse: [
                 createAttr(),
@@ -137,7 +143,7 @@ export class SNSServer implements ISNSServer {
                 {
                     CreateTopicResult: [
                         {
-                            TopicArn: topic.TopicArn,
+                            TopicArn: topicArn,
                         },
                     ],
                 },
@@ -149,16 +155,25 @@ export class SNSServer implements ISNSServer {
         const attributes = parseAttributes(body);
         const filterPolicies = attributes["FilterPolicy"] && JSON.parse(attributes["FilterPolicy"]);
         arn = this.convertPseudoParams(arn);
-        const sub = {
-            SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
-            Protocol: protocol,
-            TopicArn: arn,
-            Endpoint: endpoint,
-            Owner: "",
-            Attributes: attributes,
-            Policies: filterPolicies,
-        };
-        this.subscriptions.push(sub);
+        const existingSubscription = this.subscriptions.find(subscription => {
+            return subscription.Endpoint === endpoint && subscription.TopicArn === arn;
+        });
+        let subscriptionArn;
+        if (!existingSubscription) {
+            const sub = {
+                SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
+                Protocol: protocol,
+                TopicArn: arn,
+                Endpoint: endpoint,
+                Owner: "",
+                Attributes: attributes,
+                Policies: filterPolicies,
+            };
+            this.subscriptions.push(sub);
+            subscriptionArn = sub.SubscriptionArn;
+        } else {
+            subscriptionArn = existingSubscription.SubscriptionArn;
+        }
         return {
             SubscribeResponse: [
                 createAttr(),
@@ -166,7 +181,7 @@ export class SNSServer implements ISNSServer {
                 {
                     SubscribeResult: [
                         {
-                            SubscriptionArn: sub.SubscriptionArn,
+                            SubscriptionArn: subscriptionArn,
                         },
                     ],
                 },
