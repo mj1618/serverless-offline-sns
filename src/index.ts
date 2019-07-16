@@ -8,6 +8,8 @@ import * as _ from "lodash";
 import * as AWS from "aws-sdk";
 import { resolve } from "path";
 
+import { fork, spawn } from "child_process";
+
 class ServerlessOfflineSns {
     private config: any;
     private serverless: any;
@@ -165,16 +167,119 @@ class ServerlessOfflineSns {
             this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
             const data = await this.snsAdapter.createTopic(topicName);
             this.debug("topic: " + JSON.stringify(data));
-            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), data.TopicArn, snsConfig);
+            await this.snsAdapter.subscribe(fn, () => this.createHandler(fnName, fn), data.TopicArn, snsConfig);
         } else if (typeof snsConfig.arn === "string") {
-            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), snsConfig.arn, snsConfig);
+            await this.snsAdapter.subscribe(fn, () => this.createHandler(fnName, fn), snsConfig.arn, snsConfig);
         } else {
             this.log("unsupported config: " + snsConfig);
             return Promise.resolve("unsupported config: " + snsConfig);
         }
     }
 
-    public createHandler(fn) {
+    public createHandler(fnName, fn) {
+        if (!fn.runtime || fn.runtime.startsWith("nodejs")) {
+            return this.createJavascriptHandler(fn);
+        } else {
+            return this.createProxyHandler(fnName, fn);
+        }
+    }
+
+    public createProxyHandler(funName, funOptions) {
+        const options = this.options;
+        // stolen from serverless-offline as POC to see if python lambdas can be run in offline-sns.
+        // long term plan, depend on serverless-offline if its installed to handle non js execution
+        return (event, context) => {
+            const args = ["invoke", "local", "-f", funName];
+            const stage = options.s || options.stage;
+
+            if (stage) {
+                args.push("-s", stage);
+            }
+
+            // Use path to binary if provided, otherwise assume globally-installed
+            const binPath = options.b || options.binPath;
+            const cmd = binPath || "sls";
+
+            const process = spawn(cmd, args, {
+                cwd: funOptions.servicePath,
+                shell: true,
+                stdio: ["pipe", "pipe", "pipe"],
+            });
+
+            process.stdin.write(`${JSON.stringify(event)}\n`);
+            process.stdin.end();
+
+            const results = [];
+
+            process.stdout.on("data", (data) => {
+                results.push(data.toString());
+            });
+
+            process.stderr.on("data", data => {
+                context.fail(data);
+            });
+
+            process.on("close", code => {
+                if (code.toString() === "0") {
+                    // try to parse to json
+                    // valid result should be a json array | object
+                    // technically a string is valid json
+                    // but everything comes back as a string
+                    // so we can't reliably detect json primitives with this method
+                    let response = null;
+                    // we go end to start because the one we want should be last
+                    // or next to last
+                    for (let i = results.length - 1; i >= 0; i--) {
+                        // now we need to find the min | max [] or {} within the string
+                        // if both exist then we need the outer one.
+                        // { "something": [] } is valid,
+                        // [{"something": "valid"}] is also valid
+                        // *NOTE* Doesn't currently support 2 separate valid json bundles
+                        // within a single result.
+                        // this can happen if you use a python logger
+                        // and then do log.warn(json.dumps({'stuff': 'here'}))
+                        const item = results[i];
+                        const firstCurly = item.indexOf("{");
+                        const firstSquare = item.indexOf("[");
+                        let start = 0;
+                        let end = item.length;
+                        if (firstCurly === -1 && firstSquare === -1) {
+                            // no json found
+                            continue;
+                        }
+                        if (firstSquare === -1 || firstCurly < firstSquare) {
+                            // found an object
+                            start = firstCurly;
+                            end = item.lastIndexOf("}") + 1;
+                        } else if (firstCurly === -1 || firstSquare < firstCurly) {
+                            // found an array
+                            start = firstSquare;
+                            end = item.lastIndexOf("]") + 1;
+                        }
+
+                        try {
+                            response = JSON.parse(item.substring(start, end));
+                            break;
+                        } catch (err) {
+                            // not json, check the next one
+                            continue;
+                        }
+                    }
+                    if (response !== null) {
+                        context.succeed(response);
+                    } else {
+                        context.fail(results.join("\n"));
+                    }
+
+                } else {
+                    // this seems wrong, should we succeed here?
+                    context.succeed(code, results);
+                }
+            });
+        };
+    }
+
+    public createJavascriptHandler(fn) {
 
         // use the main serverless config since this behavior is already supported there
         if (!this.serverless.config.skipCacheInvalidation || Array.isArray(this.serverless.config.skipCacheInvalidation)) {
