@@ -28,6 +28,11 @@ class ServerlessOfflineSns {
     constructor(serverless: any, options: any) {
         this.app = express();
         this.app.use(cors());
+        this.app.use((req, res, next) => {
+            // fix for https://github.com/s12v/sns/issues/45 not sending content-type
+            req.headers["content-type"] = req.headers["content-type"] || "text/plain";
+            next();
+        });
         this.app.use(bodyParser.json({ type: ["application/json", "text/plain"] }));
         this.options = options;
         this.serverless = serverless;
@@ -211,14 +216,19 @@ class ServerlessOfflineSns {
             let error = false;
 
             process.stdout.on("data", (data) => {
-                const str = data.toString();
-                if (str) {
-                    results.push(data.toString());
+                if (data) {
+                    const str = data.toString();
+                    if (str) {
+                        // should we check the debug flag & only log if debug is true?
+                        console.log(str);
+                        results.push(data.toString());
+                    }
                 }
             });
 
             process.stderr.on("data", data => {
                 error = true;
+                console.warn("error", data);
                 context.fail(data);
             });
 
