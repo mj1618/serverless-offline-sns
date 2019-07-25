@@ -186,8 +186,6 @@ class ServerlessOfflineSns {
 
     public createProxyHandler(funName, funOptions) {
         const options = this.options;
-        // stolen from serverless-offline as POC to see if python lambdas can be run in offline-sns.
-        // long term plan, depend on serverless-offline if its installed to handle non js execution
         return (event, context) => {
             const args = ["invoke", "local", "-f", funName];
             const stage = options.s || options.stage;
@@ -210,17 +208,22 @@ class ServerlessOfflineSns {
             process.stdin.end();
 
             const results = [];
+            let error = false;
 
             process.stdout.on("data", (data) => {
-                results.push(data.toString());
+                const str = data.toString();
+                if (str) {
+                    results.push(data.toString());
+                }
             });
 
             process.stderr.on("data", data => {
+                error = true;
                 context.fail(data);
             });
 
             process.on("close", code => {
-                if (code.toString() === "0") {
+                if (!error) {
                     // try to parse to json
                     // valid result should be a json array | object
                     // technically a string is valid json
@@ -268,12 +271,8 @@ class ServerlessOfflineSns {
                     if (response !== null) {
                         context.succeed(response);
                     } else {
-                        context.fail(results.join("\n"));
+                        context.succeed(results.join("\n"));
                     }
-
-                } else {
-                    // this seems wrong, should we succeed here?
-                    context.succeed(code, results);
                 }
             });
         };

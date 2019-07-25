@@ -104,14 +104,20 @@ export class SNSAdapter implements ISNSAdapter {
             if (req.is("text/plain")) {
                 event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
-            const sendIt = (data) => {
-                res.send(data);
+            const sendIt = (err, data) => {
                 process.env = oldEnv;
-                this.sent(data);
+                if (err) {
+                    res.status(500).send(err);
+                    this.sent(err);
+                } else {
+                    res.send(data);
+                    this.sent(data);
+                }
             };
-            const maybePromise = getHandler()(event, this.createLambdaContext(fn), sendIt);
+            const maybePromise = getHandler()(event, this.createLambdaContext(fn, sendIt), sendIt);
             if (maybePromise && maybePromise.then) {
-                maybePromise.then(sendIt);
+                maybePromise.then((data) => sendIt(null, data));
+                maybePromise.catch((err) => sendIt(err, null));
             }
         });
         const params = {
