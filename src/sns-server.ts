@@ -126,10 +126,16 @@ export class SNSServer implements ISNSServer {
     }
 
     public createTopic(topicName) {
-        const topic = {
-            TopicArn: `arn:aws:sns:${this.region}:${this.accountId}:${topicName}`,
-        };
-        this.topics.push(topic);
+        const topicArn = `arn:aws:sns:${this.region}:${this.accountId}:${topicName}`;
+        const existingTopic = this.topics.find(topic => {
+            return topic.TopicArn === topicArn;
+        });
+        if (existingTopic) {
+            const topic = {
+                TopicArn: topicArn,
+            };
+            this.topics.push(topic);
+        }
         return {
             CreateTopicResponse: [
                 createAttr(),
@@ -137,7 +143,7 @@ export class SNSServer implements ISNSServer {
                 {
                     CreateTopicResult: [
                         {
-                            TopicArn: topic.TopicArn,
+                            TopicArn: topicArn,
                         },
                     ],
                 },
@@ -149,16 +155,25 @@ export class SNSServer implements ISNSServer {
         const attributes = parseAttributes(body);
         const filterPolicies = attributes["FilterPolicy"] && JSON.parse(attributes["FilterPolicy"]);
         arn = this.convertPseudoParams(arn);
-        const sub = {
-            SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
-            Protocol: protocol,
-            TopicArn: arn,
-            Endpoint: endpoint,
-            Owner: "",
-            Attributes: attributes,
-            Policies: filterPolicies,
-        };
-        this.subscriptions.push(sub);
+        const existingSubscription = this.subscriptions.find(subscription => {
+            return subscription.Endpoint === endpoint && subscription.TopicArn === arn;
+        });
+        let subscriptionArn;
+        if (!existingSubscription) {
+            const sub = {
+                SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
+                Protocol: protocol,
+                TopicArn: arn,
+                Endpoint: endpoint,
+                Owner: "",
+                Attributes: attributes,
+                Policies: filterPolicies,
+            };
+            this.subscriptions.push(sub);
+            subscriptionArn = sub.SubscriptionArn;
+        } else {
+            subscriptionArn = existingSubscription.SubscriptionArn;
+        }
         return {
             SubscribeResponse: [
                 createAttr(),
@@ -166,7 +181,7 @@ export class SNSServer implements ISNSServer {
                 {
                     SubscribeResult: [
                         {
-                            SubscriptionArn: sub.SubscriptionArn,
+                            SubscriptionArn: subscriptionArn,
                         },
                     ],
                 },
@@ -190,6 +205,9 @@ export class SNSServer implements ISNSServer {
             if (_.intersection(v, attrs).length > 0) {
                 this.debug("filterPolicy Passed: " + v + " matched message attrs: " + JSON.stringify(attrs));
                 shouldSend = true;
+            } else {
+                shouldSend = false;
+                break;
             }
         }
         if (!shouldSend) { this.debug("filterPolicy Failed: " + JSON.stringify(policies) + " did not match message attrs: " + JSON.stringify(messageAttrs)); }
@@ -213,17 +231,24 @@ export class SNSServer implements ISNSServer {
         const subEndpointUrl = new URL(sub.Endpoint);
         const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
         const sqs = new SQS({ endpoint: sqsEndpoint, region: this.region });
-        
-        const records = JSON.parse(event).Records;
-        const messagePromises = records.map(record => {
-            return sqs
-                .sendMessage({
-                    QueueUrl: sub.Endpoint,
-                    MessageBody: JSON.stringify(record.Sns),
-                })
-                .promise();
-        });
-        return Promise.all(messagePromises);
+
+        if (sub["Attributes"]["RawMessageDelivery"] === "true") {
+            return sqs.sendMessage({
+                QueueUrl: sub.Endpoint,
+                MessageBody: event,
+            }).promise();
+        } else {
+            const records = JSON.parse(event).Records;
+            const messagePromises = records.map(record => {
+                return sqs
+                    .sendMessage({
+                        QueueUrl: sub.Endpoint,
+                        MessageBody: JSON.stringify(record.Sns),
+                    })
+                    .promise();
+            });
+            return Promise.all(messagePromises);
+        }
     }
 
     public publish(topicArn, subject, message, messageType, messageAttributes) {
