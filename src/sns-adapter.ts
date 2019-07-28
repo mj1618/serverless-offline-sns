@@ -100,11 +100,10 @@ export class SNSAdapter implements ISNSAdapter {
             process.env = _.extend({}, process.env, fn.environment);
 
             let event = req.body;
-            if (req.is("text/plain")) {
+            if (req.is("text/plain") && req.get("x-amz-sns-rawdelivery") !== "true") {
                 event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
             const sendIt = (error, response) => {
-                console.log("sending it", response);
                 if (error) {
                     res.send(error);
                     process.env = oldEnv;

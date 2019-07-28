@@ -215,12 +215,13 @@ export class SNSServer implements ISNSServer {
         return shouldSend;
     }
 
-    private publishHttp(event, sub) {
+    private publishHttp(event, sub, raw) {
         return fetch(sub.Endpoint, {
             method: "POST",
             body: event,
             timeout: 0,
             headers: {
+                "x-amz-sns-rawdelivery": "" + raw,
                 "Content-Type": "text/plain; charset=UTF-8",
                 "Content-Length": Buffer.byteLength(event),
             },
@@ -255,13 +256,14 @@ export class SNSServer implements ISNSServer {
     public publish(topicArn, subject, message, messageType, messageAttributes) {
         const messageId = createMessageId();
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
+            const isRaw = sub["Attributes"]["RawMessageDelivery"] === "true";
             if (sub["Policies"] && !this.evaluatePolicies(sub["Policies"], messageAttributes)) {
                 this.debug("Filter policies failed. Skipping subscription: " + sub.Endpoint);
                 return;
             }
             this.debug("fetching: " + sub.Endpoint);
             let event;
-            if (sub["Attributes"]["RawMessageDelivery"] === "true") {
+            if (isRaw) {
                 event = message;
             } else {
                 event = JSON.stringify(createSnsTopicEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
@@ -272,7 +274,7 @@ export class SNSServer implements ISNSServer {
             }
             const protocol = sub.Protocol.toLowerCase();
             if (protocol === "http") {
-                return this.publishHttp(event, sub);
+                return this.publishHttp(event, sub, isRaw);
             }
             if (protocol === "sqs") {
                 return this.publishSqs(event, sub);

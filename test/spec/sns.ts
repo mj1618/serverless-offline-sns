@@ -69,8 +69,8 @@ describe("test", () => {
         );
         await new Promise(res => setTimeout(res, 100));
         const event = state.getEvent();
-        expect(event).to.have.property("Message", "message with attributes");
-        expect(event).to.have.deep.property(
+        expect(event.Records[0].Sns).to.have.property("Message", "message with attributes");
+        expect(event.Records[0].Sns).to.have.deep.property(
             "MessageAttributes",
             {
                 with: {
@@ -160,7 +160,7 @@ describe("test", () => {
     it("should convert pseudo param on load", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId, "pseudoHandler"), {skipCacheInvalidation: true});
         const snsAdapter = await plugin.start();
-        await snsAdapter.publish("arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-3", "{}");
+        await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic-3`, "{}");
         expect(await state.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-3`);
     });
 
@@ -223,7 +223,7 @@ describe("test", () => {
         );
         await new Promise(res => setTimeout(res, 100));
         const event = state.getEvent();
-        expect(event.Message).to.not.be.empty;
+        expect(event.Records[0].Sns.Message).to.not.be.empty;
     });
 
     it("should not send event when multiple filter policies exist and the message only contains one", async () => {
