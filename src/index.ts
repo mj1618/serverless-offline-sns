@@ -139,39 +139,34 @@ class ServerlessOfflineSns {
 
     public async subscribe(fnName, snsConfig) {
         this.debug("subscribe: " + fnName);
-        // name = event.sns ||
-        // name = event.sns.topicName ||
-        // arn = event.sns.arn ||
-        // arn = event.sns.arn && topicName = event.sns.topicName
         const fn = this.serverless.service.functions[fnName];
-        if (typeof snsConfig === "string" || typeof snsConfig.topicName === "string") {
-            let topicName = "";
-            // According to Serverless docs, if the sns config is a string,
-            // that string must be the topic ARN:
-            // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic
-            if (typeof snsConfig === "string" && snsConfig.indexOf("arn:aws:sns") === 0) {
+        let topicName = "";
+        // According to Serverless docs, if the sns config is a string,
+        // that string must be the topic ARN:
+        // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic
+        if (typeof snsConfig === "string") {
+            if (snsConfig.indexOf("arn:aws:sns") === 0) {
                 const snsConfigParts = snsConfig.split(":");
-                // the topics name is that last part of the ARN:
-                // arn:aws:sns:<REGION>:<ACCOUNT_ID>:<TOPIC_NAME>
                 topicName = snsConfigParts[snsConfigParts.length - 1];
-            } else if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
-                topicName = snsConfig.topicName;
+            } else {
+                topicName = snsConfig;
             }
+        } else if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
+            topicName = snsConfig.topicName;
+        } else if (snsConfig.arn && typeof snsConfig.arn === "string") {
+            const snsConfigParts = snsConfig.arn.split(":");
+            topicName = snsConfigParts[snsConfigParts.length - 1];
+        }
 
-            if (!topicName) {
-                return Promise.resolve(`Unable to create topic for "${fnName}". Please ensure the sns configuration is correct.`);
-            }
-
-            this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
-            const data = await this.snsAdapter.createTopic(topicName);
-            this.debug("topic: " + JSON.stringify(data));
-            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), data.TopicArn, snsConfig);
-        } else if (typeof snsConfig.arn === "string") {
-            await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), snsConfig.arn, snsConfig);
-        } else {
+        if (!topicName) {
             this.log("unsupported config: " + snsConfig);
             return Promise.resolve("unsupported config: " + snsConfig);
         }
+
+        this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
+        const data = await this.snsAdapter.createTopic(topicName);
+        this.debug("topic: " + JSON.stringify(data));
+        await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), data.TopicArn, snsConfig);
     }
 
     public createHandler(fn) {
