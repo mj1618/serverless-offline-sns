@@ -1,9 +1,8 @@
 import * as AWS from "aws-sdk";
 import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap } from "aws-sdk/clients/sns.d";
 import { ISNSAdapter, IDebug } from "./types";
-import fetch from "node-fetch";
 import * as _ from "lodash";
-import { createSnsEvent, createMessageId } from "./helpers";
+import { createSnsLambdaEvent, createMessageId } from "./helpers";
 
 export class SNSAdapter implements ISNSAdapter {
     private sns: AWS.SNS;
@@ -102,16 +101,25 @@ export class SNSAdapter implements ISNSAdapter {
 
             let event = req.body;
             if (req.is("text/plain")) {
-                event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
+                event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
             }
-            const sendIt = (data) => {
-                res.send(data);
-                process.env = oldEnv;
-                this.sent(data);
+            const sendIt = (error, response) => {
+                console.log("sending it", response);
+                if (error) {
+                    res.send(error);
+                    process.env = oldEnv;
+                    this.sent(error);
+                } else {
+                    res.send(response);
+                    process.env = oldEnv;
+                    this.sent(response);
+                }
             };
             const maybePromise = getHandler()(event, this.createLambdaContext(fn), sendIt);
             if (maybePromise && maybePromise.then) {
-                maybePromise.then(sendIt);
+                maybePromise
+                    .then(response => sendIt(null, response))
+                    .catch(error => sendIt(error, null));
             }
         });
         const params = {

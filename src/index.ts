@@ -175,7 +175,7 @@ class ServerlessOfflineSns {
     }
 
     public createHandler(fn) {
-        
+
         // Options are passed from the command line in the options parameter
         // ### OLD: use the main serverless config since this behavior is already supported there
         if (!this.options.skipCacheInvalidation || Array.isArray(this.options.skipCacheInvalidation)) {

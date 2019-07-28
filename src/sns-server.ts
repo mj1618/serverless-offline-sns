@@ -10,7 +10,7 @@ import {
     arrayify,
     createAttr,
     createMetadata,
-    createSnsEvent,
+    createSnsTopicEvent,
     parseMessageAttributes,
     parseAttributes,
     createMessageId,
@@ -221,10 +221,11 @@ export class SNSServer implements ISNSServer {
             body: event,
             timeout: 0,
             headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "text/plain; charset=UTF-8",
                 "Content-Length": Buffer.byteLength(event),
             },
-        }).then(res => this.debug(res));
+        }).then(res => this.debug(res))
+        .catch(ex => this.debug(ex));
     }
 
     private publishSqs(event, sub) {
@@ -263,7 +264,7 @@ export class SNSServer implements ISNSServer {
             if (sub["Attributes"]["RawMessageDelivery"] === "true") {
                 event = message;
             } else {
-                event = JSON.stringify(createSnsEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
+                event = JSON.stringify(createSnsTopicEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
             }
             this.debug("event: " + event);
             if (!sub.Protocol) {
@@ -311,6 +312,11 @@ export class SNSServer implements ISNSServer {
     }
 
     public debug(msg) {
-        this.pluginDebug(msg, "server");
+      if (msg instanceof Object) {
+        try {
+            msg = JSON.stringify(msg);
+        } catch (ex) {}
+      }
+      this.pluginDebug(msg, "server");
     }
 }

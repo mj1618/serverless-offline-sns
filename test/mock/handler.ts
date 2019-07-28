@@ -20,12 +20,12 @@ export const envHandler = (evt, ctx, cb) => {
 };
 
 export const pseudoHandler = (evt, ctx, cb) => {
-    setResult(evt.Records[0].Sns.TopicArn);
+    setResult(evt.TopicArn);
     cb("{}");
 };
 
 export const asyncHandler = async (evt, ctx) => {
     await new Promise(res => setTimeout(res, 100));
-    setResult(evt.Records[0].Sns.TopicArn);
-    return "{}"
+    setResult(evt.TopicArn);
+    return "{}";
 };

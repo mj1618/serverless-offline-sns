@@ -69,10 +69,8 @@ describe("test", () => {
         );
         await new Promise(res => setTimeout(res, 100));
         const event = state.getEvent();
-        const record = event.Records[0];
-        expect(record).to.include.keys("Sns");
-        expect(record.Sns).to.have.property("Message", "message with attributes");
-        expect(record.Sns).to.have.deep.property(
+        expect(event).to.have.property("Message", "message with attributes");
+        expect(event).to.have.deep.property(
             "MessageAttributes",
             {
                 with: {
@@ -170,12 +168,12 @@ describe("test", () => {
         plugin = new ServerlessOfflineSns(createServerlessCacheInvalidation(accountId), {skipCacheInvalidation: [
             /mock\.state/,
         ]});
-        
+
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(state.getPongs()).to.eq(1, "wrong number of pongs (first check)");
-        
+
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(state.getPongs(), "wrong number of pongs (second check)").to.eq(1);
@@ -225,8 +223,7 @@ describe("test", () => {
         );
         await new Promise(res => setTimeout(res, 100));
         const event = state.getEvent();
-        const record = event.Records[0];
-        expect(record).to.exist;
+        expect(event.Message).to.not.be.empty;
     });
 
     it("should not send event when multiple filter policies exist and the message only contains one", async () => {
@@ -237,7 +234,7 @@ describe("test", () => {
             "message with filter params",
             "raw",
             {
-                foo: { DataType: "String", StringValue: "bar" }
+                foo: { DataType: "String", StringValue: "bar" },
             },
         );
         await new Promise(res => setTimeout(res, 100));
@@ -253,7 +250,7 @@ describe("test", () => {
             "raw",
             {
                 foo: { DataType: "String", StringValue: "bar" },
-                second: { DataType: "String", StringValue: "bar" }
+                second: { DataType: "String", StringValue: "bar" },
             },
         );
         await new Promise(res => setTimeout(res, 100));
@@ -261,8 +258,8 @@ describe("test", () => {
     });
 
     it("should not wrap the event when the sub's raw message delivery is true", async () => {
-        let serverless = createServerless(accountId);
-        serverless.service.functions.pong4.events[0].sns['rawMessageDelivery'] = 'true';
+        const serverless = createServerless(accountId);
+        serverless.service.functions.pong4.events[0].sns["rawMessageDelivery"] = "true";
         plugin = new ServerlessOfflineSns(serverless, {skipCacheInvalidation: true});
 
         const snsAdapter = await plugin.start();
@@ -271,8 +268,8 @@ describe("test", () => {
             '{"message":"hello"}',
         );
         await new Promise(res => setTimeout(res, 100));
-        expect(state.getEvent()).to.eql({ message: "hello" })
-    })
+        expect(state.getEvent()).to.eql({ message: "hello" });
+    });
 });
 
 const createServerless = (accountId: number, handlerName: string = "pongHandler", host: string = null, subscribeEndpoint = null) => {
