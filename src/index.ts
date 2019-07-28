@@ -48,6 +48,7 @@ class ServerlessOfflineSns {
         };
 
         this.hooks = {
+            "before:offline:start": () => this.start(),
             "before:offline:start:init": () => this.start(),
             "after:offline:start:end": () => this.stop(),
             "offline-sns:start:init": () => {
