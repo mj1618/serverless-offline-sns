@@ -218,8 +218,19 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "victorsferreira",
+      "name": "Victor Ferreira",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/25830138?v=4",
+      "profile": "https://github.com/victorsferreira",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "repoType": "github",
-  "contributorsPerLine": 7
+  "contributorsPerLine": 7,
+  "repoHost": "https://github.com"
 }
