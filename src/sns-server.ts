@@ -205,6 +205,9 @@ export class SNSServer implements ISNSServer {
             if (_.intersection(v, attrs).length > 0) {
                 this.debug("filterPolicy Passed: " + v + " matched message attrs: " + JSON.stringify(attrs));
                 shouldSend = true;
+            } else {
+                shouldSend = false;
+                break;
             }
         }
         if (!shouldSend) { this.debug("filterPolicy Failed: " + JSON.stringify(policies) + " did not match message attrs: " + JSON.stringify(messageAttrs)); }

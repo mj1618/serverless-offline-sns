@@ -229,6 +229,21 @@ describe("test", () => {
         expect(record).to.exist;
     });
 
+    it("should not send event when multiple filter policies exist and the message only contains one", async () => {
+        plugin = new ServerlessOfflineSns(createServerlessWithFilterPolicies(accountId), {});
+        const snsAdapter = await plugin.start();
+        await snsAdapter.publish(
+            `arn:aws:sns:us-east-1:${accountId}:test-topic-policies-multiple`,
+            "message with filter params",
+            "raw",
+            {
+                foo: { DataType: "String", StringValue: "bar" }
+            },
+        );
+        await new Promise(res => setTimeout(res, 100));
+        expect(state.getPongs()).to.eq(0);
+    });
+
     it("should not send event when multiple filter policies exist and the message only satisfies one", async () => {
         plugin = new ServerlessOfflineSns(createServerlessWithFilterPolicies(accountId), {});
         const snsAdapter = await plugin.start();
@@ -238,6 +253,7 @@ describe("test", () => {
             "raw",
             {
                 foo: { DataType: "String", StringValue: "bar" },
+                second: { DataType: "String", StringValue: "bar" }
             },
         );
         await new Promise(res => setTimeout(res, 100));
