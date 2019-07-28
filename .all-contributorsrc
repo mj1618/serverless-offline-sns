@@ -218,8 +218,19 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "mteleskycmp",
+      "name": "Matt Telesky",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/47985584?v=4",
+      "profile": "https://github.com/mteleskycmp",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "repoType": "github",
-  "contributorsPerLine": 7
+  "contributorsPerLine": 7,
+  "repoHost": "https://github.com"
 }
