@@ -218,8 +218,19 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "perkyguy",
+      "name": "Garrett Scott",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/4624648?v=4",
+      "profile": "https://github.com/perkyguy",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "repoType": "github",
-  "contributorsPerLine": 7
+  "contributorsPerLine": 7,
+  "repoHost": "https://github.com"
 }
