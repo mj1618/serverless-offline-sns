@@ -72,14 +72,15 @@ functions:
       - sns: test-topic
 ```
 
-Or you can use the exact ARN of the topic:
+Or you can use the exact ARN of the topic, in 2 ways:
 ```YAML
 functions:
   pong:
     handler: handler.pong
     events:
       - sns:
-         arn: "arn:aws:sns:us-east-1:123456789012:test-topic"
+         arn: "arn:aws:sns:us-east-1:123456789012:test-topic" # 1st way
+      - sns: "arn:aws:sns:us-east-1:123456789012:test-topic-two" # 2nd way
 ```
 
 Here's a demo of some code that will trigger this handler:
