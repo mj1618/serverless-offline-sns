@@ -234,6 +234,7 @@ class ServerlessOfflineSns {
                 this.debug(`listening on ${host}:${this.port}`);
                 res();
             });
+            this.server.setTimeout(0);
         });
     }
 
