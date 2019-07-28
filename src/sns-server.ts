@@ -58,7 +58,15 @@ export class SNSServer implements ISNSServer {
             } else if (req.body.Action === "Subscribe") {
                 res.send(xml(this.subscribe(req.body.Endpoint, req.body.Protocol, req.body.TopicArn, req.body)));
             } else if (req.body.Action === "Publish") {
+
                 const target = this.extractTarget(req.body);
+                if (req.body.MessageStructure === "json") {
+                  const json = JSON.parse(req.body.Message);
+                  if (typeof json.default !== "string") {
+                    throw new Error("Messages must have default key");
+                  }
+                }
+
                 res.send(
                     xml(
                         this.publish(
@@ -253,7 +261,7 @@ export class SNSServer implements ISNSServer {
         }
     }
 
-    public publish(topicArn, subject, message, messageType, messageAttributes) {
+    public publish(topicArn, subject, message, messageStructure, messageAttributes) {
         const messageId = createMessageId();
         Promise.all(this.subscriptions.filter(sub => sub.TopicArn === topicArn).map(sub => {
             const isRaw = sub["Attributes"]["RawMessageDelivery"] === "true";
@@ -266,7 +274,7 @@ export class SNSServer implements ISNSServer {
             if (isRaw) {
                 event = message;
             } else {
-                event = JSON.stringify(createSnsTopicEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageAttributes));
+                event = JSON.stringify(createSnsTopicEvent(topicArn, sub.SubscriptionArn, subject, message, messageId, messageStructure, messageAttributes));
             }
             this.debug("event: " + event);
             if (!sub.Protocol) {

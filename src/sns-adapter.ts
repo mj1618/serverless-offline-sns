@@ -101,7 +101,8 @@ export class SNSAdapter implements ISNSAdapter {
 
             let event = req.body;
             if (req.is("text/plain") && req.get("x-amz-sns-rawdelivery") !== "true") {
-                event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
+                const msg = event.MessageStructure === "json" ? JSON.parse(event.Message).default : event.Message;
+                event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", msg, createMessageId(), event.MessageAttributes || {});
             }
             const sendIt = (error, response) => {
                 if (error) {
@@ -152,7 +153,7 @@ export class SNSAdapter implements ISNSAdapter {
         return topicArn.replace(awsRegex, this.accountId);
     }
 
-    public async publish(topicArn: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
+    public async publish(topicArn: string, message: string, type: string = "", messageAttributes: MessageAttributeMap = {}) {
         topicArn = this.convertPseudoParams(topicArn);
         return await new Promise((resolve, reject) => this.sns.publish({
             Message: message,
@@ -164,7 +165,7 @@ export class SNSAdapter implements ISNSAdapter {
         }));
     }
 
-    public async publishToTargetArn(targetArn: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
+    public async publishToTargetArn(targetArn: string, message: string, type: string = "", messageAttributes: MessageAttributeMap = {}) {
         targetArn = this.convertPseudoParams(targetArn);
         return await new Promise((resolve, reject) => this.sns.publish({
             Message: message,
@@ -176,7 +177,7 @@ export class SNSAdapter implements ISNSAdapter {
         }));
     }
 
-    public async publishToPhoneNumber(phoneNumber: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
+    public async publishToPhoneNumber(phoneNumber: string, message: string, type: string = "", messageAttributes: MessageAttributeMap = {}) {
         return await new Promise((resolve, reject) => this.sns.publish({
             Message: message,
             MessageStructure: type,
