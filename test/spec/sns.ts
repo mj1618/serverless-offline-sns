@@ -279,12 +279,14 @@ const createServerless = (accountId: number, handlerName: string = "pongHandler"
             },
             functions: {
                 pong: {
+                    name: "queue-one",
                     handler: "test/mock/handler." + handlerName,
                     events: [{
                         sns: `arn:aws:sns:us-east-1:${accountId}:test-topic`,
                     }],
                 },
                 pong2: {
+                    name: "queue-two",
                     handler: "test/mock/handler." + handlerName,
                     events: [{
                         sns: {
