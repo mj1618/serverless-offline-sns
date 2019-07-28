@@ -218,8 +218,18 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "shierro",
+      "name": "Theo",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/12129589?v=4",
+      "profile": "https://github.com/shierro",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "repoType": "github",
-  "contributorsPerLine": 7
+  "contributorsPerLine": 7,
+  "repoHost": "https://github.com"
 }
