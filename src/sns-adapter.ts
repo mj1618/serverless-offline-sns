@@ -130,18 +130,17 @@ export class SNSAdapter implements ISNSAdapter {
                 }).then(fetchResponse => this.debug("Subscribed: " + fetchResponse));
             }
 
-            const sendIt = (error, response) => {
-                if (error) {
-                    res.send(error);
-                    process.env = oldEnv;
-                    this.sent(error);
+            const sendIt = (err, response) => {
+                process.env = oldEnv;
+                if (err) {
+                    res.status(500).send(err);
+                    this.sent(err);
                 } else {
                     res.send(response);
-                    process.env = oldEnv;
                     this.sent(response);
                 }
             };
-            const maybePromise = getHandler()(event, this.createLambdaContext(fn), sendIt);
+            const maybePromise = getHandler()(event, this.createLambdaContext(fn, sendIt), sendIt);
             if (maybePromise && maybePromise.then) {
                 maybePromise
                     .then(response => sendIt(null, response))
