@@ -12,7 +12,8 @@ class ServerlessOfflineSns {
     private config: any;
     private serverless: any;
     public commands: object;
-    private port: number;
+    private localPort: number;
+    private remotePort: number;
     public hooks: object;
     private snsAdapter: ISNSAdapter;
     private app: any;
@@ -35,12 +36,18 @@ class ServerlessOfflineSns {
                 usage: "Listens to offline SNS events and passes them to configured Lambda fns",
                 lifecycleEvents: [
                     "start",
+                    "cleanup",
                 ],
                 commands: {
                     start: {
                         lifecycleEvents: [
                             "init",
                             "end",
+                        ],
+                    },
+                    cleanup: {
+                        lifecycleEvents: [
+                            "init",
                         ],
                     },
                 },
@@ -55,6 +62,11 @@ class ServerlessOfflineSns {
                 this.start();
                 return this.waitForSigint();
             },
+            "offline-sns:cleanup:init": async () => {
+                this.init();
+                this.setupSnsAdapter();
+                return this.unsubscribeAll();
+            },
             "offline-sns:start:end": () => this.stop(),
         };
     }
@@ -62,7 +74,8 @@ class ServerlessOfflineSns {
     public init() {
         process.env = _.extend({}, this.serverless.service.provider.environment, process.env);
         this.config = this.serverless.service.custom["serverless-offline-sns"] || {};
-        this.port = this.config.port || 4002;
+        this.localPort = this.config.port || this.config.localPort || 4002;
+        this.remotePort = this.config.port || this.config.remotePort || 4002;
         this.accountId = this.config.accountId || "123456789012";
         const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};
         this.location = process.cwd();
@@ -80,7 +93,7 @@ class ServerlessOfflineSns {
 
         // Congure SNS client to be able to find us.
         AWS.config.sns = {
-            endpoint: "http://127.0.0.1:" + this.port,
+            endpoint: "http://127.0.0.1:" + this.localPort,
             region: this.region,
         };
     }
@@ -107,18 +120,7 @@ class ServerlessOfflineSns {
     }
 
     public async subscribeAll() {
-        this.snsAdapter = new SNSAdapter(
-            this.port,
-            this.serverless.service.provider.region,
-            this.config["sns-endpoint"],
-            (msg, ctx) => this.debug(msg, ctx),
-            this.app,
-            this.serverless.service.service,
-            this.serverless.service.provider.stage,
-            this.accountId,
-            this.config.host,
-            this.config["sns-subscribe-endpoint"],
-        );
+        this.setupSnsAdapter();
         await this.unsubscribeAll();
         this.debug("subscribing");
         await Promise.all(Object.keys(this.serverless.service.functions).map(fnName => {
@@ -134,7 +136,8 @@ class ServerlessOfflineSns {
         this.debug("subs!: " + JSON.stringify(subs));
         await Promise.all(
             subs.Subscriptions
-                .filter(sub => sub.Endpoint.indexOf(":" + this.port) > -1)
+                .filter(sub => sub.Endpoint.indexOf(":" + this.remotePort) > -1)
+                .filter(sub => sub.SubscriptionArn !== "PendingConfirmation")
                 .map(sub => this.snsAdapter.unsubscribe(sub.SubscriptionArn)));
     }
 
@@ -228,8 +231,8 @@ class ServerlessOfflineSns {
             host = this.options.host;
         }
         return new Promise(res => {
-            this.server = this.app.listen(this.port, host, () => {
-                this.debug(`listening on ${host}:${this.port}`);
+            this.server = this.app.listen(this.localPort, host, () => {
+                this.debug(`listening on ${host}:${this.localPort}`);
                 res();
             });
             this.server.setTimeout(0);
@@ -242,6 +245,22 @@ class ServerlessOfflineSns {
         if (this.server) {
             this.server.close();
         }
+    }
+
+    private setupSnsAdapter() {
+        this.snsAdapter = new SNSAdapter(
+            this.localPort,
+            this.remotePort,
+            this.serverless.service.provider.region,
+            this.config["sns-endpoint"],
+            (msg, ctx) => this.debug(msg, ctx),
+            this.app,
+            this.serverless.service.service,
+            this.serverless.service.provider.stage,
+            this.accountId,
+            this.config.host,
+            this.config["sns-subscribe-endpoint"],
+        );
     }
 }
 

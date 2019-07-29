@@ -113,6 +113,21 @@ custom:
 ```
 What happens is that the container running localstack will execute a POST request to the plugin, but to reach outside the container, it needs to use the host ip address.
 
+## Hosted AWS SNS configuration
+
+In order to listen to a hosted SNS on AWS, you need the following:
+```YAML
+custom:
+  serverless-offline-sns:
+    localPort: ${env:LOCAL_PORT}
+    remotePort: ${env:SNS_SUBSCRIBE_REMOTE_PORT}
+    host: 0.0.0.0
+    sns-subscribe-endpoint: ${env:SNS_SUBSCRIBE_ENDPOINT}
+    sns-endpoint: ${env:SNS_ENDPOINT}```
+```
+
+If you want to unsubscribe when you stop your server, then call `sls offline-sns cleanup` when the script exits.
+
 ## Usage
 
 If you use [serverless-offline](https://github.com/dherault/serverless-offline) this plugin will start automatically.

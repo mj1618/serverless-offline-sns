@@ -17,15 +17,14 @@ export class SNSAdapter implements ISNSAdapter {
     private baseSubscribeEndpoint: string;
     private accountId: string;
 
-    constructor(port, region, snsEndpoint, debug, app, serviceName, stage, accountId, host, subscribeEndpoint) {
+    constructor(localPort, remotePort, region, snsEndpoint, debug, app, serviceName, stage, accountId, host, subscribeEndpoint) {
         this.pluginDebug = debug;
-        this.port = port;
         this.app = app;
         this.serviceName = serviceName;
         this.stage = stage;
-        this.adapterEndpoint = `http://${host || "127.0.0.1"}:${port}`;
-        this.baseSubscribeEndpoint = subscribeEndpoint ? `http://${subscribeEndpoint}:${port}` : this.adapterEndpoint;
-        this.endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
+        this.adapterEndpoint = `http://${host || "127.0.0.1"}:${localPort}`;
+        this.baseSubscribeEndpoint = subscribeEndpoint ? `http://${subscribeEndpoint}:${remotePort}` : this.adapterEndpoint;
+        this.endpoint = snsEndpoint || `http://127.0.0.1:${localPort}`;
         this.debug("using endpoint: " + this.endpoint);
         this.accountId = accountId;
         if (!AWS.config.credentials) {
@@ -104,6 +103,15 @@ export class SNSAdapter implements ISNSAdapter {
                 const msg = event.MessageStructure === "json" ? JSON.parse(event.Message).default : event.Message;
                 event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", msg, createMessageId(), event.MessageAttributes || {});
             }
+
+            if (req.body.SubscribeURL) {
+                this.debug("Visiting subscribe url: " + req.body.SubscribeURL);
+                return fetch(req.body.SubscribeURL, {
+                    method: "GET",
+                    timeout: 0,
+                }).then(fetchResponse => this.debug("Subscribed: " + fetchResponse));
+            }
+
             const sendIt = (error, response) => {
                 if (error) {
                     res.send(error);
