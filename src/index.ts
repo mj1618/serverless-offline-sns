@@ -7,6 +7,7 @@ import { SNSServer } from "./sns-server";
 import * as _ from "lodash";
 import * as AWS from "aws-sdk";
 import { resolve } from "path";
+import { topicNameFromArn } from "./helpers";
 
 class ServerlessOfflineSns {
     private config: any;
@@ -145,26 +146,23 @@ class ServerlessOfflineSns {
         this.debug("subscribe: " + fnName);
         const fn = this.serverless.service.functions[fnName];
         let topicName = "";
-        // According to Serverless docs, if the sns config is a string,
-        // that string must be the topic ARN:
+        
         // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic
         if (typeof snsConfig === "string") {
             if (snsConfig.indexOf("arn:aws:sns") === 0) {
-                const snsConfigParts = snsConfig.split(":");
-                topicName = snsConfigParts[snsConfigParts.length - 1];
+                topicName = topicNameFromArn(snsConfig);
             } else {
                 topicName = snsConfig;
             }
         } else if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
             topicName = snsConfig.topicName;
         } else if (snsConfig.arn && typeof snsConfig.arn === "string") {
-            const snsConfigParts = snsConfig.arn.split(":");
-            topicName = snsConfigParts[snsConfigParts.length - 1];
+            topicName = topicNameFromArn(snsConfig.arn);
         }
 
         if (!topicName) {
-            this.log("unsupported config: " + snsConfig);
-            return Promise.resolve("unsupported config: " + snsConfig);
+            this.log(`Unable to create topic for "${fnName}". Please ensure the sns configuration is correct.`);
+            return Promise.resolve(`Unable to create topic for "${fnName}". Please ensure the sns configuration is correct.`);
         }
 
         this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
