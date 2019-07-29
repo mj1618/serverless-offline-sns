@@ -157,7 +157,7 @@ class ServerlessOfflineSns {
         } else if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
             topicName = snsConfig.topicName;
         } else if (snsConfig.arn && typeof snsConfig.arn === "string") {
-            topicName = topicNameFromArn(snsConfig);
+            topicName = topicNameFromArn(snsConfig.arn);
         }
 
         if (!topicName) {
