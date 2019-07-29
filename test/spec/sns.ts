@@ -268,7 +268,7 @@ describe("test", () => {
             '{"message":"hello"}',
         );
         await new Promise(res => setTimeout(res, 100));
-        expect(state.getEvent()).to.eql({ message: "hello" })
+        expect(state.getEvent()).to.eql({ message: "hello" });
     });
 
     it("should list topics", async () => {
