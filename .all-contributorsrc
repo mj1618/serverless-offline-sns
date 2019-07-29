@@ -296,6 +296,16 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "brocksamson",
+      "name": "Matthew Miller",
+      "avatar_url": "https://avatars1.githubusercontent.com/u/314629?v=4",
+      "profile": "https://github.com/brocksamson",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "repoType": "github",
