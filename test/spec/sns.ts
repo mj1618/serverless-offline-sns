@@ -108,7 +108,7 @@ describe("test", () => {
         plugin = new ServerlessOfflineSns(createServerlessBad(accountId), {});
         const snsAdapter = await plugin.start();
         const err = await plugin.subscribe("badPong", createServerlessBad(accountId).service.functions.badPong );
-        expect(err.indexOf("unsupported config:")).to.be.greaterThan(-1);
+        expect(err.indexOf("Please ensure the sns configuration is correct")).to.be.greaterThan(-1);
         await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "{}");
         await new Promise(res => setTimeout(res, 100));
         expect(state.getPongs()).to.eq(0);
