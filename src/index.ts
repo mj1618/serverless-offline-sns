@@ -167,39 +167,40 @@ class ServerlessOfflineSns {
         this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
         const data = await this.snsAdapter.createTopic(topicName);
         this.debug("topic: " + JSON.stringify(data));
-        await this.snsAdapter.subscribe(fn, () => this.createHandler(fn), data.TopicArn, snsConfig);
+        await this.snsAdapter.subscribe(fn, this.createHandler(fn), data.TopicArn, snsConfig);
     }
 
     public createHandler(fn) {
+        return () => {
+            // Options are passed from the command line in the options parameter
+            // ### OLD: use the main serverless config since this behavior is already supported there
+            if (!this.options.skipCacheInvalidation || Array.isArray(this.options.skipCacheInvalidation)) {
+                for (const key in require.cache) {
 
-        // Options are passed from the command line in the options parameter
-        // ### OLD: use the main serverless config since this behavior is already supported there
-        if (!this.options.skipCacheInvalidation || Array.isArray(this.options.skipCacheInvalidation)) {
-            for (const key in require.cache) {
+                    // don't invalidate cached modules from node_modules ...
+                    if (key.match(/node_modules/)) {
+                        continue;
+                    }
 
-                // don't invalidate cached modules from node_modules ...
-                if (key.match(/node_modules/)) {
-                    continue;
+                    // if an array is provided to the serverless config, check the entries there too
+                    if (Array.isArray(this.options.skipCacheInvalidation) &&
+                        this.options.skipCacheInvalidation.find(pattern => new RegExp(pattern).test(key))) {
+                        continue;
+                    }
+
+                    delete require.cache[key];
                 }
-
-                // if an array is provided to the serverless config, check the entries there too
-                if (Array.isArray(this.options.skipCacheInvalidation) &&
-                    this.options.skipCacheInvalidation.find(pattern => new RegExp(pattern).test(key))) {
-                    continue;
-                }
-
-                delete require.cache[key];
             }
-        }
 
-        this.debug(process.cwd());
-        const handlerFnNameIndex = fn.handler.lastIndexOf(".");
-        const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
-        const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
-        const fullHandlerPath = resolve(this.location, handlerPath);
-        this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
-        const handler = require(fullHandlerPath)[handlerFnName];
-        return handler;
+            this.debug(process.cwd());
+            const handlerFnNameIndex = fn.handler.lastIndexOf(".");
+            const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
+            const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
+            const fullHandlerPath = resolve(this.location, handlerPath);
+            this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
+            const handler = require(fullHandlerPath)[handlerFnName];
+            return handler;
+        }
     }
 
     public log(msg, prefix = "INFO[serverless-offline-sns]: ") {
