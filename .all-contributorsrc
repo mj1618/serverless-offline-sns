@@ -218,8 +218,77 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "pjcav",
+      "name": "PJ Cavanaugh",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/33069039?v=4",
+      "profile": "https://github.com/pjcav",
+      "contributions": [
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "victorsferreira",
+      "name": "Victor Ferreira",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/25830138?v=4",
+      "profile": "https://github.com/victorsferreira",
+      "contributions": [
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "shierro",
+      "name": "Theo",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/12129589?v=4",
+      "profile": "https://github.com/shierro",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "mteleskycmp",
+      "name": "Matt Telesky",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/47985584?v=4",
+      "profile": "https://github.com/mteleskycmp",
+      "contributions": [
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "perkyguy",
+      "name": "Garrett Scott",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/4624648?v=4",
+      "profile": "https://github.com/perkyguy",
+      "contributions": [
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "Pat-rice",
+      "name": "Patrice Gargiolo",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/428113?v=4",
+      "profile": "https://github.com/Pat-rice",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "anaerobic",
+      "name": "Michael W. Martin",
+      "avatar_url": "https://avatars3.githubusercontent.com/u/5074290?v=4",
+      "profile": "https://games.crossfit.com/athlete/110515",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "repoType": "github",
-  "contributorsPerLine": 7
+  "contributorsPerLine": 7,
+  "repoHost": "https://github.com"
 }
