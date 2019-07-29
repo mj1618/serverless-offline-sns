@@ -11,21 +11,21 @@ export const pongHandler = (evt, ctx, cb) => {
     nPongs += 1;
     setPongs(nPongs);
     setEvent(evt);
-    cb("{}");
+    cb(null, "{}");
 };
 
 export const envHandler = (evt, ctx, cb) => {
     setResult(process.env["MY_VAR"]);
-    cb("{}");
+    cb(null, "{}");
 };
 
 export const pseudoHandler = (evt, ctx, cb) => {
     setResult(evt.Records[0].Sns.TopicArn);
-    cb("{}");
+    cb(null, "{}");
 };
 
 export const asyncHandler = async (evt, ctx) => {
     await new Promise(res => setTimeout(res, 100));
     setResult(evt.Records[0].Sns.TopicArn);
-    return "{}"
+    return "{}";
 };

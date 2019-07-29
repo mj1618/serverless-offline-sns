@@ -69,7 +69,7 @@ export function parseAttributes(body) {
     return attrs;
 }
 
-export function createSnsEvent(topicArn, subscriptionArn, subject, message, messageId, messageAttributes?) {
+export function createSnsLambdaEvent(topicArn, subscriptionArn, subject, message, messageId, messageAttributes?) {
     return {
         Records: [
             {
@@ -92,6 +92,23 @@ export function createSnsEvent(topicArn, subscriptionArn, subject, message, mess
             },
         ],
     };
+}
+
+export function createSnsTopicEvent(topicArn, subscriptionArn, subject, message, messageId, messageStructure, messageAttributes?) {
+  return {
+      SignatureVersion: "1",
+      Timestamp: new Date().toISOString(),
+      Signature: "EXAMPLE",
+      SigningCertUrl: "EXAMPLE",
+      MessageId: messageId,
+      Message: message,
+      MessageStructure: messageStructure,
+      MessageAttributes: messageAttributes || {},
+      Type: "Notification",
+      UnsubscribeUrl: "EXAMPLE",
+      TopicArn: topicArn,
+      Subject: subject,
+  };
 }
 
 export function createMessageId() {
