@@ -7,6 +7,7 @@ import { SNSServer } from "./sns-server";
 import * as _ from "lodash";
 import * as AWS from "aws-sdk";
 import { resolve } from "path";
+import { topicNameFromArn } from "./helpers";
 
 import { fork, spawn } from "child_process";
 
@@ -14,7 +15,8 @@ class ServerlessOfflineSns {
     private config: any;
     private serverless: any;
     public commands: object;
-    private port: number;
+    private localPort: number;
+    private remotePort: number;
     public hooks: object;
     private snsAdapter: ISNSAdapter;
     private app: any;
@@ -42,6 +44,7 @@ class ServerlessOfflineSns {
                 usage: "Listens to offline SNS events and passes them to configured Lambda fns",
                 lifecycleEvents: [
                     "start",
+                    "cleanup",
                 ],
                 commands: {
                     start: {
@@ -50,16 +53,27 @@ class ServerlessOfflineSns {
                             "end",
                         ],
                     },
+                    cleanup: {
+                        lifecycleEvents: [
+                            "init",
+                        ],
+                    },
                 },
             },
         };
 
         this.hooks = {
+            "before:offline:start": () => this.start(),
             "before:offline:start:init": () => this.start(),
             "after:offline:start:end": () => this.stop(),
             "offline-sns:start:init": () => {
                 this.start();
                 return this.waitForSigint();
+            },
+            "offline-sns:cleanup:init": async () => {
+                this.init();
+                this.setupSnsAdapter();
+                return this.unsubscribeAll();
             },
             "offline-sns:start:end": () => this.stop(),
         };
@@ -68,7 +82,8 @@ class ServerlessOfflineSns {
     public init() {
         process.env = _.extend({}, this.serverless.service.provider.environment, process.env);
         this.config = this.serverless.service.custom["serverless-offline-sns"] || {};
-        this.port = this.config.port || 4002;
+        this.localPort = this.config.port || this.config.localPort || 4002;
+        this.remotePort = this.config.port || this.config.remotePort || 4002;
         this.accountId = this.config.accountId || "123456789012";
         const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};
         this.location = process.cwd();
@@ -86,7 +101,7 @@ class ServerlessOfflineSns {
 
         // Congure SNS client to be able to find us.
         AWS.config.sns = {
-            endpoint: "http://127.0.0.1:" + this.port,
+            endpoint: "http://127.0.0.1:" + this.localPort,
             region: this.region,
         };
     }
@@ -113,18 +128,7 @@ class ServerlessOfflineSns {
     }
 
     public async subscribeAll() {
-        this.snsAdapter = new SNSAdapter(
-            this.port,
-            this.serverless.service.provider.region,
-            this.config["sns-endpoint"],
-            (msg, ctx) => this.debug(msg, ctx),
-            this.app,
-            this.serverless.service.service,
-            this.serverless.service.provider.stage,
-            this.accountId,
-            this.config.host,
-            this.config["sns-subscribe-endpoint"],
-        );
+        this.setupSnsAdapter();
         await this.unsubscribeAll();
         this.debug("subscribing");
         await Promise.all(Object.keys(this.serverless.service.functions).map(fnName => {
@@ -140,45 +144,38 @@ class ServerlessOfflineSns {
         this.debug("subs!: " + JSON.stringify(subs));
         await Promise.all(
             subs.Subscriptions
-                .filter(sub => sub.Endpoint.indexOf(":" + this.port) > -1)
+                .filter(sub => sub.Endpoint.indexOf(":" + this.remotePort) > -1)
+                .filter(sub => sub.SubscriptionArn !== "PendingConfirmation")
                 .map(sub => this.snsAdapter.unsubscribe(sub.SubscriptionArn)));
     }
 
     public async subscribe(fnName, snsConfig) {
         this.debug("subscribe: " + fnName);
-        // name = event.sns ||
-        // name = event.sns.topicName ||
-        // arn = event.sns.arn ||
-        // arn = event.sns.arn && topicName = event.sns.topicName
         const fn = this.serverless.service.functions[fnName];
-        if (typeof snsConfig === "string" || typeof snsConfig.topicName === "string") {
-            let topicName = "";
-            // According to Serverless docs, if the sns config is a string,
-            // that string must be the topic ARN:
-            // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic
-            if (typeof snsConfig === "string" && snsConfig.indexOf("arn:aws:sns") === 0) {
-                const snsConfigParts = snsConfig.split(":");
-                // the topics name is that last part of the ARN:
-                // arn:aws:sns:<REGION>:<ACCOUNT_ID>:<TOPIC_NAME>
-                topicName = snsConfigParts[snsConfigParts.length - 1];
-            } else if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
-                topicName = snsConfig.topicName;
+        let topicName = "";
+        
+        // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic
+        if (typeof snsConfig === "string") {
+            if (snsConfig.indexOf("arn:aws:sns") === 0) {
+                topicName = topicNameFromArn(snsConfig);
+            } else {
+                topicName = snsConfig;
             }
-
-            if (!topicName) {
-                return Promise.resolve(`Unable to create topic for "${fnName}". Please ensure the sns configuration is correct.`);
-            }
-
-            this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
-            const data = await this.snsAdapter.createTopic(topicName);
-            this.debug("topic: " + JSON.stringify(data));
-            await this.snsAdapter.subscribe(fn, () => this.createHandler(fnName, fn), data.TopicArn, snsConfig);
-        } else if (typeof snsConfig.arn === "string") {
-            await this.snsAdapter.subscribe(fn, () => this.createHandler(fnName, fn), snsConfig.arn, snsConfig);
-        } else {
-            this.log("unsupported config: " + snsConfig);
-            return Promise.resolve("unsupported config: " + snsConfig);
+        } else if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
+            topicName = snsConfig.topicName;
+        } else if (snsConfig.arn && typeof snsConfig.arn === "string") {
+            topicName = topicNameFromArn(snsConfig.arn);
         }
+
+        if (!topicName) {
+            this.log(`Unable to create topic for "${fnName}". Please ensure the sns configuration is correct.`);
+            return Promise.resolve(`Unable to create topic for "${fnName}". Please ensure the sns configuration is correct.`);
+        }
+
+        this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
+        const data = await this.snsAdapter.createTopic(topicName);
+        this.debug("topic: " + JSON.stringify(data));
+        await this.snsAdapter.subscribe(fn, this.createHandler(fnName, fn), data.TopicArn, snsConfig);
     }
 
     public createHandler(fnName, fn) {
@@ -289,34 +286,36 @@ class ServerlessOfflineSns {
     }
 
     public createJavascriptHandler(fn) {
+        return () => {
+            // Options are passed from the command line in the options parameter
+            // ### OLD: use the main serverless config since this behavior is already supported there
+            if (!this.options.skipCacheInvalidation || Array.isArray(this.options.skipCacheInvalidation)) {
+                for (const key in require.cache) {
 
-        // use the main serverless config since this behavior is already supported there
-        if (!this.serverless.config.skipCacheInvalidation || Array.isArray(this.serverless.config.skipCacheInvalidation)) {
-            for (const key in require.cache) {
+                    // don't invalidate cached modules from node_modules ...
+                    if (key.match(/node_modules/)) {
+                        continue;
+                    }
 
-                // don't invalidate cached modules from node_modules ...
-                if (key.match(/node_modules/)) {
-                    continue;
+                    // if an array is provided to the serverless config, check the entries there too
+                    if (Array.isArray(this.options.skipCacheInvalidation) &&
+                        this.options.skipCacheInvalidation.find(pattern => new RegExp(pattern).test(key))) {
+                        continue;
+                    }
+
+                    delete require.cache[key];
                 }
-
-                // if an array is provided to the serverless config, check the entries there too
-                if (Array.isArray(this.serverless.config.skipCacheInvalidation) &&
-                    this.serverless.config.skipCacheInvalidation.find(pattern => new RegExp(pattern).test(key))) {
-                    continue;
-                }
-
-                delete require.cache[key];
             }
-        }
 
-        this.debug(process.cwd());
-        const handlerFnNameIndex = fn.handler.lastIndexOf(".");
-        const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
-        const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
-        const fullHandlerPath = resolve(this.location, handlerPath);
-        this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
-        const handler = require(fullHandlerPath)[handlerFnName];
-        return handler;
+            this.debug(process.cwd());
+            const handlerFnNameIndex = fn.handler.lastIndexOf(".");
+            const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
+            const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
+            const fullHandlerPath = resolve(this.location, handlerPath);
+            this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
+            const handler = require(fullHandlerPath)[handlerFnName];
+            return handler;
+        };
     }
 
     public log(msg, prefix = "INFO[serverless-offline-sns]: ") {
@@ -344,10 +343,11 @@ class ServerlessOfflineSns {
             host = this.options.host;
         }
         return new Promise(res => {
-            this.server = this.app.listen(this.port, host, () => {
-                this.debug(`listening on ${host}:${this.port}`);
+            this.server = this.app.listen(this.localPort, host, () => {
+                this.debug(`listening on ${host}:${this.localPort}`);
                 res();
             });
+            this.server.setTimeout(0);
         });
     }
 
@@ -357,6 +357,22 @@ class ServerlessOfflineSns {
         if (this.server) {
             this.server.close();
         }
+    }
+
+    private setupSnsAdapter() {
+        this.snsAdapter = new SNSAdapter(
+            this.localPort,
+            this.remotePort,
+            this.serverless.service.provider.region,
+            this.config["sns-endpoint"],
+            (msg, ctx) => this.debug(msg, ctx),
+            this.app,
+            this.serverless.service.service,
+            this.serverless.service.provider.stage,
+            this.accountId,
+            this.config.host,
+            this.config["sns-subscribe-endpoint"],
+        );
     }
 }
 

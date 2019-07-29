@@ -69,7 +69,7 @@ export function parseAttributes(body) {
     return attrs;
 }
 
-export function createSnsEvent(topicArn, subscriptionArn, subject, message, messageId, messageAttributes?) {
+export function createSnsLambdaEvent(topicArn, subscriptionArn, subject, message, messageId, messageAttributes?) {
     return {
         Records: [
             {
@@ -94,6 +94,23 @@ export function createSnsEvent(topicArn, subscriptionArn, subject, message, mess
     };
 }
 
+export function createSnsTopicEvent(topicArn, subscriptionArn, subject, message, messageId, messageStructure, messageAttributes?) {
+  return {
+      SignatureVersion: "1",
+      Timestamp: new Date().toISOString(),
+      Signature: "EXAMPLE",
+      SigningCertUrl: "EXAMPLE",
+      MessageId: messageId,
+      Message: message,
+      MessageStructure: messageStructure,
+      MessageAttributes: messageAttributes || {},
+      Type: "Notification",
+      UnsubscribeUrl: "EXAMPLE",
+      TopicArn: topicArn,
+      Subject: subject,
+  };
+}
+
 export function createMessageId() {
     return uuid();
 }
@@ -106,3 +123,12 @@ export function validatePhoneNumber(phoneNumber) {
     }
     return phoneNumber;
 }
+
+// the topics name is that last part of the ARN:
+// arn:aws:sns:<REGION>:<ACCOUNT_ID>:<TOPIC_NAME>
+export const topicNameFromArn = arn => {
+    const arnParts = arn.split(":");
+    return arnParts[arnParts.length - 1];
+};
+
+export const topicArnFromName = (name, region, accountId) => `arn:aws:sns:${region}:${accountId}:${name}`;

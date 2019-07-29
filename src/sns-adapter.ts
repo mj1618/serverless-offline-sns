@@ -1,9 +1,9 @@
 import * as AWS from "aws-sdk";
-import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap } from "aws-sdk/clients/sns.d";
+import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap, ListTopicsResponse } from "aws-sdk/clients/sns.d";
 import { ISNSAdapter, IDebug } from "./types";
-import fetch from "node-fetch";
 import * as _ from "lodash";
-import { createSnsEvent, createMessageId } from "./helpers";
+import { createSnsLambdaEvent, createMessageId } from "./helpers";
+import fetch from "node-fetch";
 
 export class SNSAdapter implements ISNSAdapter {
     private sns: AWS.SNS;
@@ -18,15 +18,14 @@ export class SNSAdapter implements ISNSAdapter {
     private baseSubscribeEndpoint: string;
     private accountId: string;
 
-    constructor(port, region, snsEndpoint, debug, app, serviceName, stage, accountId, host, subscribeEndpoint) {
+    constructor(localPort, remotePort, region, snsEndpoint, debug, app, serviceName, stage, accountId, host, subscribeEndpoint) {
         this.pluginDebug = debug;
-        this.port = port;
         this.app = app;
         this.serviceName = serviceName;
         this.stage = stage;
-        this.adapterEndpoint = `http://${host || "127.0.0.1"}:${port}`;
-        this.baseSubscribeEndpoint = subscribeEndpoint ? `http://${subscribeEndpoint}:${port}` : this.adapterEndpoint;
-        this.endpoint = snsEndpoint || `http://127.0.0.1:${port}`;
+        this.adapterEndpoint = `http://${host || "127.0.0.1"}:${localPort}`;
+        this.baseSubscribeEndpoint = subscribeEndpoint ? `http://${subscribeEndpoint}:${remotePort}` : this.adapterEndpoint;
+        this.endpoint = snsEndpoint || `http://127.0.0.1:${localPort}`;
         this.debug("using endpoint: " + this.endpoint);
         this.accountId = accountId;
         if (!AWS.config.credentials) {
@@ -40,6 +39,23 @@ export class SNSAdapter implements ISNSAdapter {
             endpoint: this.endpoint,
             region,
         });
+    }
+
+    public async listTopics(): Promise<ListTopicsResponse> {
+      this.debug("listing topics");
+      const req = this.sns.listTopics({});
+      this.debug(JSON.stringify(req.httpRequest));
+
+      return await new Promise(res => {
+        this.sns.listTopics({}, (err, topics) => {
+          if (err) {
+            this.debug(err, err.stack);
+          } else {
+            this.debug(JSON.stringify(topics));
+          }
+          res(topics);
+        });
+      });
     }
 
     public async listSubscriptions(): Promise<ListSubscriptionsResponse> {
@@ -101,23 +117,34 @@ export class SNSAdapter implements ISNSAdapter {
             process.env = _.extend({}, process.env, fn.environment);
 
             let event = req.body;
-            if (req.is("text/plain")) {
-                event = createSnsEvent(event.TopicArn, "EXAMPLE", event.Subject || "", event.Message, createMessageId(), event.MessageAttributes || {});
+            if (req.is("text/plain") && req.get("x-amz-sns-rawdelivery") !== "true") {
+                const msg = event.MessageStructure === "json" ? JSON.parse(event.Message).default : event.Message;
+                event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", msg, createMessageId(), event.MessageAttributes || {});
             }
-            const sendIt = (err, data) => {
+
+            if (req.body.SubscribeURL) {
+                this.debug("Visiting subscribe url: " + req.body.SubscribeURL);
+                return fetch(req.body.SubscribeURL, {
+                    method: "GET",
+                    timeout: 0,
+                }).then(fetchResponse => this.debug("Subscribed: " + fetchResponse));
+            }
+
+            const sendIt = (error, response) => {
                 process.env = oldEnv;
-                if (err) {
+                if (error) {
                     res.status(500).send(err);
-                    this.sent(err);
+                    this.sent(error);
                 } else {
-                    res.send(data);
-                    this.sent(data);
+                    res.send(response);
+                    this.sent(response);
                 }
             };
             const maybePromise = getHandler()(event, this.createLambdaContext(fn, sendIt), sendIt);
             if (maybePromise && maybePromise.then) {
-                maybePromise.then((data) => sendIt(null, data));
-                maybePromise.catch((err) => sendIt(err, null));
+                maybePromise
+                    .then(response => sendIt(null, response))
+                    .catch(error => sendIt(error, null));
             }
         });
         const params = {
@@ -151,7 +178,7 @@ export class SNSAdapter implements ISNSAdapter {
         return topicArn.replace(awsRegex, this.accountId);
     }
 
-    public async publish(topicArn: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
+    public async publish(topicArn: string, message: string, type: string = "", messageAttributes: MessageAttributeMap = {}) {
         topicArn = this.convertPseudoParams(topicArn);
         return await new Promise((resolve, reject) => this.sns.publish({
             Message: message,
@@ -163,7 +190,7 @@ export class SNSAdapter implements ISNSAdapter {
         }));
     }
 
-    public async publishToTargetArn(targetArn: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
+    public async publishToTargetArn(targetArn: string, message: string, type: string = "", messageAttributes: MessageAttributeMap = {}) {
         targetArn = this.convertPseudoParams(targetArn);
         return await new Promise((resolve, reject) => this.sns.publish({
             Message: message,
@@ -175,7 +202,7 @@ export class SNSAdapter implements ISNSAdapter {
         }));
     }
 
-    public async publishToPhoneNumber(phoneNumber: string, message: string, type: string = "json", messageAttributes: MessageAttributeMap = {}) {
+    public async publishToPhoneNumber(phoneNumber: string, message: string, type: string = "", messageAttributes: MessageAttributeMap = {}) {
         return await new Promise((resolve, reject) => this.sns.publish({
             Message: message,
             MessageStructure: type,
