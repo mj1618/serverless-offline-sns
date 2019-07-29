@@ -130,11 +130,11 @@ export class SNSAdapter implements ISNSAdapter {
                 }).then(fetchResponse => this.debug("Subscribed: " + fetchResponse));
             }
 
-            const sendIt = (error, response) => {
+            const sendIt = (err, response) => {
                 process.env = oldEnv;
-                if (error) {
+                if (err) {
                     res.status(500).send(err);
-                    this.sent(error);
+                    this.sent(err);
                 } else {
                     res.send(response);
                     this.sent(response);
