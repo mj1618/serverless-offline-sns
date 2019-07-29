@@ -200,7 +200,7 @@ class ServerlessOfflineSns {
             this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
             const handler = require(fullHandlerPath)[handlerFnName];
             return handler;
-        }
+        };
     }
 
     public log(msg, prefix = "INFO[serverless-offline-sns]: ") {
