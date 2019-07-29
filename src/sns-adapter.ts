@@ -3,6 +3,7 @@ import { ListSubscriptionsResponse, CreateTopicResponse, MessageAttributeMap } f
 import { ISNSAdapter, IDebug } from "./types";
 import * as _ from "lodash";
 import { createSnsLambdaEvent, createMessageId } from "./helpers";
+import fetch from "node-fetch";
 
 export class SNSAdapter implements ISNSAdapter {
     private sns: AWS.SNS;
