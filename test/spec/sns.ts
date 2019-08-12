@@ -56,7 +56,7 @@ describe("test", () => {
         expect(state.getPongs()).to.eq(2);
     });
 
-    it("should send event with MessageAttributes", async () => {
+    it("should send event with MessageAttributes and subject", async () => {
         plugin = new ServerlessOfflineSns(createServerless(accountId), {skipCacheInvalidation: true});
         const snsAdapter = await plugin.start();
         await snsAdapter.publish(
@@ -66,10 +66,12 @@ describe("test", () => {
             {
                 with: { DataType: "String", StringValue: "attributes" },
             },
+            "subject"
         );
         await new Promise(res => setTimeout(res, 100));
         const event = state.getEvent();
         expect(event.Records[0].Sns).to.have.property("Message", "message with attributes");
+        expect(event.Records[0].Sns).to.have.property("Subject", "subject");
         expect(event.Records[0].Sns).to.have.deep.property(
             "MessageAttributes",
             {
