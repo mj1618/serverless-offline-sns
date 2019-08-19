@@ -306,6 +306,15 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "jason-adnuntius",
+      "name": "Jason Pell",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/52263930?v=4",
+      "profile": "https://github.com/jason-adnuntius",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "repoType": "github",
