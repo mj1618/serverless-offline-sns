@@ -178,10 +178,11 @@ export class SNSAdapter implements ISNSAdapter {
         return topicArn.replace(awsRegex, this.accountId);
     }
 
-    public async publish(topicArn: string, message: string, type: string = "", messageAttributes: MessageAttributeMap = {}) {
+    public async publish(topicArn: string, message: string, type: string = "", messageAttributes: MessageAttributeMap = {}, subject: string = "") {
         topicArn = this.convertPseudoParams(topicArn);
         return await new Promise((resolve, reject) => this.sns.publish({
             Message: message,
+            Subject: subject,
             MessageStructure: type,
             TopicArn: topicArn,
             MessageAttributes: messageAttributes,

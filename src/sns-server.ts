@@ -75,7 +75,7 @@ export class SNSServer implements ISNSServer {
                     xml(
                         this.publish(
                             target,
-                            req.body.subject,
+                            req.body.Subject,
                             req.body.Message,
                             req.body.MessageStructure,
                             parseMessageAttributes(req.body),
