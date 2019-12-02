@@ -66,7 +66,7 @@ describe("test", () => {
             {
                 with: { DataType: "String", StringValue: "attributes" },
             },
-            "subject"
+            "subject",
         );
         await new Promise(res => setTimeout(res, 100));
         const event = state.getEvent();

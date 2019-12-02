@@ -35,7 +35,7 @@ class ServerlessOfflineSns {
             req.headers["content-type"] = req.headers["content-type"] || "text/plain";
             next();
         });
-        this.app.use(bodyParser.json({ type: ["application/json", "text/plain"] }));
+        this.app.use(bodyParser.json({ type: ["application/json", "text/plain"], limit: "10mb" }));
         this.options = options;
         this.serverless = serverless;
 
@@ -153,7 +153,7 @@ class ServerlessOfflineSns {
         this.debug("subscribe: " + fnName);
         const fn = this.serverless.service.functions[fnName];
         let topicName = "";
-        
+
         // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic
         if (typeof snsConfig === "string") {
             if (snsConfig.indexOf("arn:aws:sns") === 0) {
