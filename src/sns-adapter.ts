@@ -119,7 +119,7 @@ export class SNSAdapter implements ISNSAdapter {
             let event = req.body;
             if (req.is("text/plain") && req.get("x-amz-sns-rawdelivery") !== "true") {
                 const msg = event.MessageStructure === "json" ? JSON.parse(event.Message).default : event.Message;
-                event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", msg, createMessageId(), event.MessageAttributes || {});
+                event = createSnsLambdaEvent(event.TopicArn, "EXAMPLE", event.Subject || "", msg, event.MessageId || createMessageId(), event.MessageAttributes || {});
             }
 
             if (req.body.SubscribeURL) {
