@@ -1,4 +1,4 @@
-import {ListSubscriptionsResponse, CreateTopicResponse, PublishResponse, ListTopicsResponse} from "aws-sdk/clients/sns.d";
+import { ListSubscriptionsResponse, CreateTopicResponse, PublishResponse, ListTopicsResponse } from "aws-sdk/clients/sns.d";
 
 export type IDebug = (msg: any, stack?: any) => void;
 

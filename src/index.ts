@@ -9,7 +9,7 @@ import * as AWS from "aws-sdk";
 import { resolve } from "path";
 import { topicNameFromArn } from "./helpers";
 
-import { fork, spawn } from "child_process";
+import { spawn } from "child_process";
 
 class ServerlessOfflineSns {
     private config: any;
@@ -155,7 +155,7 @@ class ServerlessOfflineSns {
         if (!fn.runtime) {
             fn.runtime = this.serverless.service.provider.runtime;
         }
-        
+
         let topicName = "";
 
         // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic

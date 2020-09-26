@@ -40,7 +40,7 @@ export class SNSServer implements ISNSServer {
 
     public routes() {
         this.debug("configuring route");
-        this.app.use(bodyParser.json({limit: "10mb"})); // for parsing application/json
+        this.app.use(bodyParser.json({ limit: "10mb" })); // for parsing application/json
         this.app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" })); // for parsing application/x-www-form-urlencoded
         this.app.use((req, res, next) => {
             res.header("Access-Control-Allow-Origin", "*");
@@ -65,10 +65,10 @@ export class SNSServer implements ISNSServer {
 
                 const target = this.extractTarget(req.body);
                 if (req.body.MessageStructure === "json") {
-                  const json = JSON.parse(req.body.Message);
-                  if (typeof json.default !== "string") {
-                    throw new Error("Messages must have default key");
-                  }
+                    const json = JSON.parse(req.body.Message);
+                    if (typeof json.default !== "string") {
+                        throw new Error("Messages must have default key");
+                    }
                 }
 
                 res.send(
@@ -161,10 +161,10 @@ export class SNSServer implements ISNSServer {
     public createTopic(topicName) {
         const topicArn = topicArnFromName(topicName, this.region, this.accountId);
         const topic = {
-          TopicArn: topicArn,
+            TopicArn: topicArn,
         };
         if (!this.topics.find(({ TopicArn }) => TopicArn === topicArn)) {
-          this.topics.push(topic);
+            this.topics.push(topic);
         }
         return {
             CreateTopicResponse: [
@@ -232,7 +232,7 @@ export class SNSServer implements ISNSServer {
             } else {
                 attrs = [messageAttrs[k].Value];
             }
-            if (_.intersection(v, attrs).length > 0) {
+            if (_.intersection(v as unknown[], attrs).length > 0) {
                 this.debug("filterPolicy Passed: " + v + " matched message attrs: " + JSON.stringify(attrs));
                 shouldSend = true;
             } else {
@@ -256,7 +256,7 @@ export class SNSServer implements ISNSServer {
                 "Content-Length": Buffer.byteLength(event),
             },
         }).then(res => this.debug(res))
-        .catch(ex => this.debug(ex));
+            .catch(ex => this.debug(ex));
     }
 
     private publishSqs(event, sub) {
@@ -344,11 +344,11 @@ export class SNSServer implements ISNSServer {
     }
 
     public debug(msg) {
-      if (msg instanceof Object) {
-        try {
-            msg = JSON.stringify(msg);
-        } catch (ex) {}
-      }
-      this.pluginDebug(msg, "server");
+        if (msg instanceof Object) {
+            try {
+                msg = JSON.stringify(msg);
+            } catch (ex) { }
+        }
+        this.pluginDebug(msg, "server");
     }
 }
