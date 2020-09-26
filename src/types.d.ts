@@ -19,3 +19,10 @@ export interface ISNSAdapterConstructable {
 export interface ISNSServer {
     routes();
 }
+
+export type MessageAttributes = MessageAttribute[]
+
+export type MessageAttribute = {
+    Type: string,
+    Value: string
+}
