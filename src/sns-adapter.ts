@@ -173,6 +173,35 @@ export class SNSAdapter implements ISNSAdapter {
         });
     }
 
+    public async subscribeQueue(queueUrl, arn, snsConfig) {
+        arn = this.convertPseudoParams(arn);
+        this.debug("subscribe: " + queueUrl + " " + arn);
+        const params = {
+            Protocol: "sqs",
+            TopicArn: arn,
+            Endpoint: queueUrl,
+            Attributes: {},
+        };
+
+        if (snsConfig.rawMessageDelivery === "true") {
+            params.Attributes["RawMessageDelivery"] = "true";
+        }
+        if (snsConfig.filterPolicy) {
+            params.Attributes["FilterPolicy"] = JSON.stringify(snsConfig.filterPolicy);
+        }
+
+        await new Promise(res => {
+            this.sns.subscribe(params, (err, data) => {
+                if (err) {
+                    this.debug(err, err.stack);
+                } else {
+                    this.debug(`successfully subscribed queue "${queueUrl}" to topic: "${arn}"`);
+                }
+                res();
+            });
+        });
+    }
+
     public convertPseudoParams(topicArn) {
         const awsRegex = /#{AWS::([a-zA-Z]+)}/g;
         return topicArn.replace(awsRegex, this.accountId);
