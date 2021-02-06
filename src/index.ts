@@ -1,3 +1,5 @@
+import * as shell from "shelljs";
+
 import { SNSAdapter } from "./sns-adapter";
 import * as express from "express";
 import * as cors from "cors";
@@ -10,6 +12,8 @@ import { resolve } from "path";
 import { topicNameFromArn } from "./helpers";
 
 import { fork, spawn } from "child_process";
+
+import { loadServerlessConfig } from "./sls-config-parser";
 
 class ServerlessOfflineSns {
     private config: any;
@@ -26,6 +30,7 @@ class ServerlessOfflineSns {
     private location: string;
     private region: string;
     private accountId: string;
+    private servicesDirectory: string;
 
     constructor(serverless: any, options: any) {
         this.app = express();
@@ -118,7 +123,7 @@ class ServerlessOfflineSns {
         return new Promise(res => {
             process.on("SIGINT", () => {
                 this.log("Halting offline-sns server");
-                res();
+                res("");
             });
         });
     }
@@ -131,12 +136,33 @@ class ServerlessOfflineSns {
         this.setupSnsAdapter();
         await this.unsubscribeAll();
         this.debug("subscribing");
-        await Promise.all(Object.keys(this.serverless.service.functions).map(fnName => {
-            const fn = this.serverless.service.functions[fnName];
-            return Promise.all(fn.events.filter(event => event.sns != null).map(event => {
-                return this.subscribe(fnName, event.sns);
-            }));
-        }));
+        const subscribePromises: Array<Promise<any>> = [];
+        if (this.servicesDirectory) {
+            shell.cd(this.servicesDirectory);
+            for (const directory of shell.ls("-d", "*/")) {
+                shell.cd(directory);
+                const service = directory.split("/")[0];
+                const serverless = await loadServerlessConfig(shell.pwd());
+                this.debug("Processing subscriptions for ", service);
+                this.debug("shell.pwd()", shell.pwd());
+                this.debug("serverless functions", serverless.service.functions);
+                Object.keys(serverless.service.functions).map(fnName => {
+                    const fn = serverless.service.functions[fnName];
+                    subscribePromises.push(Promise.all(fn.events.filter(event => event.sns != null).map(event => {
+                        return this.subscribe(serverless, fnName, event.sns, shell.pwd());
+                    })));
+                });
+                shell.cd("../");
+            }
+        } else {
+            Object.keys(this.serverless.service.functions).map(fnName => {
+                const fn = this.serverless.service.functions[fnName];
+                subscribePromises.push(Promise.all(fn.events.filter(event => event.sns != null).map(event => {
+                    return this.subscribe(this.serverless, fnName, event.sns, this.location);
+                })));
+            });
+        }
+        await Promise.all(subscribePromises);
     }
 
     public async unsubscribeAll() {
@@ -149,11 +175,11 @@ class ServerlessOfflineSns {
                 .map(sub => this.snsAdapter.unsubscribe(sub.SubscriptionArn)));
     }
 
-    public async subscribe(fnName, snsConfig) {
+    public async subscribe(serverless, fnName, snsConfig, lambdasLocation) {
         this.debug("subscribe: " + fnName);
-        const fn = this.serverless.service.functions[fnName];
+        const fn = serverless.service.functions[fnName];
         if (!fn.runtime) {
-            fn.runtime = this.serverless.service.provider.runtime;
+            fn.runtime = serverless.service.provider.runtime;
         }
         
         let topicName = "";
@@ -179,18 +205,18 @@ class ServerlessOfflineSns {
         this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
         const data = await this.snsAdapter.createTopic(topicName);
         this.debug("topic: " + JSON.stringify(data));
-        await this.snsAdapter.subscribe(fn, this.createHandler(fnName, fn), data.TopicArn, snsConfig);
+        await this.snsAdapter.subscribe(fn, this.createHandler(fnName, fn, lambdasLocation), data.TopicArn, snsConfig);
     }
 
-    public createHandler(fnName, fn) {
+    public createHandler(fnName, fn, location) {
         if (!fn.runtime || fn.runtime.startsWith("nodejs")) {
-            return this.createJavascriptHandler(fn);
+            return this.createJavascriptHandler(fn, location);
         } else {
-            return () => this.createProxyHandler(fnName, fn);
+            return () => this.createProxyHandler(fnName, fn, location);
         }
     }
 
-    public createProxyHandler(funName, funOptions) {
+    public createProxyHandler(funName, funOptions, location) {
         const options = this.options;
         return (event, context) => {
             const args = ["invoke", "local", "-f", funName];
@@ -205,7 +231,7 @@ class ServerlessOfflineSns {
             const cmd = binPath || "sls";
 
             const process = spawn(cmd, args, {
-                cwd: funOptions.servicePath,
+                cwd: location,
                 shell: true,
                 stdio: ["pipe", "pipe", "pipe"],
             });
@@ -289,7 +315,7 @@ class ServerlessOfflineSns {
         };
     }
 
-    public createJavascriptHandler(fn) {
+    public createJavascriptHandler(fn, location) {
         return () => {
             // Options are passed from the command line in the options parameter
             // ### OLD: use the main serverless config since this behavior is already supported there
@@ -315,7 +341,7 @@ class ServerlessOfflineSns {
             const handlerFnNameIndex = fn.handler.lastIndexOf(".");
             const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
             const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
-            const fullHandlerPath = resolve(this.location, handlerPath);
+            const fullHandlerPath = resolve(location, handlerPath);
             this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
             const handler = require(fullHandlerPath)[handlerFnName];
             return handler;
@@ -349,7 +375,7 @@ class ServerlessOfflineSns {
         return new Promise(res => {
             this.server = this.app.listen(this.localPort, host, () => {
                 this.debug(`listening on ${host}:${this.localPort}`);
-                res();
+                res("");
             });
             this.server.setTimeout(0);
         });

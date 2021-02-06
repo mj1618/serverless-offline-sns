@@ -221,7 +221,7 @@ export class SNSServer implements ISNSServer {
 
     private evaluatePolicies(policies: any, messageAttrs: any): boolean {
         let shouldSend: boolean = false;
-        for (const [k, v] of Object.entries(policies)) {
+        for (const [k, v] of Object.entries<any>(policies)) {
             if (!messageAttrs[k]) {
                 shouldSend = false;
                 break;
@@ -232,7 +232,7 @@ export class SNSServer implements ISNSServer {
             } else {
                 attrs = [messageAttrs[k].Value];
             }
-            if (_.intersection(v, attrs).length > 0) {
+            if (_.intersection<any>(v, attrs).length > 0) {
                 this.debug("filterPolicy Passed: " + v + " matched message attrs: " + JSON.stringify(attrs));
                 shouldSend = true;
             } else {

@@ -86,7 +86,7 @@ export class SNSAdapter implements ISNSAdapter {
                 } else {
                     this.debug("unsubscribed: " + JSON.stringify(data));
                 }
-                res();
+                res("");
             });
         });
     }
@@ -168,7 +168,7 @@ export class SNSAdapter implements ISNSAdapter {
                 } else {
                     this.debug(`successfully subscribed fn "${fn.name}" to topic: "${arn}"`);
                 }
-                res();
+                res("");
             });
         });
     }
