@@ -90,6 +90,7 @@ class ServerlessOfflineSns {
         this.localPort = this.config.port || this.config.localPort || 4002;
         this.remotePort = this.config.port || this.config.remotePort || 4002;
         this.accountId = this.config.accountId || "123456789012";
+        this.servicesDirectory = this.config.servicesDirectory || ""
         const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};
         this.location = process.cwd();
         const locationRelativeToCwd = this.options.location || offlineConfig.location;
@@ -142,7 +143,7 @@ class ServerlessOfflineSns {
             for (const directory of shell.ls("-d", "*/")) {
                 shell.cd(directory);
                 const service = directory.split("/")[0];
-                const serverless = await loadServerlessConfig(shell.pwd());
+                const serverless = await loadServerlessConfig(shell.pwd(), this.debug);
                 this.debug("Processing subscriptions for ", service);
                 this.debug("shell.pwd()", shell.pwd());
                 this.debug("serverless functions", serverless.service.functions);

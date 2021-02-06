@@ -1,4 +1,4 @@
-import Serverless from "serverless";
+import * as Serverless from "serverless";
 
 import * as path from "path";
 import * as fs from "fs";
@@ -61,7 +61,8 @@ const normalizeResources = config => {
   };
 };
 
-export async function loadServerlessConfig(cwd = process.cwd()) {
+export async function loadServerlessConfig(cwd = process.cwd(), debug) {
+  console.log("debug loadServerlessConfig", cwd)
   const stat = fs.statSync(cwd);
   if (!stat.isDirectory()) {
     cwd = path.dirname(cwd);
