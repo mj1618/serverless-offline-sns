@@ -160,6 +160,9 @@ export class SNSAdapter implements ISNSAdapter {
         if (snsConfig.filterPolicy) {
             params.Attributes["FilterPolicy"] = JSON.stringify(snsConfig.filterPolicy);
         }
+        if (snsConfig.protocol) {
+            params.Protocol = snsConfig.protocol;
+        }
 
         await new Promise(res => {
             this.sns.subscribe(params, (err, data) => {
@@ -242,5 +245,4 @@ export class SNSAdapter implements ISNSAdapter {
             clientContext: {},
         };
     }
-
 }
