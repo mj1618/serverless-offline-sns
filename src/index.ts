@@ -87,7 +87,7 @@ class ServerlessOfflineSns {
         this.accountId = this.config.accountId || "123456789012";
         const offlineConfig = this.serverless.service.custom["serverless-offline"] || {};
         this.location = process.cwd();
-        const locationRelativeToCwd = this.options.location || offlineConfig.location;
+        const locationRelativeToCwd = this.options.location || (this.config.location ||offlineConfig.location);
         if (locationRelativeToCwd) {
             this.location = process.cwd() + "/" + locationRelativeToCwd;
         } else if (this.serverless.config.servicePath) {
