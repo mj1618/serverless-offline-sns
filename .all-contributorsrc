@@ -334,9 +334,82 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "Alexandre-io",
+      "name": "Alexandre",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8135542?v=4",
+      "profile": "https://github.com/Alexandre-io",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "k-k",
+      "name": "Keith Kirk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2430033?v=4",
+      "profile": "http://kmfk.io/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "crash7",
+      "name": "Christian Musa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1450075?v=4",
+      "profile": "https://github.com/crash7",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Glavin001",
+      "name": "Glavin Wiechert",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1885333?v=4",
+      "profile": "https://codepass.ca/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "jagregory",
+      "name": "James Gregory",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10828?v=4",
+      "profile": "https://www.jagregory.com/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "richlloydmiles",
+      "name": "Richard",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8024768?v=4",
+      "profile": "https://www.atheneum.ai/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "alex-vance",
+      "name": "alex-vance",
+      "avatar_url": "https://avatars.githubusercontent.com/u/50587352?v=4",
+      "profile": "https://github.com/alex-vance",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "christiangoltz",
+      "name": "christiangoltz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2478085?v=4",
+      "profile": "https://github.com/christiangoltz",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "repoType": "github",
   "contributorsPerLine": 7,
-  "repoHost": "https://github.com"
+  "repoHost": "https://github.com",
+  "commitConvention": "none"
 }
