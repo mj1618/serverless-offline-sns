@@ -107,7 +107,7 @@ export class SNSAdapter implements ISNSAdapter {
           } else {
             this.debug("unsubscribed: " + JSON.stringify(data));
           }
-          res();
+          res(true);
         }
       );
     });
@@ -199,7 +199,11 @@ export class SNSAdapter implements ISNSAdapter {
         snsConfig.filterPolicy
       );
     }
-
+   
+    if (snsConfig.protocol) {
+      params.Protocol = snsConfig.protocol;
+    }
+   
     await new Promise((res) => {
       this.sns.subscribe(params, (err, data) => {
         if (err) {
@@ -209,7 +213,7 @@ export class SNSAdapter implements ISNSAdapter {
             `successfully subscribed fn "${fn.name}" to topic: "${arn}"`
           );
         }
-        res();
+        res(true);
       });
     });
   }
@@ -233,6 +237,10 @@ export class SNSAdapter implements ISNSAdapter {
       );
     }
 
+    if (snsConfig.protocol) {
+      params.Protocol = snsConfig.protocol;
+    }
+
     await new Promise((res) => {
       this.sns.subscribe(params, (err, data) => {
         if (err) {
@@ -242,7 +250,7 @@ export class SNSAdapter implements ISNSAdapter {
             `successfully subscribed queue "${queueUrl}" to topic: "${arn}"`
           );
         }
-        res();
+        res(true);
       });
     });
   }
