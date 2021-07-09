@@ -9,6 +9,7 @@ import * as AWS from "aws-sdk";
 import { resolve } from "path";
 import { topicNameFromArn } from "./helpers";
 import { spawn } from "child_process";
+import { get, has } from "lodash/fp";
 
 class ServerlessOfflineSns {
   private config: any;
@@ -135,11 +136,72 @@ class ServerlessOfflineSns {
       this.accountId
     );
   }
+  private getFunctionName(name) {
+    let result;
+    Object.entries(this.serverless.service.functions).forEach(
+      ([funcName, funcValue]) => {
+        const events = get(["events"], funcValue);
+        events &&
+          events.forEach((event) => {
+            const attribute = get(["sqs", "arn"], event);
+            if (!has("Fn::GetAtt", attribute)) return;
+            const [resourceName, value] = attribute["Fn::GetAtt"];
+            if (value !== "Arn") return;
+            if (name !== resourceName) return;
+            result = funcName;
+          });
+      }
+    );
+    return result;
+  }
 
+  private getResourceSubscriptions() {
+    const resources = this.serverless.service.resources.Resources;
+    const subscriptions = [];
+    if (!resources) return subscriptions;
+    new Map(Object.entries(resources)).forEach((value, key) => {
+      let type = get(["Type"], value);
+      if (type !== "AWS::SNS::Subscription") return;
+
+      const endPoint = get(["Properties", "Endpoint"], value);
+      if (!has("Fn::GetAtt", endPoint)) return;
+
+      const [resourceName, attribute] = endPoint["Fn::GetAtt"];
+      type = get(["Type"], resources[resourceName]);
+      if (attribute !== "Arn") return;
+      if (type !== "AWS::SQS::Queue") return;
+
+      const filterPolicy = get(["Properties", "FilterPolicy"], value);
+      const protocol = get(["Properties", "Protocol"], value);
+      const rawMessageDelivery = get(
+        ["Properties", "RawMessageDelivery"],
+        value
+      );
+      const topicArn = get(["Properties", "TopicArn", "Ref"], value);
+      const topicName = get(["Properties", "TopicName"], resources[topicArn]);
+      const fnName = this.getFunctionName(resourceName);
+      subscriptions.push({
+        fnName,
+        options: {
+          topicName,
+          protocol,
+          rawMessageDelivery,
+          filterPolicy,
+        },
+      });
+    });
+    return subscriptions;
+  }
   public async subscribeAll() {
     this.setupSnsAdapter();
     await this.unsubscribeAll();
     this.debug("subscribing functions");
+    const subscriptions = this.getResourceSubscriptions();
+    await Promise.all(
+      subscriptions.map((subscription) =>
+        this.subscribeFromResource(subscription)
+      )
+    );
     await Promise.all(
       Object.keys(this.serverless.service.functions).map((fnName) => {
         const fn = this.serverless.service.functions[fnName];
@@ -160,7 +222,23 @@ class ServerlessOfflineSns {
       })
     );
   }
-
+  private async subscribeFromResource(subscription) {
+    this.debug("subscribe: " + subscription.fnName);
+    this.log(
+      `Creating topic: "${subscription.options.topicName}" for fn "${subscription.fnName}"`
+    );
+    const data = await this.snsAdapter.createTopic(
+      subscription.options.topicName
+    );
+    this.debug("topic: " + JSON.stringify(data));
+    const fn = this.serverless.service.functions[subscription.fnName];
+    await this.snsAdapter.subscribe(
+      fn,
+      this.createHandler(subscription.fnName, fn),
+      data.TopicArn,
+      subscription.options
+    );
+  }
   public async unsubscribeAll() {
     const subs = await this.snsAdapter.listSubscriptions();
     this.debug("subs!: " + JSON.stringify(subs));

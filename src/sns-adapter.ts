@@ -185,7 +185,7 @@ export class SNSAdapter implements ISNSAdapter {
       }
     });
     const params = {
-      Protocol: "http",
+      Protocol: snsConfig.protocol || "http",
       TopicArn: arn,
       Endpoint: subscribeEndpoint,
       Attributes: {},
@@ -199,11 +199,7 @@ export class SNSAdapter implements ISNSAdapter {
         snsConfig.filterPolicy
       );
     }
-   
-    if (snsConfig.protocol) {
-      params.Protocol = snsConfig.protocol;
-    }
-   
+
     await new Promise((res) => {
       this.sns.subscribe(params, (err, data) => {
         if (err) {
@@ -222,7 +218,7 @@ export class SNSAdapter implements ISNSAdapter {
     arn = this.convertPseudoParams(arn);
     this.debug("subscribe: " + queueUrl + " " + arn);
     const params = {
-      Protocol: "sqs",
+      Protocol: snsConfig.protocol || "sqs",
       TopicArn: arn,
       Endpoint: queueUrl,
       Attributes: {},
@@ -235,10 +231,6 @@ export class SNSAdapter implements ISNSAdapter {
       params.Attributes["FilterPolicy"] = JSON.stringify(
         snsConfig.filterPolicy
       );
-    }
-
-    if (snsConfig.protocol) {
-      params.Protocol = snsConfig.protocol;
     }
 
     await new Promise((res) => {

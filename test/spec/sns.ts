@@ -3,6 +3,9 @@ import { expect } from "chai";
 import handler = require("../mock/handler");
 import state = require("../mock/mock.state");
 import * as multiDotHandler from "../mock/multi.dot.handler";
+import * as AWSMock from "aws-sdk-mock";
+import * as AWS from "aws-sdk";
+import { assert, spy } from "sinon";
 
 let plugin;
 
@@ -381,10 +384,34 @@ describe("test", () => {
     const { Topics } = await snsAdapter.listTopics();
     await new Promise((res) => setTimeout(res, 100));
     const topicArns = Topics.map((topic) => topic.TopicArn);
-    expect(Topics.length).to.eq(4);
+    expect(Topics.length).to.eq(5);
     expect(topicArns).to.include(
       `arn:aws:sns:us-east-1:${accountId}:test-topic`
     );
+  });
+
+  it("should subscribe", async () => {
+    const spySendMessage = spy();
+    AWSMock.setSDKInstance(AWS);
+    AWSMock.mock("SQS", "sendMessage", spySendMessage);
+    plugin = new ServerlessOfflineSns(
+      createServerless(accountId, "envHandler"),
+      { skipCacheInvalidation: true }
+    );
+    const snsAdapter = await plugin.start();
+    await plugin.subscribeAll();
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:topic-pinging`,
+      "{}"
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    assert.calledOnce(spySendMessage);
+    assert.calledWith(spySendMessage, {
+      QueueUrl: "http://127.0.0.1:4002/undefined",
+      MessageBody: "{}",
+      MessageAttributes: {},
+    });
+    AWSMock.restore("SQS", "sendMessage");
   });
 });
 
@@ -470,6 +497,47 @@ const createServerless = (
             },
           ],
         },
+        pong6: {
+          handler: "test/mock/handler." + handlerName,
+          events: [
+            {
+              sqs: {
+                arn: {
+                  "Fn::GetAtt": ["pong6", "Arn"],
+                },
+              },
+            },
+          ],
+        },
+      },
+      resources: {
+        Resources: {
+          pong6QueueSubscription: {
+            Type: "AWS::SNS::Subscription",
+            Properties: {
+              Protocol: "sqs",
+              Endpoint: {
+                "Fn::GetAtt": ["pong6", "Arn"],
+              },
+              RawMessageDelivery: "true",
+              TopicArn: {
+                Ref: "pinging",
+              },
+            },
+          },
+          pong6: {
+            Type: "AWS::SQS::Queue",
+            Properties: {
+              QueueName: "pong6",
+            },
+          },
+          pinging: {
+            Type: "AWS::SNS::Topic",
+            Properties: {
+              TopicName: "topic-pinging",
+            },
+          },
+        },
       },
     },
     cli: {
@@ -517,6 +585,7 @@ const createServerlessCacheInvalidation = (
           ],
         },
       },
+      resources: {},
     },
     cli: {
       log: (data) => {
@@ -562,6 +631,7 @@ const createServerlessMultiDot = (
           ],
         },
       },
+      resources: {},
     },
     cli: {
       log: (data) => {
@@ -601,6 +671,7 @@ const createServerlessBad = (accountId: number) => {
           ],
         },
       },
+      resources: {},
     },
     cli: {
       log: (data) => {
@@ -671,6 +742,7 @@ const createServerlessWithFilterPolicies = (
           ],
         },
       },
+      resources: {},
     },
     cli: {
       log: (data) => {
