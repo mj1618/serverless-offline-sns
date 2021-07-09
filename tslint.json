@@ -1,6 +1,13 @@
 {
     "defaultSeverity": "error",
+<<<<<<< HEAD
     "extends": ["tslint:recommended"],
+=======
+    "extends": [
+        "tslint:recommended",
+        "tslint-config-prettier"
+    ],
+>>>>>>> main
     "jsRules": {},
     "rules": {
         "ordered-imports": false,
