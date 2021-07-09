@@ -47,9 +47,21 @@ custom:
     port: 4002 # a free port for the sns server to run on
     debug: false
     # host: 0.0.0.0 # Optional, defaults to 127.0.0.1 if not provided to serverless-offline
-    # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom endpoint
+    # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom SNS provider endpoint
+    # sns-subscribe-endpoint: http://127.0.0.1:3000 # Optional. Only if you want to use a custom subscribe endpoint from SNS to send messages back to
     # accountId: 123456789012 # Optional
     # location .build # Optional if the location of your handler.js is not in ./ (useful for typescript)
+```
+
+For example, if you would like to connect to AWS and have callbacks coming via ngrok, use:
+
+```YAML
+serverless-offline-sns:
+    sns-endpoint: sns.${self:provider.region}.amazonaws.com
+    sns-subscribe-endpoint: <ngrok_url>
+    remotePort: 80
+    localPort: <ngrok_port>
+    accountId: ${self:provider.accountId}
 ```
 
 In normal operation, the plugin will use the same *--host* option as provided to serverless-offline. The *host* parameter as shown above overrides this setting.
