@@ -130,12 +130,17 @@ class ServerlessOfflineSns {
     public async subscribeAll() {
         this.setupSnsAdapter();
         await this.unsubscribeAll();
-        this.debug("subscribing");
+        this.debug("subscribing functions");
         await Promise.all(Object.keys(this.serverless.service.functions).map(fnName => {
             const fn = this.serverless.service.functions[fnName];
             return Promise.all(fn.events.filter(event => event.sns != null).map(event => {
                 return this.subscribe(fnName, event.sns);
             }));
+        }));
+
+        this.debug("subscribing queues");
+        await Promise.all((this.config.subscriptions || []).map(sub => {
+            return this.subscribeQueue(sub.queue, sub.topic);
         }));
     }
 
@@ -152,6 +157,7 @@ class ServerlessOfflineSns {
     public async subscribe(fnName, snsConfig) {
         this.debug("subscribe: " + fnName);
         const fn = this.serverless.service.functions[fnName];
+
         if (!fn.runtime) {
             fn.runtime = this.serverless.service.provider.runtime;
         }
@@ -180,6 +186,34 @@ class ServerlessOfflineSns {
         const data = await this.snsAdapter.createTopic(topicName);
         this.debug("topic: " + JSON.stringify(data));
         await this.snsAdapter.subscribe(fn, this.createHandler(fnName, fn), data.TopicArn, snsConfig);
+    }
+
+    public async subscribeQueue(queueUrl, snsConfig) {
+        this.debug("subscribe: " + queueUrl);
+        let topicName = "";
+
+        // https://serverless.com/framework/docs/providers/aws/events/sns#using-a-pre-existing-topic
+        if (typeof snsConfig === "string") {
+            if (snsConfig.indexOf("arn:aws:sns") === 0) {
+                topicName = topicNameFromArn(snsConfig);
+            } else {
+                topicName = snsConfig;
+            }
+        } else if (snsConfig.topicName && typeof snsConfig.topicName === "string") {
+            topicName = snsConfig.topicName;
+        } else if (snsConfig.arn && typeof snsConfig.arn === "string") {
+            topicName = topicNameFromArn(snsConfig.arn);
+        }
+
+        if (!topicName) {
+            this.log(`Unable to create topic for "${queueUrl}". Please ensure the sns configuration is correct.`);
+            return Promise.resolve(`Unable to create topic for "${queueUrl}". Please ensure the sns configuration is correct.`);
+        }
+
+        this.log(`Creating topic: "${topicName}" for queue "${queueUrl}"`);
+        const data = await this.snsAdapter.createTopic(topicName);
+        this.debug("topic: " + JSON.stringify(data));
+        await this.snsAdapter.subscribeQueue(queueUrl, data.TopicArn, snsConfig);
     }
 
     public createHandler(fnName, fn) {
