@@ -12,11 +12,12 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 12.x
-      - run: >
-        DEBUG=true npm install
-        npm run lint
-        npm run test
-        npm run build
+      - name: install, lint, test, build
+        run: |
+          DEBUG=true npm install
+          npm run lint
+          npm run test
+          npm run build
 
   publish:
     name: Publish
