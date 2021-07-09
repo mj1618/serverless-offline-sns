@@ -25,6 +25,13 @@ jobs:
     needs: [test]
     if: github.ref == 'refs/heads/main'
     steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - name: install, lint, test, build
+        run: npm install
       - uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_TOKEN }}
