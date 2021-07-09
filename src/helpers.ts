@@ -1,4 +1,5 @@
 import { v4 as uuid } from "uuid";
+import { MessageAttributes } from "./types";
 
 export function createAttr() {
   return {
@@ -150,3 +151,16 @@ export const topicNameFromArn = (arn) => {
 
 export const topicArnFromName = (name, region, accountId) =>
   `arn:aws:sns:${region}:${accountId}:${name}`;
+
+export const formatMessageAttributes = (
+  messageAttributes: MessageAttributes
+) => {
+  const newMessageAttributes = {};
+  for (const [key, value] of Object.entries(messageAttributes)) {
+    newMessageAttributes[key] = {
+      DataType: value.Type,
+      StringValue: value.Value,
+    };
+  }
+  return newMessageAttributes;
+};

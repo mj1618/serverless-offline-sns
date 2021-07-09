@@ -16,6 +16,7 @@ import {
   createMessageId,
   validatePhoneNumber,
   topicArnFromName,
+  formatMessageAttributes,
 } from "./helpers";
 
 export class SNSServer implements ISNSServer {
@@ -252,7 +253,7 @@ export class SNSServer implements ISNSServer {
       } else {
         attrs = [messageAttrs[k].Value];
       }
-      if (_.intersection(v, attrs).length > 0) {
+      if (_.intersection(v as unknown[], attrs).length > 0) {
         this.debug(
           "filterPolicy Passed: " +
             v +
@@ -292,7 +293,7 @@ export class SNSServer implements ISNSServer {
       .catch((ex) => this.debug(ex));
   }
 
-  private publishSqs(event, sub) {
+  private publishSqs(event, sub, messageAttributes) {
     const subEndpointUrl = new URL(sub.Endpoint);
     const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
     const sqs = new SQS({ endpoint: sqsEndpoint, region: this.region });
@@ -302,6 +303,7 @@ export class SNSServer implements ISNSServer {
         .sendMessage({
           QueueUrl: sub.Endpoint,
           MessageBody: event,
+          MessageAttributes: formatMessageAttributes(messageAttributes),
         })
         .promise();
     } else {
@@ -311,6 +313,7 @@ export class SNSServer implements ISNSServer {
           .sendMessage({
             QueueUrl: sub.Endpoint,
             MessageBody: JSON.stringify(record.Sns),
+            MessageAttributes: formatMessageAttributes(messageAttributes),
           })
           .promise();
       });
@@ -366,7 +369,7 @@ export class SNSServer implements ISNSServer {
             return this.publishHttp(event, sub, isRaw);
           }
           if (protocol === "sqs") {
-            return this.publishSqs(event, sub);
+            return this.publishSqs(event, sub, messageAttributes);
           }
           throw new Error(
             `Protocol '${protocol}' is not supported by serverless-offline-sns`

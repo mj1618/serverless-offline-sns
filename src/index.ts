@@ -8,7 +8,7 @@ import * as _ from "lodash";
 import * as AWS from "aws-sdk";
 import { resolve } from "path";
 import { topicNameFromArn } from "./helpers";
-import { fork, spawn } from "child_process";
+import { spawn } from "child_process";
 
 class ServerlessOfflineSns {
   private config: any;
