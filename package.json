@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p src",
     "watch": "tsc -p src -w",
-    "test": "nyc ts-mocha \"test/**/*.ts\" -p src/",
+    "test": "nyc ts-mocha \"test/**/*.ts\" --slow 300 -p src/tsconfig.json -p src/",
     "lint": "tslint -p src/",
     "prepare": "npm run lint && npm run test && npm run build",
     "prettier": "npx prettier --write src test"
