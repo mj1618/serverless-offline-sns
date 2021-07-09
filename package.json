@@ -1,6 +1,6 @@
 {
   "name": "serverless-offline-sns",
-  "version": "0.69.0",
+  "version": "0.70.0",
   "description": "Serverless plugin to run a local SNS server and call lambdas with events notifications.",
   "main": "dist/index.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "test": "nyc ts-mocha \"test/**/*.ts\" --slow 300 -p src/tsconfig.json -p src/",
     "lint": "tslint -p src/",
     "prepare": "npm run lint && npm run test && npm run build",
-    "prettier": "npx prettier --write src test"
+    "prettier": "npx prettier --write src test",
+    "upgrade": "npx npm-check-updates -u"
   },
   "repository": {
     "type": "git",
