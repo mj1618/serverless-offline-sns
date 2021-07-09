@@ -32,7 +32,14 @@ jobs:
           node-version: 12.x
       - name: install
         run: npm install
-      
+
+      - name:  'Automated Version Bump'
+        uses:  'phips28/gh-action-bump-version@v8.0.18'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag-prefix:  'v'
+
       - uses: JS-DevTools/npm-publish@v1
         with:
           token: ${{ secrets.NPM_TOKEN }}
