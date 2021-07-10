@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es2015"
+    ],
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "node_modules",
+    "test"
+  ],
+  "include": [
+    "src/*.ts"
+  ]
+}

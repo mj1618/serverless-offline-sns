@@ -141,8 +141,10 @@ describe("test", () => {
     plugin = new ServerlessOfflineSns(createServerlessBad(accountId), {});
     const snsAdapter = await plugin.start();
     const err = await plugin.subscribe(
+      plugin.serverless,
       "badPong",
-      createServerlessBad(accountId).service.functions.badPong
+      createServerlessBad(accountId).service.functions.badPong,
+      plugin.location
     );
     expect(
       err.indexOf("Please ensure the sns configuration is correct")

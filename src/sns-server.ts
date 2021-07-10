@@ -307,7 +307,7 @@ export class SNSServer implements ISNSServer {
         })
         .promise();
     } else {
-      const records = JSON.parse(event).Records;
+      const records = JSON.parse(event).Records ?? [];
       const messagePromises = records.map((record) => {
         return sqs
           .sendMessage({

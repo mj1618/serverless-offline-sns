@@ -1,3 +1,5 @@
+import * as shell from "shelljs";
+
 import { SNSAdapter } from "./sns-adapter";
 import * as express from "express";
 import * as cors from "cors";
@@ -10,6 +12,8 @@ import { resolve } from "path";
 import { topicNameFromArn } from "./helpers";
 import { spawn } from "child_process";
 import { get, has } from "lodash/fp";
+
+import { loadServerlessConfig } from "./sls-config-parser"
 
 class ServerlessOfflineSns {
   private config: any;
@@ -26,6 +30,7 @@ class ServerlessOfflineSns {
   private location: string;
   private region: string;
   private accountId: string;
+  private servicesDirectory: string;
 
   constructor(serverless: any, options: any) {
     this.app = express();
@@ -90,6 +95,7 @@ class ServerlessOfflineSns {
     this.accountId = this.config.accountId || "123456789012";
     const offlineConfig =
       this.serverless.service.custom["serverless-offline"] || {};
+    this.servicesDirectory = this.config.servicesDirectory || ""
     this.location = process.cwd();
     const locationRelativeToCwd =
       this.options.location || this.config.location || offlineConfig.location;
@@ -155,8 +161,8 @@ class ServerlessOfflineSns {
     return result;
   }
 
-  private getResourceSubscriptions() {
-    const resources = this.serverless.service.resources.Resources;
+  private getResourceSubscriptions(serverless) {
+    const resources = serverless.service.resources.Resources;
     const subscriptions = [];
     if (!resources) return subscriptions;
     new Map(Object.entries(resources)).forEach((value, key) => {
@@ -196,25 +202,41 @@ class ServerlessOfflineSns {
     this.setupSnsAdapter();
     await this.unsubscribeAll();
     this.debug("subscribing functions");
-    const subscriptions = this.getResourceSubscriptions();
-    await Promise.all(
-      subscriptions.map((subscription) =>
-        this.subscribeFromResource(subscription)
-      )
-    );
-    await Promise.all(
-      Object.keys(this.serverless.service.functions).map((fnName) => {
-        const fn = this.serverless.service.functions[fnName];
-        return Promise.all(
-          fn.events
-            .filter((event) => event.sns != null)
-            .map((event) => {
-              return this.subscribe(fnName, event.sns);
-            })
-        );
-      })
-    );
-
+    const subscribePromises: Array<Promise<any>> = [];
+    if (this.servicesDirectory) {
+        shell.cd(this.servicesDirectory);
+        for (const directory of shell.ls("-d", "*/")) {
+            shell.cd(directory);
+            const service = directory.split("/")[0];
+            const serverless = await loadServerlessConfig(shell.pwd(), this.debug);
+            this.debug("Processing subscriptions for ", service);
+            this.debug("shell.pwd()", shell.pwd());
+            this.debug("serverless functions", serverless.service.functions);
+            const subscriptions = this.getResourceSubscriptions(serverless);
+            subscriptions.forEach((subscription) =>
+            subscribePromises.push(this.subscribeFromResource(subscription, this.location))
+            )
+            Object.keys(serverless.service.functions).map(fnName => {
+                const fn = serverless.service.functions[fnName];
+                subscribePromises.push(Promise.all(fn.events.filter(event => event.sns != null).map(event => {
+                    return this.subscribe(serverless, fnName, event.sns, shell.pwd());
+                })));
+            });
+            shell.cd("../");
+        }
+    } else {
+        const subscriptions = this.getResourceSubscriptions(this.serverless);
+        subscriptions.forEach((subscription) =>
+        subscribePromises.push(this.subscribeFromResource(subscription, this.location))
+        )
+        Object.keys(this.serverless.service.functions).map(fnName => {
+            const fn = this.serverless.service.functions[fnName];
+            subscribePromises.push(Promise.all(fn.events.filter(event => event.sns != null).map(event => {
+                return this.subscribe(this.serverless, fnName, event.sns, this.location);
+            })));
+        });
+    }
+    await Promise.all(subscribePromises);
     this.debug("subscribing queues");
     await Promise.all(
       (this.config.subscriptions || []).map((sub) => {
@@ -222,7 +244,7 @@ class ServerlessOfflineSns {
       })
     );
   }
-  private async subscribeFromResource(subscription) {
+  private async subscribeFromResource(subscription, location) {
     this.debug("subscribe: " + subscription.fnName);
     this.log(
       `Creating topic: "${subscription.options.topicName}" for fn "${subscription.fnName}"`
@@ -234,7 +256,7 @@ class ServerlessOfflineSns {
     const fn = this.serverless.service.functions[subscription.fnName];
     await this.snsAdapter.subscribe(
       fn,
-      this.createHandler(subscription.fnName, fn),
+      this.createHandler(subscription.fnName, fn, location),
       data.TopicArn,
       subscription.options
     );
@@ -251,12 +273,12 @@ class ServerlessOfflineSns {
     );
   }
 
-  public async subscribe(fnName, snsConfig) {
+  public async subscribe(serverless, fnName, snsConfig, lambdasLocation) {
     this.debug("subscribe: " + fnName);
-    const fn = this.serverless.service.functions[fnName];
+    const fn = serverless.service.functions[fnName];
 
     if (!fn.runtime) {
-      fn.runtime = this.serverless.service.provider.runtime;
+        fn.runtime = serverless.service.provider.runtime;
     }
 
     let topicName = "";
@@ -286,12 +308,7 @@ class ServerlessOfflineSns {
     this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
     const data = await this.snsAdapter.createTopic(topicName);
     this.debug("topic: " + JSON.stringify(data));
-    await this.snsAdapter.subscribe(
-      fn,
-      this.createHandler(fnName, fn),
-      data.TopicArn,
-      snsConfig
-    );
+    await this.snsAdapter.subscribe(fn, this.createHandler(fnName, fn, lambdasLocation), data.TopicArn, snsConfig);
   }
 
   public async subscribeQueue(queueUrl, snsConfig) {
@@ -326,15 +343,15 @@ class ServerlessOfflineSns {
     await this.snsAdapter.subscribeQueue(queueUrl, data.TopicArn, snsConfig);
   }
 
-  public createHandler(fnName, fn) {
+  public createHandler(fnName, fn, location) {
     if (!fn.runtime || fn.runtime.startsWith("nodejs")) {
-      return this.createJavascriptHandler(fn);
+        return this.createJavascriptHandler(fn, location);
     } else {
-      return () => this.createProxyHandler(fnName, fn);
+        return () => this.createProxyHandler(fnName, fn, location);
     }
   }
 
-  public createProxyHandler(funName, funOptions) {
+  public createProxyHandler(funName, funOptions, location) {
     const options = this.options;
     return (event, context) => {
       const args = ["invoke", "local", "-f", funName];
@@ -349,7 +366,7 @@ class ServerlessOfflineSns {
       const cmd = binPath || "sls";
 
       const process = spawn(cmd, args, {
-        cwd: funOptions.servicePath,
+        cwd: location,
         shell: true,
         stdio: ["pipe", "pipe", "pipe"],
       });
@@ -433,7 +450,7 @@ class ServerlessOfflineSns {
     };
   }
 
-  public createJavascriptHandler(fn) {
+  public createJavascriptHandler(fn, location) {
     return () => {
       // Options are passed from the command line in the options parameter
       // ### OLD: use the main serverless config since this behavior is already supported there
@@ -465,7 +482,7 @@ class ServerlessOfflineSns {
       const handlerFnNameIndex = fn.handler.lastIndexOf(".");
       const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
       const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
-      const fullHandlerPath = resolve(this.location, handlerPath);
+      const fullHandlerPath = resolve(location, handlerPath)
       this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
       const handler = require(fullHandlerPath)[handlerFnName];
       return handler;

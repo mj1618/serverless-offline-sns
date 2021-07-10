@@ -141,6 +141,17 @@ custom:
 
 If you want to unsubscribe when you stop your server, then call `sls offline-sns cleanup` when the script exits.
 
+## Multiple serverless services configuration
+
+If you have multiple serverless services, please specify a root directory:
+```YAML
+custom:
+  serverless-offline-sns:
+    servicesDirectory: "/path/to/directory"
+```
+
+The root directory must contain directories with serverless.yaml files inside.
+
 ## Usage
 
 If you use [serverless-offline](https://github.com/dherault/serverless-offline) this plugin will start automatically.
