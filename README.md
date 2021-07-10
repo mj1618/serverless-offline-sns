@@ -105,7 +105,7 @@ var sns = new AWS.SNS({
   region: "us-east-1",
 });
 sns.publish({
-  Message: "hello!",
+  Message: "{content: \"hello!\"}",
   MessageStructure: "json",
   TopicArn: "arn:aws:sns:us-east-1:123456789012:test-topic",
 }, () => {
