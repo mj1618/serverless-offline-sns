@@ -1,7 +1,8 @@
 {
     "defaultSeverity": "error",
     "extends": [
-        "tslint:recommended"
+        "tslint:recommended",
+        "tslint-config-prettier"
     ],
     "jsRules": {},
     "rules": {
@@ -17,7 +18,9 @@
         "arrow-parens": false,
         "no-console": false,
         "no-empty-interface": false,
-        "no-var-requires": false
+        "no-var-requires": false,
+        "trailing-comma": false,
+        "curly": [true, "ignore-same-line"]
     },
     "rulesDirectory": []
 }
