@@ -241,6 +241,7 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
     <td align="center"><a href="https://www.atheneum.ai/"><img src="https://avatars.githubusercontent.com/u/8024768?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Richard</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=richlloydmiles" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/alex-vance"><img src="https://avatars.githubusercontent.com/u/50587352?v=4?s=100" width="100px;" alt=""/><br /><sub><b>alex-vance</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=alex-vance" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/christiangoltz"><img src="https://avatars.githubusercontent.com/u/2478085?v=4?s=100" width="100px;" alt=""/><br /><sub><b>christiangoltz</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=christiangoltz" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/artem7902"><img src="https://avatars.githubusercontent.com/u/26010756?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Artem Yefimenko</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=artem7902" title="Code">💻</a></td>
   </tr>
 </table>
 
