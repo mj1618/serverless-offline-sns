@@ -21,17 +21,15 @@ class ConfigServerless extends Serverless {
 
     this.pluginManager.validateCommand(this.processedInput.commands);
 
-    return this.variables
-      .populateService()
-      .then(() => {
-        this.service.mergeResourceArrays();
-        this.service.setFunctionNames(this.processedInput.options);
-        this.service.validate();
-      });
+    return this.variables.populateService().then(() => {
+      this.service.mergeResourceArrays();
+      this.service.setFunctionNames(this.processedInput.options);
+      this.service.validate();
+    });
   }
 }
 
-const normalizeResources = config => {
+const normalizeResources = (config) => {
   if (!config.resources) {
     return config.resources;
   }
@@ -53,7 +51,7 @@ const normalizeResources = config => {
         ...Outputs,
       },
     }),
-    {},
+    {}
   );
 
   return {
@@ -62,7 +60,7 @@ const normalizeResources = config => {
 };
 
 export async function loadServerlessConfig(cwd = process.cwd(), debug) {
-  console.log("debug loadServerlessConfig", cwd)
+  console.log("debug loadServerlessConfig", cwd);
   const stat = fs.statSync(cwd);
   if (!stat.isDirectory()) {
     cwd = path.dirname(cwd);
@@ -81,7 +79,7 @@ export async function loadServerlessConfig(cwd = process.cwd(), debug) {
     },
     resources: normalizeResources(config),
   };
-  
+
   console.log("output");
 
   return output;

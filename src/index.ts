@@ -13,7 +13,7 @@ import { topicNameFromArn } from "./helpers";
 import { spawn } from "child_process";
 import { get, has } from "lodash/fp";
 
-import { loadServerlessConfig } from "./sls-config-parser"
+import { loadServerlessConfig } from "./sls-config-parser";
 
 class ServerlessOfflineSns {
   private config: any;
@@ -95,7 +95,7 @@ class ServerlessOfflineSns {
     this.accountId = this.config.accountId || "123456789012";
     const offlineConfig =
       this.serverless.service.custom["serverless-offline"] || {};
-    this.servicesDirectory = this.config.servicesDirectory || ""
+    this.servicesDirectory = this.config.servicesDirectory || "";
     this.location = process.cwd();
     const locationRelativeToCwd =
       this.options.location || this.config.location || offlineConfig.location;
@@ -204,37 +204,63 @@ class ServerlessOfflineSns {
     this.debug("subscribing functions");
     const subscribePromises: Array<Promise<any>> = [];
     if (this.servicesDirectory) {
-        shell.cd(this.servicesDirectory);
-        for (const directory of shell.ls("-d", "*/")) {
-            shell.cd(directory);
-            const service = directory.split("/")[0];
-            const serverless = await loadServerlessConfig(shell.pwd(), this.debug);
-            this.debug("Processing subscriptions for ", service);
-            this.debug("shell.pwd()", shell.pwd());
-            this.debug("serverless functions", serverless.service.functions);
-            const subscriptions = this.getResourceSubscriptions(serverless);
-            subscriptions.forEach((subscription) =>
-            subscribePromises.push(this.subscribeFromResource(subscription, this.location))
-            )
-            Object.keys(serverless.service.functions).map(fnName => {
-                const fn = serverless.service.functions[fnName];
-                subscribePromises.push(Promise.all(fn.events.filter(event => event.sns != null).map(event => {
-                    return this.subscribe(serverless, fnName, event.sns, shell.pwd());
-                })));
-            });
-            shell.cd("../");
-        }
-    } else {
-        const subscriptions = this.getResourceSubscriptions(this.serverless);
+      shell.cd(this.servicesDirectory);
+      for (const directory of shell.ls("-d", "*/")) {
+        shell.cd(directory);
+        const service = directory.split("/")[0];
+        const serverless = await loadServerlessConfig(shell.pwd(), this.debug);
+        this.debug("Processing subscriptions for ", service);
+        this.debug("shell.pwd()", shell.pwd());
+        this.debug("serverless functions", serverless.service.functions);
+        const subscriptions = this.getResourceSubscriptions(serverless);
         subscriptions.forEach((subscription) =>
-        subscribePromises.push(this.subscribeFromResource(subscription, this.location))
-        )
-        Object.keys(this.serverless.service.functions).map(fnName => {
-            const fn = this.serverless.service.functions[fnName];
-            subscribePromises.push(Promise.all(fn.events.filter(event => event.sns != null).map(event => {
-                return this.subscribe(this.serverless, fnName, event.sns, this.location);
-            })));
+          subscribePromises.push(
+            this.subscribeFromResource(subscription, this.location)
+          )
+        );
+        Object.keys(serverless.service.functions).map((fnName) => {
+          const fn = serverless.service.functions[fnName];
+          subscribePromises.push(
+            Promise.all(
+              fn.events
+                .filter((event) => event.sns != null)
+                .map((event) => {
+                  return this.subscribe(
+                    serverless,
+                    fnName,
+                    event.sns,
+                    shell.pwd()
+                  );
+                })
+            )
+          );
         });
+        shell.cd("../");
+      }
+    } else {
+      const subscriptions = this.getResourceSubscriptions(this.serverless);
+      subscriptions.forEach((subscription) =>
+        subscribePromises.push(
+          this.subscribeFromResource(subscription, this.location)
+        )
+      );
+      Object.keys(this.serverless.service.functions).map((fnName) => {
+        const fn = this.serverless.service.functions[fnName];
+        subscribePromises.push(
+          Promise.all(
+            fn.events
+              .filter((event) => event.sns != null)
+              .map((event) => {
+                return this.subscribe(
+                  this.serverless,
+                  fnName,
+                  event.sns,
+                  this.location
+                );
+              })
+          )
+        );
+      });
     }
     await Promise.all(subscribePromises);
     this.debug("subscribing queues");
@@ -278,7 +304,7 @@ class ServerlessOfflineSns {
     const fn = serverless.service.functions[fnName];
 
     if (!fn.runtime) {
-        fn.runtime = serverless.service.provider.runtime;
+      fn.runtime = serverless.service.provider.runtime;
     }
 
     let topicName = "";
@@ -308,7 +334,12 @@ class ServerlessOfflineSns {
     this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
     const data = await this.snsAdapter.createTopic(topicName);
     this.debug("topic: " + JSON.stringify(data));
-    await this.snsAdapter.subscribe(fn, this.createHandler(fnName, fn, lambdasLocation), data.TopicArn, snsConfig);
+    await this.snsAdapter.subscribe(
+      fn,
+      this.createHandler(fnName, fn, lambdasLocation),
+      data.TopicArn,
+      snsConfig
+    );
   }
 
   public async subscribeQueue(queueUrl, snsConfig) {
@@ -345,9 +376,9 @@ class ServerlessOfflineSns {
 
   public createHandler(fnName, fn, location) {
     if (!fn.runtime || fn.runtime.startsWith("nodejs")) {
-        return this.createJavascriptHandler(fn, location);
+      return this.createJavascriptHandler(fn, location);
     } else {
-        return () => this.createProxyHandler(fnName, fn, location);
+      return () => this.createProxyHandler(fnName, fn, location);
     }
   }
 
@@ -482,7 +513,7 @@ class ServerlessOfflineSns {
       const handlerFnNameIndex = fn.handler.lastIndexOf(".");
       const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
       const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
-      const fullHandlerPath = resolve(location, handlerPath)
+      const fullHandlerPath = resolve(location, handlerPath);
       this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
       const handler = require(fullHandlerPath)[handlerFnName];
       return handler;
