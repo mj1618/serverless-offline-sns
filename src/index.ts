@@ -162,7 +162,7 @@ class ServerlessOfflineSns {
   }
 
   private getResourceSubscriptions(serverless) {
-    const resources = serverless.service.resources.Resources;
+    const resources = serverless.service.resources?.Resources;
     const subscriptions = [];
     if (!resources) return subscriptions;
     new Map(Object.entries(resources)).forEach((value, key) => {

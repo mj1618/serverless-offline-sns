@@ -415,6 +415,15 @@ describe("test", () => {
     });
     AWSMock.restore("SQS", "sendMessage");
   });
+
+  it("should handle empty resource definition", async () => {
+    const serverless = createServerless(accountId);
+    serverless.service.resources = undefined;
+    plugin = new ServerlessOfflineSns(serverless, {
+      skipCacheInvalidation: true,
+    });
+    await plugin.start();
+  })
 });
 
 const createServerless = (
