@@ -415,10 +415,20 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "jackshaw",
+      "name": "jackshaw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12078858?v=4",
+      "profile": "https://github.com/jackshaw",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "repoType": "github",
   "contributorsPerLine": 7,
   "repoHost": "https://github.com",
-  "commitConvention": "none"
+  "commitConvention": "none",
+  "skipCi": true
 }
