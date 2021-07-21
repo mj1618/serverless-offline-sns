@@ -243,6 +243,9 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
     <td align="center"><a href="https://github.com/christiangoltz"><img src="https://avatars.githubusercontent.com/u/2478085?v=4?s=100" width="100px;" alt=""/><br /><sub><b>christiangoltz</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=christiangoltz" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/artem7902"><img src="https://avatars.githubusercontent.com/u/26010756?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Artem Yefimenko</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=artem7902" title="Code">💻</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/jhackshaw"><img src="https://avatars.githubusercontent.com/u/36460150?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jeff Hackshaw</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=jhackshaw" title="Code">💻</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
