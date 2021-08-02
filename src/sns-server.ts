@@ -10,7 +10,7 @@ import {
   arrayify,
   createAttr,
   createMetadata,
-  createSnsTopicEvent,
+  createSnsLambdaEvent,
   parseMessageAttributes,
   parseAttributes,
   createMessageId,
@@ -349,13 +349,12 @@ export class SNSServer implements ISNSServer {
             event = message;
           } else {
             event = JSON.stringify(
-              createSnsTopicEvent(
+              createSnsLambdaEvent(
                 topicArn,
                 sub.SubscriptionArn,
                 subject,
                 message,
                 messageId,
-                messageStructure,
                 messageAttributes
               )
             );
