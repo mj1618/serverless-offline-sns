@@ -50,7 +50,7 @@ custom:
     # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom SNS provider endpoint
     # sns-subscribe-endpoint: http://127.0.0.1:3000 # Optional. Only if you want to use a custom subscribe endpoint from SNS to send messages back to
     # accountId: 123456789012 # Optional
-    # location .build # Optional if the location of your handler.js is not in ./ (useful for typescript)
+    # location: .build # Optional if the location of your handler.js is not in ./ (useful for typescript)
 ```
 
 For example, if you would like to connect to AWS and have callbacks coming via ngrok, use:
