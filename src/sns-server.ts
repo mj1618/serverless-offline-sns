@@ -316,6 +316,7 @@ export class SNSServer implements ISNSServer {
             QueueUrl: sub.Endpoint,
             MessageBody: JSON.stringify(record.Sns),
             MessageAttributes: formatMessageAttributes(messageAttributes),
+            ...(messageGroupId && { MessageGroupId: messageGroupId }),
           })
           .promise();
       });
