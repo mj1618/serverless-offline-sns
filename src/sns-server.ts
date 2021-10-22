@@ -1,11 +1,11 @@
-import { SQS } from 'aws-sdk';
-import { TopicsList, Subscription } from 'aws-sdk/clients/sns';
-import fetch from 'node-fetch';
-import { URL } from 'url';
-import { IDebug, ISNSServer } from './types';
-import * as bodyParser from 'body-parser';
-import * as _ from 'lodash';
-import * as xml from 'xml';
+import { SQS } from "aws-sdk";
+import { TopicsList, Subscription } from "aws-sdk/clients/sns";
+import fetch from "node-fetch";
+import { URL } from "url";
+import { IDebug, ISNSServer } from "./types";
+import * as bodyParser from "body-parser";
+import * as _ from "lodash";
+import * as xml from "xml";
 import {
   arrayify,
   createAttr,
@@ -17,7 +17,7 @@ import {
   validatePhoneNumber,
   topicArnFromName,
   formatMessageAttributes,
-} from './helpers';
+} from "./helpers";
 
 export class SNSServer implements ISNSServer {
   private topics: TopicsList;
@@ -40,32 +40,32 @@ export class SNSServer implements ISNSServer {
   }
 
   public routes() {
-    this.debug('configuring route');
-    this.app.use(bodyParser.json({ limit: '10mb' })); // for parsing application/json
-    this.app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' })); // for parsing application/x-www-form-urlencoded
+    this.debug("configuring route");
+    this.app.use(bodyParser.json({ limit: "10mb" })); // for parsing application/json
+    this.app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" })); // for parsing application/x-www-form-urlencoded
     this.app.use((req, res, next) => {
-      res.header('Access-Control-Allow-Origin', '*');
+      res.header("Access-Control-Allow-Origin", "*");
       res.header(
-        'Access-Control-Allow-Headers',
-        'Origin, X-Requested-With, Content-Type, Accept'
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept"
       );
       next();
     });
-    this.app.all('/', (req, res) => {
-      this.debug('hello request');
+    this.app.all("/", (req, res) => {
+      this.debug("hello request");
       this.debug(JSON.stringify(req.body));
       this.debug(JSON.stringify(this.subscriptions));
-      if (req.body.Action === 'ListSubscriptions') {
+      if (req.body.Action === "ListSubscriptions") {
         this.debug(
-          'sending: ' + xml(this.listSubscriptions(), { indent: '\t' })
+          "sending: " + xml(this.listSubscriptions(), { indent: "\t" })
         );
         res.send(xml(this.listSubscriptions()));
-      } else if (req.body.Action === 'ListTopics') {
-        this.debug('sending: ' + xml(this.listTopics(), { indent: '\t' }));
+      } else if (req.body.Action === "ListTopics") {
+        this.debug("sending: " + xml(this.listTopics(), { indent: "\t" }));
         res.send(xml(this.listTopics()));
-      } else if (req.body.Action === 'CreateTopic') {
+      } else if (req.body.Action === "CreateTopic") {
         res.send(xml(this.createTopic(req.body.Name)));
-      } else if (req.body.Action === 'Subscribe') {
+      } else if (req.body.Action === "Subscribe") {
         res.send(
           xml(
             this.subscribe(
@@ -76,12 +76,12 @@ export class SNSServer implements ISNSServer {
             )
           )
         );
-      } else if (req.body.Action === 'Publish') {
+      } else if (req.body.Action === "Publish") {
         const target = this.extractTarget(req.body);
-        if (req.body.MessageStructure === 'json') {
+        if (req.body.MessageStructure === "json") {
           const json = JSON.parse(req.body.Message);
-          if (typeof json.default !== 'string') {
-            throw new Error('Messages must have default key');
+          if (typeof json.default !== "string") {
+            throw new Error("Messages must have default key");
           }
         }
 
@@ -97,7 +97,7 @@ export class SNSServer implements ISNSServer {
             )
           )
         );
-      } else if (req.body.Action === 'Unsubscribe') {
+      } else if (req.body.Action === "Unsubscribe") {
         res.send(xml(this.unsubscribe(req.body.SubscriptionArn)));
       } else {
         res.send(
@@ -111,7 +111,7 @@ export class SNSServer implements ISNSServer {
   }
 
   public listTopics() {
-    this.debug('Topics: ' + JSON.stringify(this.topics));
+    this.debug("Topics: " + JSON.stringify(this.topics));
     return {
       ListTopicsResponse: [
         createAttr(),
@@ -168,7 +168,7 @@ export class SNSServer implements ISNSServer {
 
   public unsubscribe(arn) {
     this.debug(JSON.stringify(this.subscriptions));
-    this.debug('unsubscribing: ' + arn);
+    this.debug("unsubscribing: " + arn);
     this.subscriptions = this.subscriptions.filter(
       (sub) => sub.SubscriptionArn !== arn
     );
@@ -203,7 +203,7 @@ export class SNSServer implements ISNSServer {
   public subscribe(endpoint, protocol, arn, body) {
     const attributes = parseAttributes(body);
     const filterPolicies =
-      attributes['FilterPolicy'] && JSON.parse(attributes['FilterPolicy']);
+      attributes["FilterPolicy"] && JSON.parse(attributes["FilterPolicy"]);
     arn = this.convertPseudoParams(arn);
     const existingSubscription = this.subscriptions.find((subscription) => {
       return (
@@ -213,11 +213,11 @@ export class SNSServer implements ISNSServer {
     let subscriptionArn;
     if (!existingSubscription) {
       const sub = {
-        SubscriptionArn: arn + ':' + Math.floor(Math.random() * (1000000 - 1)),
+        SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
         Protocol: protocol,
         TopicArn: arn,
         Endpoint: endpoint,
-        Owner: '',
+        Owner: "",
         Attributes: attributes,
         Policies: filterPolicies,
       };
@@ -249,16 +249,16 @@ export class SNSServer implements ISNSServer {
         break;
       }
       let attrs;
-      if (messageAttrs[k].Type.endsWith('.Array')) {
+      if (messageAttrs[k].Type.endsWith(".Array")) {
         attrs = JSON.parse(messageAttrs[k].Value);
       } else {
         attrs = [messageAttrs[k].Value];
       }
       if (_.intersection(v as unknown[], attrs).length > 0) {
         this.debug(
-          'filterPolicy Passed: ' +
+          "filterPolicy Passed: " +
             v +
-            ' matched message attrs: ' +
+            " matched message attrs: " +
             JSON.stringify(attrs)
         );
         shouldSend = true;
@@ -269,9 +269,9 @@ export class SNSServer implements ISNSServer {
     }
     if (!shouldSend) {
       this.debug(
-        'filterPolicy Failed: ' +
+        "filterPolicy Failed: " +
           JSON.stringify(policies) +
-          ' did not match message attrs: ' +
+          " did not match message attrs: " +
           JSON.stringify(messageAttrs)
       );
     }
@@ -281,13 +281,13 @@ export class SNSServer implements ISNSServer {
 
   private publishHttp(event, sub, raw) {
     return fetch(sub.Endpoint, {
-      method: 'POST',
+      method: "POST",
       body: event,
       timeout: 0,
       headers: {
-        'x-amz-sns-rawdelivery': '' + raw,
-        'Content-Type': 'text/plain; charset=UTF-8',
-        'Content-Length': Buffer.byteLength(event),
+        "x-amz-sns-rawdelivery": "" + raw,
+        "Content-Type": "text/plain; charset=UTF-8",
+        "Content-Length": Buffer.byteLength(event),
       },
     })
       .then((res) => this.debug(res))
@@ -299,7 +299,7 @@ export class SNSServer implements ISNSServer {
     const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
     const sqs = new SQS({ endpoint: sqsEndpoint, region: this.region });
 
-    if (sub['Attributes']['RawMessageDelivery'] === 'true') {
+    if (sub["Attributes"]["RawMessageDelivery"] === "true") {
       return sqs
         .sendMessage({
           QueueUrl: sub.Endpoint,
@@ -336,17 +336,17 @@ export class SNSServer implements ISNSServer {
       this.subscriptions
         .filter((sub) => sub.TopicArn === topicArn)
         .map((sub) => {
-          const isRaw = sub['Attributes']['RawMessageDelivery'] === 'true';
+          const isRaw = sub["Attributes"]["RawMessageDelivery"] === "true";
           if (
-            sub['Policies'] &&
-            !this.evaluatePolicies(sub['Policies'], messageAttributes)
+            sub["Policies"] &&
+            !this.evaluatePolicies(sub["Policies"], messageAttributes)
           ) {
             this.debug(
-              'Filter policies failed. Skipping subscription: ' + sub.Endpoint
+              "Filter policies failed. Skipping subscription: " + sub.Endpoint
             );
             return;
           }
-          this.debug('fetching: ' + sub.Endpoint);
+          this.debug("fetching: " + sub.Endpoint);
           let event;
           if (isRaw) {
             event = message;
@@ -364,15 +364,15 @@ export class SNSServer implements ISNSServer {
               )
             );
           }
-          this.debug('event: ' + event);
+          this.debug("event: " + event);
           if (!sub.Protocol) {
-            sub.Protocol = 'http';
+            sub.Protocol = "http";
           }
           const protocol = sub.Protocol.toLowerCase();
-          if (protocol === 'http') {
+          if (protocol === "http") {
             return this.publishHttp(event, sub, isRaw);
           }
-          if (protocol === 'sqs') {
+          if (protocol === "sqs") {
             return this.publishSqs(
               event,
               sub,
@@ -404,7 +404,7 @@ export class SNSServer implements ISNSServer {
     if (!body.PhoneNumber) {
       const target = body.TopicArn || body.TargetArn;
       if (!target) {
-        throw new Error('TopicArn or TargetArn is missing');
+        throw new Error("TopicArn or TargetArn is missing");
       }
       return this.convertPseudoParams(target);
     } else {
@@ -423,6 +423,6 @@ export class SNSServer implements ISNSServer {
         msg = JSON.stringify(msg);
       } catch (ex) {}
     }
-    this.pluginDebug(msg, 'server');
+    this.pluginDebug(msg, "server");
   }
 }
