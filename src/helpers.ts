@@ -1,10 +1,10 @@
-import { v4 as uuid } from "uuid";
-import { MessageAttributes } from "./types";
+import { v4 as uuid } from 'uuid';
+import { MessageAttributes } from './types';
 
 export function createAttr() {
   return {
     _attr: {
-      xmlns: "http://sns.amazonaws.com/doc/2010-03-31/",
+      xmlns: 'http://sns.amazonaws.com/doc/2010-03-31/',
     },
   };
 }
@@ -28,15 +28,15 @@ export function arrayify(obj) {
 }
 
 export function parseMessageAttributes(body) {
-  if (body.MessageStructure === "json") {
+  if (body.MessageStructure === 'json') {
     return {};
   }
 
   const entries = Object.keys(body)
-    .filter((key) => key.startsWith("MessageAttributes.entry"))
+    .filter((key) => key.startsWith('MessageAttributes.entry'))
     .reduce((prev, key) => {
       const index = key
-        .replace("MessageAttributes.entry.", "")
+        .replace('MessageAttributes.entry.', '')
         .match(/.*?(?=\.|$)/i)[0];
       return prev.includes(index) ? prev : [...prev, index];
     }, []);
@@ -58,10 +58,10 @@ export function parseMessageAttributes(body) {
 
 export function parseAttributes(body) {
   const indices = Object.keys(body)
-    .filter((key) => key.startsWith("Attributes.entry"))
+    .filter((key) => key.startsWith('Attributes.entry'))
     .reduce((prev, key) => {
       const index = key
-        .replace("Attributes.entry.", "")
+        .replace('Attributes.entry.', '')
         .match(/.*?(?=\.|$)/i)[0];
       return prev.includes(index) ? prev : [...prev, index];
     }, []);
@@ -78,24 +78,26 @@ export function createSnsLambdaEvent(
   subject,
   message,
   messageId,
-  messageAttributes?
+  messageAttributes?,
+  messageGroupId?
 ) {
   return {
     Records: [
       {
-        EventVersion: "1.0",
+        EventVersion: '1.0',
         EventSubscriptionArn: subscriptionArn,
-        EventSource: "aws:sns",
+        EventSource: 'aws:sns',
         Sns: {
-          SignatureVersion: "1",
+          SignatureVersion: '1',
           Timestamp: new Date().toISOString(),
-          Signature: "EXAMPLE",
-          SigningCertUrl: "EXAMPLE",
+          Signature: 'EXAMPLE',
+          SigningCertUrl: 'EXAMPLE',
           MessageId: messageId,
           Message: message,
           MessageAttributes: messageAttributes || {},
-          Type: "Notification",
-          UnsubscribeUrl: "EXAMPLE",
+          ...(messageGroupId && { MessageGroupId: messageGroupId }),
+          Type: 'Notification',
+          UnsubscribeUrl: 'EXAMPLE',
           TopicArn: topicArn,
           Subject: subject,
         },
@@ -111,19 +113,21 @@ export function createSnsTopicEvent(
   message,
   messageId,
   messageStructure,
-  messageAttributes?
+  messageAttributes?,
+  messageGroupId?
 ) {
   return {
-    SignatureVersion: "1",
+    SignatureVersion: '1',
     Timestamp: new Date().toISOString(),
-    Signature: "EXAMPLE",
-    SigningCertUrl: "EXAMPLE",
+    Signature: 'EXAMPLE',
+    SigningCertUrl: 'EXAMPLE',
     MessageId: messageId,
     Message: message,
     MessageStructure: messageStructure,
     MessageAttributes: messageAttributes || {},
-    Type: "Notification",
-    UnsubscribeUrl: "EXAMPLE",
+    ...(messageGroupId && { MessageGroupId: messageGroupId }),
+    Type: 'Notification',
+    UnsubscribeUrl: 'EXAMPLE',
     TopicArn: topicArn,
     Subject: subject,
   };
@@ -145,7 +149,7 @@ export function validatePhoneNumber(phoneNumber) {
 // the topics name is that last part of the ARN:
 // arn:aws:sns:<REGION>:<ACCOUNT_ID>:<TOPIC_NAME>
 export const topicNameFromArn = (arn) => {
-  const arnParts = arn.split(":");
+  const arnParts = arn.split(':');
   return arnParts[arnParts.length - 1];
 };
 
