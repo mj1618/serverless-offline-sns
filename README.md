@@ -136,7 +136,7 @@ custom:
     remotePort: ${env:SNS_SUBSCRIBE_REMOTE_PORT}
     host: 0.0.0.0
     sns-subscribe-endpoint: ${env:SNS_SUBSCRIBE_ENDPOINT}
-    sns-endpoint: ${env:SNS_ENDPOINT}```
+    sns-endpoint: ${env:SNS_ENDPOINT}
 ```
 
 If you want to unsubscribe when you stop your server, then call `sls offline-sns cleanup` when the script exits.
