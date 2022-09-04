@@ -1,11 +1,10 @@
 const ServerlessOfflineSns = require("../../src/index");
-import { expect } from "chai";
-import handler = require("../mock/handler");
-import state = require("../mock/mock.state");
-import * as multiDotHandler from "../mock/multi.dot.handler";
-import * as AWSMock from "aws-sdk-mock";
 import * as AWS from "aws-sdk";
+import * as AWSMock from "aws-sdk-mock";
+import { expect } from "chai";
 import { assert, spy } from "sinon";
+import * as handler from "../mock/handler";
+import * as state from "../mock/mock.state";
 
 let plugin;
 
@@ -458,8 +457,8 @@ describe("test", () => {
 const createServerless = (
   accountId: number,
   handlerName: string = "pongHandler",
-  host: string = null,
-  subscribeEndpoint = null
+  host: string|null = null,
+  subscribeEndpoint: string|null = null
 ) => {
   return {
     config: {

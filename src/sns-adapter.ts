@@ -1,14 +1,11 @@
 import * as AWS from "aws-sdk";
 import {
-  ListSubscriptionsResponse,
-  CreateTopicResponse,
-  MessageAttributeMap,
-  ListTopicsResponse,
+  ListSubscriptionsResponse, ListTopicsResponse, MessageAttributeMap
 } from "aws-sdk/clients/sns.d";
-import { ISNSAdapter, IDebug } from "./types";
 import * as _ from "lodash";
-import { createSnsLambdaEvent, createMessageId } from "./helpers";
 import fetch from "node-fetch";
+import { createMessageId, createSnsLambdaEvent } from "./helpers";
+import { IDebug, ISNSAdapter } from "./types";
 
 export class SNSAdapter implements ISNSAdapter {
   private sns: AWS.SNS;
@@ -259,7 +256,7 @@ export class SNSAdapter implements ISNSAdapter {
     type: string = "",
     messageAttributes: MessageAttributeMap = {},
     subject: string = "",
-    messageGroupId: string = undefined
+    messageGroupId?: string
   ) {
     topicArn = this.convertPseudoParams(topicArn);
     return await new Promise((resolve, reject) =>
@@ -284,7 +281,7 @@ export class SNSAdapter implements ISNSAdapter {
     message: string,
     type: string = "",
     messageAttributes: MessageAttributeMap = {},
-    messageGroupId: string = undefined
+    messageGroupId?: string
   ) {
     targetArn = this.convertPseudoParams(targetArn);
     return await new Promise((resolve, reject) =>
@@ -308,7 +305,7 @@ export class SNSAdapter implements ISNSAdapter {
     message: string,
     type: string = "",
     messageAttributes: MessageAttributeMap = {},
-    messageGroupId: string = undefined
+    messageGroupId?: string
   ) {
     return await new Promise((resolve, reject) =>
       this.sns.publish(

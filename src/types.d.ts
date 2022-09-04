@@ -27,22 +27,22 @@ export interface ISNSAdapter {
     message: string
   ): Promise<PublishResponse>;
 }
-export interface ISNSAdapterConstructable {
-  new (
-    endpoint: string,
-    port: number,
-    region: string,
-    debug: IDebug
-  ): ISNSAdapter;
-}
+
+export type ISNSAdapterConstructable = new (
+  endpoint: string,
+  port: number,
+  region: string,
+  debug: IDebug
+) => ISNSAdapter;
 
 export interface ISNSServer {
   routes();
 }
 
-export type MessageAttributes = MessageAttribute[];
+export type MessageAttributes = IMessageAttribute[];
 
-export type MessageAttribute = {
+export interface IMessageAttribute {
   Type: string;
   Value: string;
-};
+}
+

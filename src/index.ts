@@ -210,7 +210,7 @@ class ServerlessOfflineSns {
         for (const directory of shell.ls("-d", "*/")) {
           shell.cd(directory);
           const service = directory.split("/")[0];
-          const serverless = await loadServerlessConfig(shell.pwd(), this.debug);
+          const serverless = await loadServerlessConfig(shell.pwd().toString(), this.debug);
           this.debug("Processing subscriptions for ", service);
           this.debug("shell.pwd()", shell.pwd());
           this.debug("serverless functions", serverless.service.functions);
