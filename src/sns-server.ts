@@ -92,7 +92,8 @@ export class SNSServer implements ISNSServer {
               req.body.Subject,
               req.body.Message,
               req.body.MessageStructure,
-              parseMessageAttributes(req.body)
+              parseMessageAttributes(req.body),
+              req.body.MessageGroupId
             )
           )
         );
@@ -293,7 +294,7 @@ export class SNSServer implements ISNSServer {
       .catch((ex) => this.debug(ex));
   }
 
-  private publishSqs(event, sub, messageAttributes) {
+  private publishSqs(event, sub, messageAttributes, messageGroupId) {
     const subEndpointUrl = new URL(sub.Endpoint);
     const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
     const sqs = new SQS({ endpoint: sqsEndpoint, region: this.region });
@@ -304,6 +305,7 @@ export class SNSServer implements ISNSServer {
           QueueUrl: sub.Endpoint,
           MessageBody: event,
           MessageAttributes: formatMessageAttributes(messageAttributes),
+          ...(messageGroupId && { MessageGroupId: messageGroupId }),
         })
         .promise();
     } else {
@@ -314,6 +316,7 @@ export class SNSServer implements ISNSServer {
             QueueUrl: sub.Endpoint,
             MessageBody: JSON.stringify(record.Sns),
             MessageAttributes: formatMessageAttributes(messageAttributes),
+            ...(messageGroupId && { MessageGroupId: messageGroupId }),
           })
           .promise();
       });
@@ -326,7 +329,8 @@ export class SNSServer implements ISNSServer {
     subject,
     message,
     messageStructure,
-    messageAttributes
+    messageAttributes,
+    messageGroupId
   ) {
     const messageId = createMessageId();
     Promise.all(
@@ -356,7 +360,8 @@ export class SNSServer implements ISNSServer {
                 message,
                 messageId,
                 messageStructure,
-                messageAttributes
+                messageAttributes,
+                messageGroupId
               )
             );
           }
@@ -369,7 +374,12 @@ export class SNSServer implements ISNSServer {
             return this.publishHttp(event, sub, isRaw);
           }
           if (protocol === "sqs") {
-            return this.publishSqs(event, sub, messageAttributes);
+            return this.publishSqs(
+              event,
+              sub,
+              messageAttributes,
+              messageGroupId
+            );
           }
           throw new Error(
             `Protocol '${protocol}' is not supported by serverless-offline-sns`

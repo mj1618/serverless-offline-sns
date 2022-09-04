@@ -151,7 +151,8 @@ export class SNSAdapter implements ISNSAdapter {
           event.Subject || "",
           msg,
           event.MessageId || createMessageId(),
-          event.MessageAttributes || {}
+          event.MessageAttributes || {},
+          event.MessageGroupId
         );
       }
 
@@ -257,7 +258,8 @@ export class SNSAdapter implements ISNSAdapter {
     message: string,
     type: string = "",
     messageAttributes: MessageAttributeMap = {},
-    subject: string = ""
+    subject: string = "",
+    messageGroupId: string = undefined
   ) {
     topicArn = this.convertPseudoParams(topicArn);
     return await new Promise((resolve, reject) =>
@@ -268,6 +270,7 @@ export class SNSAdapter implements ISNSAdapter {
           MessageStructure: type,
           TopicArn: topicArn,
           MessageAttributes: messageAttributes,
+          ...(messageGroupId && { MessageGroupId: messageGroupId }),
         },
         (err, result) => {
           resolve(result);
@@ -280,7 +283,8 @@ export class SNSAdapter implements ISNSAdapter {
     targetArn: string,
     message: string,
     type: string = "",
-    messageAttributes: MessageAttributeMap = {}
+    messageAttributes: MessageAttributeMap = {},
+    messageGroupId: string = undefined
   ) {
     targetArn = this.convertPseudoParams(targetArn);
     return await new Promise((resolve, reject) =>
@@ -290,6 +294,7 @@ export class SNSAdapter implements ISNSAdapter {
           MessageStructure: type,
           TargetArn: targetArn,
           MessageAttributes: messageAttributes,
+          ...(messageGroupId && { MessageGroupId: messageGroupId }),
         },
         (err, result) => {
           resolve(result);
@@ -302,7 +307,8 @@ export class SNSAdapter implements ISNSAdapter {
     phoneNumber: string,
     message: string,
     type: string = "",
-    messageAttributes: MessageAttributeMap = {}
+    messageAttributes: MessageAttributeMap = {},
+    messageGroupId: string = undefined
   ) {
     return await new Promise((resolve, reject) =>
       this.sns.publish(
@@ -311,6 +317,7 @@ export class SNSAdapter implements ISNSAdapter {
           MessageStructure: type,
           PhoneNumber: phoneNumber,
           MessageAttributes: messageAttributes,
+          ...(messageGroupId && { MessageGroupId: messageGroupId }),
         },
         (err, result) => {
           resolve(result);

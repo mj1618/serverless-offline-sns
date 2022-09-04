@@ -78,7 +78,8 @@ export function createSnsLambdaEvent(
   subject,
   message,
   messageId,
-  messageAttributes?
+  messageAttributes?,
+  messageGroupId?
 ) {
   return {
     Records: [
@@ -94,6 +95,7 @@ export function createSnsLambdaEvent(
           MessageId: messageId,
           Message: message,
           MessageAttributes: messageAttributes || {},
+          ...(messageGroupId && { MessageGroupId: messageGroupId }),
           Type: "Notification",
           UnsubscribeUrl: "EXAMPLE",
           TopicArn: topicArn,
@@ -111,7 +113,8 @@ export function createSnsTopicEvent(
   message,
   messageId,
   messageStructure,
-  messageAttributes?
+  messageAttributes?,
+  messageGroupId?
 ) {
   return {
     SignatureVersion: "1",
@@ -122,6 +125,7 @@ export function createSnsTopicEvent(
     Message: message,
     MessageStructure: messageStructure,
     MessageAttributes: messageAttributes || {},
+    ...(messageGroupId && { MessageGroupId: messageGroupId }),
     Type: "Notification",
     UnsubscribeUrl: "EXAMPLE",
     TopicArn: topicArn,

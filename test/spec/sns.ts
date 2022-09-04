@@ -423,7 +423,36 @@ describe("test", () => {
       skipCacheInvalidation: true,
     });
     await plugin.start();
-  })
+  });
+
+  it("should handle messageGroupId", async () => {
+    const spySendMessage = spy();
+    AWSMock.setSDKInstance(AWS);
+    AWSMock.mock("SQS", "sendMessage", spySendMessage);
+    plugin = new ServerlessOfflineSns(
+      createServerless(accountId, "envHandler"),
+      { skipCacheInvalidation: true }
+    );
+    const snsAdapter = await plugin.start();
+    await plugin.subscribeAll();
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:topic-pinging`,
+      "{}",
+      "",
+      {},
+      "",
+      "messageGroupId-here"
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    assert.calledOnce(spySendMessage);
+    assert.calledWith(spySendMessage, {
+      QueueUrl: "http://127.0.0.1:4002/undefined",
+      MessageBody: "{}",
+      MessageAttributes: {},
+      MessageGroupId: "messageGroupId-here",
+    });
+    AWSMock.restore("SQS", "sendMessage");
+  });
 });
 
 const createServerless = (
