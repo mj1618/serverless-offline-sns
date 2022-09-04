@@ -31,6 +31,7 @@ class ServerlessOfflineSns {
   private region: string;
   private accountId: string;
   private servicesDirectory: string;
+  private autoSubscribe: boolean;
 
   constructor(serverless: any, options: any) {
     this.app = express();
@@ -109,7 +110,7 @@ class ServerlessOfflineSns {
     } else {
       this.region = "us-east-1";
     }
-
+    this.autoSubscribe = this.config.autoSubscribe === undefined ? true : this.config.autoSubscribe;
     // Congure SNS client to be able to find us.
     AWS.config.sns = {
       endpoint: "http://127.0.0.1:" + this.localPort,
@@ -203,65 +204,71 @@ class ServerlessOfflineSns {
     await this.unsubscribeAll();
     this.debug("subscribing functions");
     const subscribePromises: Array<Promise<any>> = [];
-    if (this.servicesDirectory) {
-      shell.cd(this.servicesDirectory);
-      for (const directory of shell.ls("-d", "*/")) {
-        shell.cd(directory);
-        const service = directory.split("/")[0];
-        const serverless = await loadServerlessConfig(shell.pwd(), this.debug);
-        this.debug("Processing subscriptions for ", service);
-        this.debug("shell.pwd()", shell.pwd());
-        this.debug("serverless functions", serverless.service.functions);
-        const subscriptions = this.getResourceSubscriptions(serverless);
+    if(this.autoSubscribe) {
+      if (this.servicesDirectory) {
+        shell.cd(this.servicesDirectory);
+        for (const directory of shell.ls("-d", "*/")) {
+          shell.cd(directory);
+          const service = directory.split("/")[0];
+          const serverless = await loadServerlessConfig(shell.pwd(), this.debug);
+          this.debug("Processing subscriptions for ", service);
+          this.debug("shell.pwd()", shell.pwd());
+          this.debug("serverless functions", serverless.service.functions);
+          const subscriptions = this.getResourceSubscriptions(serverless);
+          subscriptions.forEach((subscription) =>
+            subscribePromises.push(
+              this.subscribeFromResource(subscription, this.location)
+            )
+          );
+          Object.keys(serverless.service.functions).map((fnName) => {
+            const fn = serverless.service.functions[fnName];
+            subscribePromises.push(
+              Promise.all(
+                fn.events
+                  .filter((event) => event.sns != null)
+                  .map((event) => {
+                    return this.subscribe(
+                      serverless,
+                      fnName,
+                      event.sns,
+                      shell.pwd()
+                    );
+                  })
+              )
+            );
+          });
+          shell.cd("../");
+        }
+      } else {
+        const subscriptions = this.getResourceSubscriptions(this.serverless);
         subscriptions.forEach((subscription) =>
           subscribePromises.push(
             this.subscribeFromResource(subscription, this.location)
           )
         );
-        Object.keys(serverless.service.functions).map((fnName) => {
-          const fn = serverless.service.functions[fnName];
+        Object.keys(this.serverless.service.functions).map((fnName) => {
+          const fn = this.serverless.service.functions[fnName];
           subscribePromises.push(
             Promise.all(
               fn.events
                 .filter((event) => event.sns != null)
                 .map((event) => {
                   return this.subscribe(
-                    serverless,
+                    this.serverless,
                     fnName,
                     event.sns,
-                    shell.pwd()
+                    this.location
                   );
                 })
             )
           );
         });
-        shell.cd("../");
       }
-    } else {
-      const subscriptions = this.getResourceSubscriptions(this.serverless);
-      subscriptions.forEach((subscription) =>
-        subscribePromises.push(
-          this.subscribeFromResource(subscription, this.location)
-        )
-      );
-      Object.keys(this.serverless.service.functions).map((fnName) => {
-        const fn = this.serverless.service.functions[fnName];
-        subscribePromises.push(
-          Promise.all(
-            fn.events
-              .filter((event) => event.sns != null)
-              .map((event) => {
-                return this.subscribe(
-                  this.serverless,
-                  fnName,
-                  event.sns,
-                  this.location
-                );
-              })
-          )
-        );
-      });
     }
+    await this.subscribeAllQueues(subscribePromises);
+  }
+
+  private async subscribeAllQueues(subscribePromises) {
     await Promise.all(subscribePromises);
     this.debug("subscribing queues");
     await Promise.all(
@@ -270,6 +277,7 @@ class ServerlessOfflineSns {
       })
     );
   }
+
   private async subscribeFromResource(subscription, location) {
     this.debug("subscribe: " + subscription.fnName);
     this.log(
