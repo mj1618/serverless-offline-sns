@@ -8,16 +8,16 @@ jobs:
     name: Test and Build
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js 12.x
+      - name: Use Node.js 16.x
         uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 16.x
       - name: install, lint, test, build
         run: |
-          DEBUG=true npm ci
-          npm run lint
-          npm run test
-          npm run build
+          DEBUG=true yarn install --frozen-lockfile
+          yarn run lint
+          yarn test
+          yarn build
 
   publish:
     name: Publish
@@ -26,12 +26,12 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js 12.x
+      - name: Use Node.js 16.x
         uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 16.x
       - name: install
-        run: npm ci
+        run: yarn install --frozen-lockfile
 
       - name: package-version
         run: node -p -e '`PACKAGE_VERSION=${require("./package.json").version}`' >> $GITHUB_ENV
