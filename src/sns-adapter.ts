@@ -52,7 +52,8 @@ export class SNSAdapter implements ISNSAdapter {
       });
     }
     this.sns = new AWS.SNS({
-      endpoint: this.endpoint,
+      //SNS endpoint will be dervived based on the region
+      //endpoint: this.endpoint,
       region,
     });
   }
