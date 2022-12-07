@@ -39,7 +39,7 @@
     "express": "^4.17.1",
     "lodash": "^4.17.21",
     "node-fetch": "^2.6.1",
-    "serverless": "^2.51.2",
+    "serverless": "^3.25.1",
     "shelljs": "^0.8.4",
     "uuid": "^8.3.2",
     "xml": "^1.0.1"
