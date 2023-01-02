@@ -146,6 +146,10 @@ export function validatePhoneNumber(phoneNumber) {
   return phoneNumber;
 }
 
+export function isPhoneNumber(phoneNumber) {
+  return phoneNumberValidator.test(phoneNumber)
+}
+
 // the topics name is that last part of the ARN:
 // arn:aws:sns:<REGION>:<ACCOUNT_ID>:<TOPIC_NAME>
 export const topicNameFromArn = (arn) => {
