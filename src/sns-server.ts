@@ -17,7 +17,9 @@ import {
   validatePhoneNumber,
   topicArnFromName,
   formatMessageAttributes,
+  isPhoneNumber,
 } from "./helpers";
+import store from "./store";
 
 export class SNSServer implements ISNSServer {
   private topics: TopicsList;
@@ -333,59 +335,69 @@ export class SNSServer implements ISNSServer {
     messageGroupId
   ) {
     const messageId = createMessageId();
-    Promise.all(
-      this.subscriptions
-        .filter((sub) => sub.TopicArn === topicArn)
-        .map((sub) => {
-          const isRaw = sub["Attributes"]["RawMessageDelivery"] === "true";
-          if (
-            sub["Policies"] &&
-            !this.evaluatePolicies(sub["Policies"], messageAttributes)
-          ) {
-            this.debug(
-              "Filter policies failed. Skipping subscription: " + sub.Endpoint
-            );
-            return;
-          }
-          this.debug("fetching: " + sub.Endpoint);
-          let event;
-          if (isRaw) {
-            event = message;
-          } else {
-            event = JSON.stringify(
-              createSnsTopicEvent(
-                topicArn,
-                sub.SubscriptionArn,
-                subject,
-                message,
-                messageId,
-                messageStructure,
+    if(isPhoneNumber(topicArn)){
+      store.sms.push({
+        messageId: messageId,
+        destination: topicArn,
+        subject: subject,
+        body: message,
+        at: Math.floor(new Date().getTime() / 1000)
+      })
+    } else {
+      Promise.all(
+        this.subscriptions
+          .filter((sub) => sub.TopicArn === topicArn)
+          .map((sub) => {
+            const isRaw = sub["Attributes"]["RawMessageDelivery"] === "true";
+            if (
+              sub["Policies"] &&
+              !this.evaluatePolicies(sub["Policies"], messageAttributes)
+            ) {
+              this.debug(
+                "Filter policies failed. Skipping subscription: " + sub.Endpoint
+              );
+              return;
+            }
+            this.debug("fetching: " + sub.Endpoint);
+            let event;
+            if (isRaw) {
+              event = message;
+            } else {
+              event = JSON.stringify(
+                createSnsTopicEvent(
+                  topicArn,
+                  sub.SubscriptionArn,
+                  subject,
+                  message,
+                  messageId,
+                  messageStructure,
+                  messageAttributes,
+                  messageGroupId
+                )
+              );
+            }
+            this.debug("event: " + event);
+            if (!sub.Protocol) {
+              sub.Protocol = "http";
+            }
+            const protocol = sub.Protocol.toLowerCase();
+            if (protocol === "http") {
+              return this.publishHttp(event, sub, isRaw);
+            }
+            if (protocol === "sqs") {
+              return this.publishSqs(
+                event,
+                sub,
                 messageAttributes,
                 messageGroupId
-              )
+              );
+            }
+            throw new Error(
+              `Protocol '${protocol}' is not supported by serverless-offline-sns`
             );
-          }
-          this.debug("event: " + event);
-          if (!sub.Protocol) {
-            sub.Protocol = "http";
-          }
-          const protocol = sub.Protocol.toLowerCase();
-          if (protocol === "http") {
-            return this.publishHttp(event, sub, isRaw);
-          }
-          if (protocol === "sqs") {
-            return this.publishSqs(
-              event,
-              sub,
-              messageAttributes,
-              messageGroupId
-            );
-          }
-          throw new Error(
-            `Protocol '${protocol}' is not supported by serverless-offline-sns`
-          );
-        })
-    );
+          })
+      );
+    }
     return {
       PublishResponse: [
         createAttr(),

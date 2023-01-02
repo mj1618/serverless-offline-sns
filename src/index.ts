@@ -14,6 +14,7 @@ import { spawn } from "child_process";
 import { get, has } from "lodash/fp";
 
 import { loadServerlessConfig } from "./sls-config-parser";
+import store from "./store";
 
 class ServerlessOfflineSns {
   private config: any;
@@ -47,6 +48,16 @@ class ServerlessOfflineSns {
         limit: "10mb",
       })
     );
+    this.app.get('/store', (req, res) => {
+      if (!req.query.since) {
+        res.status(200).send(store);
+        return;
+      }
+    })
+    this.app.post('/clear-store', (req, res) => {
+      store.sms = [];
+      res.status(200).send({ message: 'Sms cleared' });
+    });
     this.options = options;
     this.serverless = serverless;
 
