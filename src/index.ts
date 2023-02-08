@@ -187,6 +187,16 @@ class ServerlessOfflineSns {
       const topicArn = get(["Properties", "TopicArn", "Ref"], value);
       const topicName = get(["Properties", "TopicName"], resources[topicArn]);
       const fnName = this.getFunctionName(resourceName);
+
+      if(!topicName){
+        this.log(`${fnName} does not have a topic name, skipping`);
+        return;
+      }
+
+      if(!fnName){
+        this.log(`${topicName} does not have a function, skipping`);
+        return;
+      }
       subscriptions.push({
         fnName,
         options: {
