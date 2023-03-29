@@ -86,8 +86,8 @@ class ServerlessOfflineSns {
   public init() {
     process.env = _.extend(
       {},
-      this.serverless.service.provider.environment,
-      process.env
+      process.env,
+      this.serverless.service.provider.environment
     );
     this.config =
       this.serverless.service.custom["serverless-offline-sns"] || {};
