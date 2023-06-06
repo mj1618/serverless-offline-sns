@@ -9,7 +9,7 @@
     "test": "nyc ts-mocha \"test/**/*.ts\" --slow 300 -p src/tsconfig.json",
     "lint": "tslint -c tslint.json 'src/**/*'",
     "prepare": "yarn run lint && yarn test && yarn build",
-    "prettier": "npx prettier --write src test",
+    "prettier": "npx prettier --write src test README.md",
     "upgrade": "npx npm-check-updates -u"
   },
   "repository": {

@@ -1,6 +1,7 @@
 Looking for a maintainer for this project, email me if you are interested.
 
 # serverless-offline-sns
+
 A serverless plugin to listen to offline SNS and call lambda fns with events.
 
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
@@ -12,6 +13,7 @@ A serverless plugin to listen to offline SNS and call lambda fns with events.
 [![All Contributors](https://img.shields.io/badge/all_contributors-33-orange.svg?style=flat-square)](#contributors)
 
 ## Docs
+
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configure](#configure)
@@ -29,11 +31,13 @@ If you'd rather use your own endpoint, e.g. from your AWS account or a [localsta
 ## Installation
 
 Install the plugin
+
 ```bash
 npm install serverless-offline-sns --save
 ```
 
 Let serverless know about the plugin
+
 ```YAML
 plugins:
   - serverless-offline-sns
@@ -66,9 +70,10 @@ serverless-offline-sns:
     accountId: ${self:provider.accountId}
 ```
 
-In normal operation, the plugin will use the same *--host* option as provided to serverless-offline. The *host* parameter as shown above overrides this setting.
+In normal operation, the plugin will use the same _--host_ option as provided to serverless-offline. The _host_ parameter as shown above overrides this setting.
 
 If you are using the [serverless-offline](https://github.com/dherault/serverless-offline) plugin serverless-offline-sns will start automatically. If you are not using this plugin you can run the following command instead:
+
 ```bash
 serverless offline-sns start
 ```
@@ -88,6 +93,7 @@ functions:
 ```
 
 Or you can use the exact ARN of the topic, in 2 ways:
+
 ```YAML
 functions:
   pong:
@@ -106,31 +112,39 @@ var sns = new AWS.SNS({
   endpoint: "http://127.0.0.1:4002",
   region: "us-east-1",
 });
-sns.publish({
-  Message: "{content: \"hello!\"}",
-  MessageStructure: "json",
-  TopicArn: "arn:aws:sns:us-east-1:123456789012:test-topic",
-}, () => {
-  console.log("ping");
-});
+sns.publish(
+  {
+    Message: '{content: "hello!"}',
+    MessageStructure: "json",
+    TopicArn: "arn:aws:sns:us-east-1:123456789012:test-topic",
+  },
+  () => {
+    console.log("ping");
+  }
+);
 ```
 
 Note the region that offline-sns will listen on is what is configured in your serverless.yml provider.
 
 ## Localstack docker configuration
+
 In order to listen to localstack SNS event, if localstack is started with docker, you need the following:
+
 ```YAML
 custom:
   serverless-offline-sns:
     host: 0.0.0.0 # Enable plugin to listen on every local address
     sns-subscribe-endpoint: 192.168.1.225 #Host ip address
     sns-endpoint: http://localhost:4575 # Default localstack sns endpoint
+    https: false # Enables HTTPS protocol for the sns-subscribe-endpoint
 ```
+
 What happens is that the container running localstack will execute a POST request to the plugin, but to reach outside the container, it needs to use the host ip address.
 
 ## Hosted AWS SNS configuration
 
 In order to listen to a hosted SNS on AWS, you need the following:
+
 ```YAML
 custom:
   serverless-offline-sns:
@@ -139,6 +153,7 @@ custom:
     host: 0.0.0.0
     sns-subscribe-endpoint: ${env:SNS_SUBSCRIBE_ENDPOINT}
     sns-endpoint: ${env:SNS_ENDPOINT}
+    https: true # Enables HTTPS protocol for the sns-subscribe-endpoint
 ```
 
 If you want to unsubscribe when you stop your server, then call `sls offline-sns cleanup` when the script exits.
@@ -146,6 +161,7 @@ If you want to unsubscribe when you stop your server, then call `sls offline-sns
 ## Multiple serverless services configuration
 
 If you have multiple serverless services, please specify a root directory:
+
 ```YAML
 custom:
   serverless-offline-sns:
@@ -159,6 +175,7 @@ The root directory must contain directories with serverless.yaml files inside.
 If you use [serverless-offline](https://github.com/dherault/serverless-offline) this plugin will start automatically.
 
 However if you don't use serverless-offline you can start this plugin manually with -
+
 ```bash
 serverless offline-sns start
 ```
@@ -173,12 +190,14 @@ the SQS service when creating the queue or listing with `ListQueues`:
 
 ```javascript
 // async
-const queue = await sqs.createQueue({ QueueName: 'my-queue' }).promise();
-const subscription = await sns.subscribe({
+const queue = await sqs.createQueue({ QueueName: "my-queue" }).promise();
+const subscription = await sns
+  .subscribe({
     TopicArn: myTopicArn,
-    Protocol: 'sqs',
+    Protocol: "sqs",
     Endpoint: queue.QueueUrl,
-}).promise();
+  })
+  .promise();
 ```
 
 ## Contributors
