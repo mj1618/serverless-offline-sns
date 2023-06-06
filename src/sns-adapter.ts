@@ -34,7 +34,7 @@ export class SNSAdapter implements ISNSAdapter {
     accountId,
     host,
     subscribeEndpoint,
-    enableHttps
+    enableHttps = false
   ) {
     this.pluginDebug = debug;
     this.app = app;

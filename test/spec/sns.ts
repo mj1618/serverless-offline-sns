@@ -182,6 +182,25 @@ describe("test", () => {
     });
   });
 
+  it("should use the custom subscribe endpoint for subscription urls with https", async () => {
+    plugin = new ServerlessOfflineSns(
+      createServerless(
+        accountId,
+        "pongHandler",
+        "0.0.0.0",
+        "anotherHost",
+        true
+      ),
+      { skipCacheInvalidation: true }
+    );
+    const snsAdapter = await plugin.start();
+    const response = await snsAdapter.listSubscriptions();
+
+    response.Subscriptions.forEach((sub) => {
+      expect(sub.Endpoint.startsWith("https://anotherHost:4002")).to.be.true;
+    });
+  });
+
   it("should unsubscribe", async () => {
     plugin = new ServerlessOfflineSns(createServerless(accountId), {
       skipCacheInvalidation: true,
@@ -458,7 +477,8 @@ const createServerless = (
   accountId: number,
   handlerName: string = "pongHandler",
   host: string | null = null,
-  subscribeEndpoint: string | null = null
+  subscribeEndpoint: string | null = null,
+  https: boolean = false
 ) => {
   return {
     config: {
@@ -473,6 +493,7 @@ const createServerless = (
           accountId: accountId,
           host: host,
           "sns-subscribe-endpoint": subscribeEndpoint,
+          https,
         },
       },
       provider: {
@@ -592,7 +613,7 @@ const createServerless = (
 const createServerlessCacheInvalidation = (
   accountId: number,
   handlerName: string = "pongHandler",
-  host: string = null
+  host: string | null = null
 ) => {
   return {
     config: {
@@ -639,7 +660,7 @@ const createServerlessCacheInvalidation = (
 const createServerlessMultiDot = (
   accountId: number,
   handlerName: string = "pongHandler",
-  host: string = null
+  host: string | null = null
 ) => {
   return {
     config: {
@@ -725,7 +746,7 @@ const createServerlessBad = (accountId: number) => {
 const createServerlessWithFilterPolicies = (
   accountId: number,
   handlerName: string = "pongHandler",
-  host: string = null,
+  host: string | null = null,
   subscribeEndpoint = null
 ) => {
   return {
