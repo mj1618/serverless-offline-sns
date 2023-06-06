@@ -1,6 +1,8 @@
 import * as AWS from "aws-sdk";
 import {
-  ListSubscriptionsResponse, ListTopicsResponse, MessageAttributeMap
+  ListSubscriptionsResponse,
+  ListTopicsResponse,
+  MessageAttributeMap,
 } from "aws-sdk/clients/sns.d";
 import * as _ from "lodash";
 import fetch from "node-fetch";
@@ -31,7 +33,8 @@ export class SNSAdapter implements ISNSAdapter {
     stage,
     accountId,
     host,
-    subscribeEndpoint
+    subscribeEndpoint,
+    enableHttps
   ) {
     this.pluginDebug = debug;
     this.app = app;
@@ -39,7 +42,7 @@ export class SNSAdapter implements ISNSAdapter {
     this.stage = stage;
     this.adapterEndpoint = `http://${host || "127.0.0.1"}:${localPort}`;
     this.baseSubscribeEndpoint = subscribeEndpoint
-      ? `http://${subscribeEndpoint}:${remotePort}`
+      ? `${enableHttps ? "https" : "http"}://${subscribeEndpoint}:${remotePort}`
       : this.adapterEndpoint;
     this.endpoint = snsEndpoint || `http://127.0.0.1:${localPort}`;
     this.debug("using endpoint: " + this.endpoint);

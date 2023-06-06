@@ -45,4 +45,3 @@ export interface IMessageAttribute {
   Type: string;
   Value: string;
 }
-

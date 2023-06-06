@@ -457,8 +457,8 @@ describe("test", () => {
 const createServerless = (
   accountId: number,
   handlerName: string = "pongHandler",
-  host: string|null = null,
-  subscribeEndpoint: string|null = null
+  host: string | null = null,
+  subscribeEndpoint: string | null = null
 ) => {
   return {
     config: {

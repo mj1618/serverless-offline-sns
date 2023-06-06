@@ -110,7 +110,10 @@ class ServerlessOfflineSns {
     } else {
       this.region = "us-east-1";
     }
-    this.autoSubscribe = this.config.autoSubscribe === undefined ? true : this.config.autoSubscribe;
+    this.autoSubscribe =
+      this.config.autoSubscribe === undefined
+        ? true
+        : this.config.autoSubscribe;
     // Congure SNS client to be able to find us.
     AWS.config.sns = {
       endpoint: "http://127.0.0.1:" + this.localPort,
@@ -204,13 +207,16 @@ class ServerlessOfflineSns {
     await this.unsubscribeAll();
     this.debug("subscribing functions");
     const subscribePromises: Array<Promise<any>> = [];
-    if(this.autoSubscribe) {
+    if (this.autoSubscribe) {
       if (this.servicesDirectory) {
         shell.cd(this.servicesDirectory);
         for (const directory of shell.ls("-d", "*/")) {
           shell.cd(directory);
           const service = directory.split("/")[0];
-          const serverless = await loadServerlessConfig(shell.pwd().toString(), this.debug);
+          const serverless = await loadServerlessConfig(
+            shell.pwd().toString(),
+            this.debug
+          );
           this.debug("Processing subscriptions for ", service);
           this.debug("shell.pwd()", shell.pwd());
           this.debug("serverless functions", serverless.service.functions);
@@ -581,7 +587,8 @@ class ServerlessOfflineSns {
       this.serverless.service.provider.stage,
       this.accountId,
       this.config.host,
-      this.config["sns-subscribe-endpoint"]
+      this.config["sns-subscribe-endpoint"],
+      this.config["https"]
     );
   }
 }
