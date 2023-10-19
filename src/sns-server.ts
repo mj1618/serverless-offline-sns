@@ -283,7 +283,6 @@ export class SNSServer implements ISNSServer {
     return fetch(sub.Endpoint, {
       method: "POST",
       body: event,
-      timeout: 0,
       headers: {
         "x-amz-sns-rawdelivery": "" + raw,
         "Content-Type": "text/plain; charset=UTF-8",
