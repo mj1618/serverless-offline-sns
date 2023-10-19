@@ -1,13 +1,13 @@
 let nPongs = 0;
 let event;
-let _resolve;
-let _deferred;
+let resolve;
+let deferred;
 
 export const resetResult = () =>
-  (_deferred = new Promise((res) => (_resolve = (result) => res(result))));
-export const getResult = async () => _deferred;
+  (deferred = new Promise((res) => (resolve = (result) => res(result))));
+export const getResult = async () => deferred;
 export const setResult = (value) => {
-  _resolve(value);
+  resolve(value);
 };
 export const getPongs = () => nPongs;
 export const setPongs = (value) => (nPongs = value);

@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "module": "es2020",
+        "target": "es2020",
+        "lib": [
+            "es2020"
+        ],
+        "declaration": false,
+        "noImplicitAny": false,
+        "removeComments": true,
+        "inlineSourceMap": true,
+        "esModuleInterop": true,
+        "moduleResolution": "node"
+    },
+    "include": [
+        "**/*.ts",
+        "../src/**/*.ts"
+    ]
+}

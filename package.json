@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -p src",
     "watch": "tsc -p src -w",
-    "test": "tsc -p src",
+    "test": "nyc ts-mocha -r ts-node/register --loader=ts-node/esm --no-warnings=ExperimentalWarning --experimental-specifier-resolution=node \"test/**/*.ts\" -p test/tsconfig.json",
     "lint": "tslint -c tslint.json 'src/**/*'",
     "prepare": "yarn run lint && yarn test && yarn build",
     "prettier": "npx prettier --write src test",

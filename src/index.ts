@@ -500,8 +500,7 @@ class ServerlessOfflineSns {
     const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
     const fullHandlerPath = resolve(location, handlerPath);
     const handlers = await import(`${fullHandlerPath}.js`);
-    const handler = handlers[handlerFnName];
-    return handler;
+    return handlers[handlerFnName];
   }
 
   public log(msg, prefix = "INFO[@viso-trust/serverless-offline-sns]: ") {
