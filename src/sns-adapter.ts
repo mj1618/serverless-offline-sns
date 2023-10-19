@@ -1,11 +1,11 @@
-import * as AWS from "aws-sdk";
+import AWS from "aws-sdk";
 import {
   ListSubscriptionsResponse, ListTopicsResponse, MessageAttributeMap
-} from "aws-sdk/clients/sns.d";
-import * as _ from "lodash";
+} from "aws-sdk/clients/sns.d.js";
+import _ from "lodash";
 import fetch from "node-fetch";
-import { createMessageId, createSnsLambdaEvent } from "./helpers";
-import { IDebug, ISNSAdapter } from "./types";
+import { createMessageId, createSnsLambdaEvent } from "./helpers.js";
+import { IDebug, ISNSAdapter } from "./types.js";
 
 export class SNSAdapter implements ISNSAdapter {
   private sns: AWS.SNS;
@@ -171,7 +171,7 @@ export class SNSAdapter implements ISNSAdapter {
           this.sent(response);
         }
       };
-      const maybePromise = getHandler()(
+      const maybePromise = getHandler(
         event,
         this.createLambdaContext(fn, sendIt),
         sendIt

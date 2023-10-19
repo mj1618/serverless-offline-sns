@@ -1,19 +1,20 @@
 import * as shell from "shelljs";
 
-import { SNSAdapter } from "./sns-adapter";
-import * as express from "express";
-import * as cors from "cors";
-import * as bodyParser from "body-parser";
-import { ISNSAdapter } from "./types";
-import { SNSServer } from "./sns-server";
-import * as _ from "lodash";
-import * as AWS from "aws-sdk";
+import { SNSAdapter } from "./sns-adapter.js";
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import { ISNSAdapter } from "./types.js";
+import { SNSServer } from "./sns-server.js";
+import _ from "lodash";
+import AWS from "aws-sdk";
 import { resolve } from "path";
-import { topicNameFromArn } from "./helpers";
+import { topicNameFromArn } from "./helpers.js";
 import { spawn } from "child_process";
-import { get, has } from "lodash/fp";
+import lodashfp from 'lodash/fp.js';
+const { get, has } = lodashfp;
 
-import { loadServerlessConfig } from "./sls-config-parser";
+import { loadServerlessConfig } from "./sls-config-parser.js";
 
 class ServerlessOfflineSns {
   private config: any;
@@ -90,7 +91,7 @@ class ServerlessOfflineSns {
       process.env
     );
     this.config =
-      this.serverless.service.custom["serverless-offline-sns"] || {};
+      this.serverless.service.custom["@viso-trust/serverless-offline-sns"] || {};
     this.localPort = this.config.port || this.config.localPort || 4002;
     this.remotePort = this.config.port || this.config.remotePort || 4002;
     this.accountId = this.config.accountId || "123456789012";
@@ -204,7 +205,7 @@ class ServerlessOfflineSns {
     await this.unsubscribeAll();
     this.debug("subscribing functions");
     const subscribePromises: Array<Promise<any>> = [];
-    if(this.autoSubscribe) {
+    if (this.autoSubscribe) {
       if (this.servicesDirectory) {
         shell.cd(this.servicesDirectory);
         for (const directory of shell.ls("-d", "*/")) {
@@ -213,7 +214,7 @@ class ServerlessOfflineSns {
           const serverless = await loadServerlessConfig(shell.pwd().toString(), this.debug);
           this.debug("Processing subscriptions for ", service);
           this.debug("shell.pwd()", shell.pwd());
-          this.debug("serverless functions", serverless.service.functions);
+          this.debug("serverless functions", JSON.stringify(serverless.service.functions));
           const subscriptions = this.getResourceSubscriptions(serverless);
           subscriptions.forEach((subscription) =>
             subscribePromises.push(
@@ -288,9 +289,10 @@ class ServerlessOfflineSns {
     );
     this.debug("topic: " + JSON.stringify(data));
     const fn = this.serverless.service.functions[subscription.fnName];
+    const handler = await this.createHandler(subscription.fnName, fn, location);
     await this.snsAdapter.subscribe(
       fn,
-      this.createHandler(subscription.fnName, fn, location),
+      handler,
       data.TopicArn,
       subscription.options
     );
@@ -342,9 +344,10 @@ class ServerlessOfflineSns {
     this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
     const data = await this.snsAdapter.createTopic(topicName);
     this.debug("topic: " + JSON.stringify(data));
+    const handler = await this.createHandler(fnName, fn, lambdasLocation);
     await this.snsAdapter.subscribe(
       fn,
-      this.createHandler(fnName, fn, lambdasLocation),
+      handler,
       data.TopicArn,
       snsConfig
     );
@@ -382,15 +385,15 @@ class ServerlessOfflineSns {
     await this.snsAdapter.subscribeQueue(queueUrl, data.TopicArn, snsConfig);
   }
 
-  public createHandler(fnName, fn, location) {
+  public async createHandler(fnName, fn, location) {
     if (!fn.runtime || fn.runtime.startsWith("nodejs")) {
-      return this.createJavascriptHandler(fn, location);
+      return await this.createJavascriptHandler(fn, location);
     } else {
-      return () => this.createProxyHandler(fnName, fn, location);
+      return async () => await this.createProxyHandler(fnName, fn, location);
     }
   }
 
-  public createProxyHandler(funName, funOptions, location) {
+  public async createProxyHandler(funName, funOptions, location) {
     const options = this.options;
     return (event, context) => {
       const args = ["invoke", "local", "-f", funName];
@@ -489,55 +492,28 @@ class ServerlessOfflineSns {
     };
   }
 
-  public createJavascriptHandler(fn, location) {
-    return () => {
-      // Options are passed from the command line in the options parameter
-      // ### OLD: use the main serverless config since this behavior is already supported there
-      if (
-        !this.options.skipCacheInvalidation ||
-        Array.isArray(this.options.skipCacheInvalidation)
-      ) {
-        for (const key in require.cache) {
-          // don't invalidate cached modules from node_modules ...
-          if (key.match(/node_modules/)) {
-            continue;
-          }
-
-          // if an array is provided to the serverless config, check the entries there too
-          if (
-            Array.isArray(this.options.skipCacheInvalidation) &&
-            this.options.skipCacheInvalidation.find((pattern) =>
-              new RegExp(pattern).test(key)
-            )
-          ) {
-            continue;
-          }
-
-          delete require.cache[key];
-        }
-      }
-
-      this.debug(process.cwd());
-      const handlerFnNameIndex = fn.handler.lastIndexOf(".");
-      const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
-      const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
-      const fullHandlerPath = resolve(location, handlerPath);
-      this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
-      const handler = require(fullHandlerPath)[handlerFnName];
-      return handler;
-    };
+  public async createJavascriptHandler(fn, location) {
+    // Options are passed from the command line in the options parameter
+    this.debug(process.cwd());
+    const handlerFnNameIndex = fn.handler.lastIndexOf('.');
+    const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
+    const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
+    const fullHandlerPath = resolve(location, handlerPath);
+    const handlers = await import(`${fullHandlerPath}.js`);
+    const handler = handlers[handlerFnName];
+    return handler;
   }
 
-  public log(msg, prefix = "INFO[serverless-offline-sns]: ") {
+  public log(msg, prefix = "INFO[@viso-trust/serverless-offline-sns]: ") {
     this.serverless.cli.log.call(this.serverless.cli, prefix + msg);
   }
 
   public debug(msg, context?: string) {
     if (this.config.debug) {
       if (context) {
-        this.log(msg, `DEBUG[serverless-offline-sns][${context}]: `);
+        this.log(msg, `DEBUG[@viso-trust/serverless-offline-sns][${context}]: `);
       } else {
-        this.log(msg, "DEBUG[serverless-offline-sns]: ");
+        this.log(msg, "DEBUG[@viso-trust/serverless-offline-sns]: ");
       }
     }
   }
@@ -586,4 +562,4 @@ class ServerlessOfflineSns {
   }
 }
 
-module.exports = ServerlessOfflineSns;
+export default ServerlessOfflineSns;
