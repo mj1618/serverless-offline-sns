@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "target": "es2020",
-    "module": "es2020",
+    "target": "es2022",
+    "module": "es2022",
     "esModuleInterop": true,
     "outDir": "../dist",
-    "lib": ["es5", "es2015.promise", "es2017", "es2017.object", "dom"],
     "allowUnreachableCode": true,
     "noImplicitAny": false,
     "declaration": false,
