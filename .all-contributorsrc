@@ -1,5 +1,5 @@
 {
-  "projectName": "@viso-trust/serverless-offline-sns",
+  "projectName": "serverless-offline-sns",
   "projectOwner": "mj1618",
   "files": [
     "README.md"

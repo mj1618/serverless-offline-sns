@@ -91,7 +91,7 @@ class ServerlessOfflineSns {
       process.env
     );
     this.config =
-      this.serverless.service.custom["@viso-trust/serverless-offline-sns"] || {};
+      this.serverless.service.custom["serverless-offline-sns"] || {};
     this.localPort = this.config.port || this.config.localPort || 4002;
     this.remotePort = this.config.port || this.config.remotePort || 4002;
     this.accountId = this.config.accountId || "123456789012";
@@ -503,16 +503,16 @@ class ServerlessOfflineSns {
     return handlers[handlerFnName];
   }
 
-  public log(msg, prefix = "INFO[@viso-trust/serverless-offline-sns]: ") {
+  public log(msg, prefix = "INFO[serverless-offline-sns]: ") {
     this.serverless.cli.log.call(this.serverless.cli, prefix + msg);
   }
 
   public debug(msg, context?: string) {
     if (this.config.debug) {
       if (context) {
-        this.log(msg, `DEBUG[@viso-trust/serverless-offline-sns][${context}]: `);
+        this.log(msg, `DEBUG[serverless-offline-sns][${context}]: `);
       } else {
-        this.log(msg, "DEBUG[@viso-trust/serverless-offline-sns]: ");
+        this.log(msg, "DEBUG[serverless-offline-sns]: ");
       }
     }
   }

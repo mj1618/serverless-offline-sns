@@ -390,7 +390,7 @@ export class SNSServer implements ISNSServer {
             );
           }
           throw new Error(
-            `Protocol '${protocol}' is not supported by @viso-trust/serverless-offline-sns`
+            `Protocol '${protocol}' is not supported by serverless-offline-sns`
           );
         })
     );

@@ -426,7 +426,7 @@ const createServerless = (
     config: {},
     service: {
       custom: {
-        "@viso-trust/serverless-offline-sns": {
+        "serverless-offline-sns": {
           debug: true,
           port: 4002,
           accountId,
@@ -557,7 +557,7 @@ const createServerlessCacheInvalidation = (
     config: {},
     service: {
       custom: {
-        "@viso-trust/serverless-offline-sns": {
+        "serverless-offline-sns": {
           debug: true,
           port: 4002,
           accountId,
@@ -602,7 +602,7 @@ const createServerlessMultiDot = (
     config: {},
     service: {
       custom: {
-        "@viso-trust/serverless-offline-sns": {
+        "serverless-offline-sns": {
           debug: true,
           port: 4002,
           accountId,
@@ -642,7 +642,7 @@ const createServerlessBad = (accountId: number) => {
     config: {},
     service: {
       custom: {
-        "@viso-trust/serverless-offline-sns": {
+        "serverless-offline-sns": {
           debug: true,
           port: 4002,
           accountId,
@@ -685,7 +685,7 @@ const createServerlessWithFilterPolicies = (
     config: {},
     service: {
       custom: {
-        "@viso-trust/serverless-offline-sns": {
+        "serverless-offline-sns": {
           debug: true,
           port: 4002,
           accountId,

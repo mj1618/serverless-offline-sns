@@ -1,6 +1,6 @@
 Looking for a maintainer for this project, email me if you are interested.
 
-# @viso-trust/serverless-offline-sns
+# serverless-offline-sns
 A serverless plugin to listen to offline SNS and call lambda fns with events.
 
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)

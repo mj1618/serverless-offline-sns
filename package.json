@@ -1,6 +1,6 @@
 {
-  "name": "@viso-trust/serverless-offline-sns",
-  "version": "1.0.0",
+  "name": "serverless-offline-sns",
+  "version": "0.78.0",
   "description": "Serverless plugin to run a local SNS server and call lambdas with events notifications.",
   "exports": "./dist/index.js",
   "type": "module",
