@@ -34,7 +34,7 @@ class ServerlessOfflineSns {
   private servicesDirectory: string;
   private autoSubscribe: boolean;
 
-  constructor(serverless: any, options: any) {
+  constructor(serverless: any, options: any = {}) {
     this.app = express();
     this.app.use(cors());
     this.app.use((req, res, next) => {

@@ -37,9 +37,7 @@ describe("test", () => {
   });
 
   it('should send event to topic ARN', async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerless(accountId));
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
       `arn:aws:sns:us-east-1:${accountId}:test-topic`,
@@ -50,9 +48,7 @@ describe("test", () => {
   });
 
   it('should send event to topic ARN', async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerless(accountId));
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
       `arn:aws:sns:us-east-1:${accountId}:test-topic`,
@@ -63,9 +59,7 @@ describe("test", () => {
   });
 
   it("should send event to target ARN", async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerless(accountId));
     const snsAdapter = await plugin.start();
     await snsAdapter.publishToTargetArn(
       `arn:aws:sns:us-east-1:${accountId}:test-topic`,
@@ -76,9 +70,7 @@ describe("test", () => {
   });
 
   it("should send event with pseudo parameters", async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerless(accountId));
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
       "arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic",
@@ -89,9 +81,7 @@ describe("test", () => {
   });
 
   it("should send event with MessageAttributes and subject", async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerless(accountId));
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
       `arn:aws:sns:us-east-1:${accountId}:test-topic`,
@@ -118,9 +108,7 @@ describe("test", () => {
   });
 
   it("should return a valid response to publish", async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerless(accountId));
     const snsAdapter = await plugin.start();
     const snsResponse = await snsAdapter.publish(
       `arn:aws:sns:us-east-1:${accountId}:test-topic`,
@@ -133,9 +121,7 @@ describe("test", () => {
   });
 
   it("should send a message to a E.164 phone number", async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerless(accountId));
     const snsAdapter = await plugin.start();
     const snsResponse = await snsAdapter.publishToPhoneNumber(
       `+10000000000`,
@@ -169,8 +155,7 @@ describe("test", () => {
 
   it("should use the custom host for subscription urls", async () => {
     plugin = new ServerlessOfflineSns(
-      createServerless(accountId, "pongHandler", "0.0.0.0"),
-      { skipCacheInvalidation: true }
+      createServerless(accountId, "pongHandler", "0.0.0.0")
     );
     const snsAdapter = await plugin.start();
     const response = await snsAdapter.listSubscriptions();
@@ -182,8 +167,7 @@ describe("test", () => {
 
   it("should use the custom subscribe endpoint for subscription urls", async () => {
     plugin = new ServerlessOfflineSns(
-      createServerless(accountId, "pongHandler", "0.0.0.0", "anotherHost"),
-      { skipCacheInvalidation: true }
+      createServerless(accountId, "pongHandler", "0.0.0.0", "anotherHost")
     );
     const snsAdapter = await plugin.start();
     const response = await snsAdapter.listSubscriptions();
@@ -194,9 +178,7 @@ describe("test", () => {
   });
 
   it("should unsubscribe", async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerless(accountId));
     const snsAdapter = await plugin.start();
     await plugin.unsubscribeAll();
     await snsAdapter.publish(
@@ -209,8 +191,7 @@ describe("test", () => {
 
   it("should read env variable", async () => {
     plugin = new ServerlessOfflineSns(
-      createServerless(accountId, "envHandler"),
-      { skipCacheInvalidation: true }
+      createServerless(accountId, "envHandler")
     );
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
@@ -222,8 +203,7 @@ describe("test", () => {
 
   it("should read env variable for function", async () => {
     plugin = new ServerlessOfflineSns(
-      createServerless(accountId, "envHandler"),
-      { skipCacheInvalidation: true }
+      createServerless(accountId, "envHandler")
     );
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
@@ -235,8 +215,7 @@ describe("test", () => {
 
   it("should convert pseudo param on load", async () => {
     plugin = new ServerlessOfflineSns(
-      createServerless(accountId, "pseudoHandler"),
-      { skipCacheInvalidation: true }
+      createServerless(accountId, "pseudoHandler")
     );
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
@@ -248,33 +227,8 @@ describe("test", () => {
     );
   });
 
-  // TODO: fix
-  // it("should completely reload the module every time if cache invalidation is enabled", async () => {
-  //   plugin = new ServerlessOfflineSns(
-  //     createServerlessCacheInvalidation(accountId),
-  //     { skipCacheInvalidation: [/mock\.state/] }
-  //   );
-
-  //   const snsAdapter = await plugin.start();
-  //   await snsAdapter.publish(
-  //     `arn:aws:sns:us-east-1:${accountId}:test-topic`,
-  //     "{}"
-  //   );
-  //   await new Promise((res) => setTimeout(res, 100));
-  //   expect(state.getPongs()).to.eq(1, "wrong number of pongs (first check)");
-
-  //   await snsAdapter.publish(
-  //     `arn:aws:sns:us-east-1:${accountId}:test-topic`,
-  //     "{}"
-  //   );
-  //   await new Promise((res) => setTimeout(res, 100));
-  //   expect(state.getPongs(), "wrong number of pongs (second check)").to.eq(1);
-  // });
-
   it("should send event to handlers with more than one dot in the filename", async () => {
-    plugin = new ServerlessOfflineSns(createServerlessMultiDot(accountId), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerlessMultiDot(accountId));
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
       `arn:aws:sns:us-east-1:${accountId}:multi-dot-topic`,
@@ -283,6 +237,7 @@ describe("test", () => {
     await new Promise((res) => setTimeout(res, 100));
     expect(state.getPongs()).to.eq(1);
   });
+  
   // TODO: fix
   // it('should support async handlers with no callback', async () => {
   //   plugin = new ServerlessOfflineSns(createServerless(accountId, "asyncHandler"), {
@@ -320,8 +275,7 @@ describe("test", () => {
 
   it("should send event when filter policies exist and pass", async () => {
     plugin = new ServerlessOfflineSns(
-      createServerlessWithFilterPolicies(accountId),
-      { skipCacheInvalidation: true }
+      createServerlessWithFilterPolicies(accountId)
     );
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
@@ -379,9 +333,7 @@ describe("test", () => {
     const serverless = createServerless(accountId);
     serverless.service.functions.pong4.events[0].sns["rawMessageDelivery"] =
       "true";
-    plugin = new ServerlessOfflineSns(serverless, {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(serverless);
 
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
@@ -409,8 +361,7 @@ describe("test", () => {
     AWSMock.setSDKInstance(AWS);
     AWSMock.mock("SQS", "sendMessage", spySendMessage);
     plugin = new ServerlessOfflineSns(
-      createServerless(accountId, "envHandler"),
-      { skipCacheInvalidation: true }
+      createServerless(accountId, "envHandler")
     );
     const snsAdapter = await plugin.start();
     await plugin.subscribeAll();
@@ -432,9 +383,7 @@ describe("test", () => {
   it("should handle empty resource definition", async () => {
     const serverless = createServerless(accountId);
     serverless.service.resources = undefined;
-    plugin = new ServerlessOfflineSns(serverless, {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(serverless);
     await plugin.start();
   });
 
@@ -443,8 +392,7 @@ describe("test", () => {
     AWSMock.setSDKInstance(AWS);
     AWSMock.mock("SQS", "sendMessage", spySendMessage);
     plugin = new ServerlessOfflineSns(
-      createServerless(accountId, "envHandler"),
-      { skipCacheInvalidation: true }
+      createServerless(accountId, "envHandler")
     );
     const snsAdapter = await plugin.start();
     await plugin.subscribeAll();
@@ -475,10 +423,7 @@ const createServerless = (
   subscribeEndpoint: string | null = null
 ) => {
   return {
-    config: {
-      // Since this is not really being used, it should be removed
-      skipCacheInvalidation: true,
-    },
+    config: {},
     service: {
       custom: {
         "@viso-trust/serverless-offline-sns": {
@@ -609,9 +554,7 @@ const createServerlessCacheInvalidation = (
   host = null
 ) => {
   return {
-    config: {
-      skipCacheInvalidation: [/mock\.state/],
-    },
+    config: {},
     service: {
       custom: {
         "@viso-trust/serverless-offline-sns": {
@@ -656,9 +599,7 @@ const createServerlessMultiDot = (
   host = null
 ) => {
   return {
-    config: {
-      skipCacheInvalidation: true,
-    },
+    config: {},
     service: {
       custom: {
         "@viso-trust/serverless-offline-sns": {
@@ -698,9 +639,7 @@ const createServerlessMultiDot = (
 
 const createServerlessBad = (accountId: number) => {
   return {
-    config: {
-      skipCacheInvalidation: true,
-    },
+    config: {},
     service: {
       custom: {
         "@viso-trust/serverless-offline-sns": {
@@ -743,9 +682,7 @@ const createServerlessWithFilterPolicies = (
   subscribeEndpoint = null
 ) => {
   return {
-    config: {
-      skipCacheInvalidation: true,
-    },
+    config: {},
     service: {
       custom: {
         "@viso-trust/serverless-offline-sns": {
