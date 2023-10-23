@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/visotrust/serverless-offline-sns.git"
+    "url": "git+https://github.com/mj1618/serverless-offline-sns.git"
   },
   "keywords": [
     "serverless-plugin",
@@ -30,9 +30,9 @@
   "author": "Matthew James <matthew.stephen.james@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/visotrust/serverless-offline-sns/issues"
+    "url": "https://github.com/mj1618/serverless-offline-sns/issues"
   },
-  "homepage": "https://github.com/visotrust/serverless-offline-sns#readme",
+  "homepage": "https://github.com/mj1618/serverless-offline-sns#readme",
   "dependencies": {
     "aws-sdk": "^2.1476.0",
     "body-parser": "^1.20.2",

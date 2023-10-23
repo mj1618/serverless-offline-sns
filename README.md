@@ -4,7 +4,7 @@ Looking for a maintainer for this project, email me if you are interested.
 A serverless plugin to listen to offline SNS and call lambda fns with events.
 
 [![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
-![build status](https://github.com/visotrust/serverless-offline-sns/actions/workflows/build.yml/badge.svg)
+![build status](https://github.com/mj1618/serverless-offline-sns/actions/workflows/build.yml/badge.svg)
 [![npm version](https://badge.fury.io/js/serverless-offline-sns.svg)](https://badge.fury.io/js/serverless-offline-sns)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
@@ -30,13 +30,13 @@ If you'd rather use your own endpoint, e.g. from your AWS account or a [localsta
 
 Install the plugin
 ```bash
-npm install --save-dev @viso-trust/serverless-offline-sns
+npm install serverless-offline-sns --save
 ```
 
 Let serverless know about the plugin
 ```YAML
 plugins:
-  - "@viso-trust/serverless-offline-sns"
+  - serverless-offline-sns
 ```
 
 Note that ordering matters when used with serverless-offline and serverless-webpack. serverless-webpack must be specified at the start of the list of plugins.
@@ -45,10 +45,10 @@ Configure the plugin with your offline SNS endpoint, host to listen on, and a fr
 
 ```YAML
 custom:
-  "@viso-trust/serverless-offline-sns":
+  serverless-offline-sns:
     port: 4002 # a free port for the sns server to run on
     debug: false
-    # host: 0.0.0.0 # Optional, defaults to 127.0.0.1 if not provided to @viso-trust/serverless-offline-sns
+    # host: 0.0.0.0 # Optional, defaults to 127.0.0.1 if not provided to serverless-offline
     # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom SNS provider endpoint
     # sns-subscribe-endpoint: http://127.0.0.1:3000 # Optional. Only if you want to use a custom subscribe endpoint from SNS to send messages back to
     # accountId: 123456789012 # Optional
@@ -58,7 +58,7 @@ custom:
 For example, if you would like to connect to AWS and have callbacks coming via ngrok, use:
 
 ```YAML
-"@viso-trust/serverless-offline-sns":
+serverless-offline-sns:
     sns-endpoint: sns.${self:provider.region}.amazonaws.com
     sns-subscribe-endpoint: <ngrok_url>
     remotePort: 80
@@ -68,7 +68,7 @@ For example, if you would like to connect to AWS and have callbacks coming via n
 
 In normal operation, the plugin will use the same *--host* option as provided to serverless-offline. The *host* parameter as shown above overrides this setting.
 
-If you are using the [serverless-offline](https://github.com/dherault/serverless-offline) plugin @viso-trust/serverless-offline-sns will start automatically. If you are not using this plugin you can run the following command instead:
+If you are using the [serverless-offline](https://github.com/dherault/serverless-offline) plugin serverless-offline-sns will start automatically. If you are not using this plugin you can run the following command instead:
 ```bash
 serverless offline-sns start
 ```
@@ -121,7 +121,7 @@ Note the region that offline-sns will listen on is what is configured in your se
 In order to listen to localstack SNS event, if localstack is started with docker, you need the following:
 ```YAML
 custom:
-  "@viso-trust/serverless-offline-sns":
+  serverless-offline-sns:
     host: 0.0.0.0 # Enable plugin to listen on every local address
     sns-subscribe-endpoint: 192.168.1.225 #Host ip address
     sns-endpoint: http://localhost:4575 # Default localstack sns endpoint
@@ -133,7 +133,7 @@ What happens is that the container running localstack will execute a POST reques
 In order to listen to a hosted SNS on AWS, you need the following:
 ```YAML
 custom:
-  "@viso-trust/serverless-offline-sns":
+  serverless-offline-sns:
     localPort: ${env:LOCAL_PORT}
     remotePort: ${env:SNS_SUBSCRIBE_REMOTE_PORT}
     host: 0.0.0.0
@@ -148,7 +148,7 @@ If you want to unsubscribe when you stop your server, then call `sls offline-sns
 If you have multiple serverless services, please specify a root directory:
 ```YAML
 custom:
-  "@viso-trust/serverless-offline-sns":
+  serverless-offline-sns:
     servicesDirectory: "/path/to/directory"
 ```
 
@@ -165,7 +165,7 @@ serverless offline-sns start
 
 ### Subscribing
 
-`@viso-trust/serverless-offline-sns` supports `http`, `https`, and `sqs` subscriptions. `email`, `email-json`,
+`serverless-offline-sns` supports `http`, `https`, and `sqs` subscriptions. `email`, `email-json`,
 `sms`, `application`, and `lambda` protocols are not supported at this time.
 
 When using `sqs` the `Endpoint` for the subscription must be the full `QueueUrl` returned from
@@ -183,7 +183,7 @@ const subscription = await sns.subscribe({
 
 ## Contributors
 
-Happy to accept contributions, [feature requests](https://github.com/visotrust/serverless-offline-sns/issues) and [issues](https://github.com/visotrust/serverless-offline-sns/issues).
+Happy to accept contributions, [feature requests](https://github.com/mj1618/serverless-offline-sns/issues) and [issues](https://github.com/mj1618/serverless-offline-sns/issues).
 
 Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
 
