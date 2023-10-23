@@ -238,22 +238,21 @@ describe("test", () => {
     expect(state.getPongs()).to.eq(1);
   });
   
-  // TODO: fix
-  // it('should support async handlers with no callback', async () => {
-  //   plugin = new ServerlessOfflineSns(createServerless(accountId, "asyncHandler"), {
-  //     skipCacheInvalidation: true,
-  //   });
-  //   const snsAdapter = await plugin.start();
-  //   await snsAdapter.publish(
-  //     `arn:aws:sns:us-east-1:${accountId}:test-topic-async`,
-  //     "{}"
-  //   );
-  //   await new Promise((res) => setTimeout(res, 100));
-  //   expect(await state.getResult()).to.eq(
-  //     `arn:aws:sns:us-east-1:${accountId}:test-topic-async`
-  //   );
-  //   expect(await snsAdapter.Deferred).to.eq("{}");
-  // });
+  it('should support async handlers with no callback', async () => {
+    plugin = new ServerlessOfflineSns(createServerless(accountId, "asyncHandler"), {
+      skipCacheInvalidation: true,
+    });
+    const snsAdapter = await plugin.start();
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:test-topic-async`,
+      "{}"
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    expect(await state.getResult()).to.eq(
+      `arn:aws:sns:us-east-1:${accountId}:test-topic-async`
+    );
+    expect(await snsAdapter.Deferred).to.eq("{}");
+  });
 
   it("should not send event when filter policies exist and fail", async () => {
     plugin = new ServerlessOfflineSns(
