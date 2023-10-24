@@ -1,11 +1,11 @@
-import { SQS } from "aws-sdk";
-import { TopicsList, Subscription } from "aws-sdk/clients/sns";
+import AWS from "aws-sdk";
+import { TopicsList, Subscription } from "aws-sdk/clients/sns.js";
 import fetch from "node-fetch";
 import { URL } from "url";
-import { IDebug, ISNSServer } from "./types";
-import * as bodyParser from "body-parser";
-import * as _ from "lodash";
-import * as xml from "xml";
+import { IDebug, ISNSServer } from "./types.js";
+import bodyParser from "body-parser";
+import _ from "lodash";
+import xml from "xml";
 import {
   arrayify,
   createAttr,
@@ -17,7 +17,7 @@ import {
   validatePhoneNumber,
   topicArnFromName,
   formatMessageAttributes,
-} from "./helpers";
+} from "./helpers.js";
 
 export class SNSServer implements ISNSServer {
   private topics: TopicsList;
@@ -283,11 +283,10 @@ export class SNSServer implements ISNSServer {
     return fetch(sub.Endpoint, {
       method: "POST",
       body: event,
-      timeout: 0,
       headers: {
         "x-amz-sns-rawdelivery": "" + raw,
         "Content-Type": "text/plain; charset=UTF-8",
-        "Content-Length": Buffer.byteLength(event),
+        "Content-Length": Buffer.byteLength(event).toString(),
       },
     })
       .then((res) => this.debug(res))
@@ -297,30 +296,39 @@ export class SNSServer implements ISNSServer {
   private publishSqs(event, sub, messageAttributes, messageGroupId) {
     const subEndpointUrl = new URL(sub.Endpoint);
     const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
-    const sqs = new SQS({ endpoint: sqsEndpoint, region: this.region });
+    const sqs = new AWS.SQS({ endpoint: sqsEndpoint, region: this.region });
 
     if (sub["Attributes"]["RawMessageDelivery"] === "true") {
-      return sqs
+      return new Promise<void>((resolve, reject) => {
+        sqs
         .sendMessage({
           QueueUrl: sub.Endpoint,
           MessageBody: event,
           MessageAttributes: formatMessageAttributes(messageAttributes),
           ...(messageGroupId && { MessageGroupId: messageGroupId }),
-        })
-        .promise();
+        }).promise().then(() => {
+          resolve();
+        });
+      });
     } else {
       const records = JSON.parse(event).Records ?? [];
       const messagePromises = records.map((record) => {
-        return sqs
+        return new Promise<void>((resolve, reject) => {
+          sqs
           .sendMessage({
             QueueUrl: sub.Endpoint,
             MessageBody: JSON.stringify(record.Sns),
             MessageAttributes: formatMessageAttributes(messageAttributes),
             ...(messageGroupId && { MessageGroupId: messageGroupId }),
           })
-          .promise();
+          .promise().then(() => {
+            resolve();
+          });
+        });
       });
-      return Promise.all(messagePromises);
+      return new Promise<void>((resolve, reject) => {
+        Promise.all(messagePromises).then(() => resolve());
+      });
     }
   }
 

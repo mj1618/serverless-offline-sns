@@ -1,5 +1,5 @@
 import { v4 as uuid } from "uuid";
-import { MessageAttributes } from "./types";
+import { MessageAttributes } from "./types.js";
 
 export function createAttr() {
   return {

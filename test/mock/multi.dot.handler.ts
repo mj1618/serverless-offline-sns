@@ -1,4 +1,4 @@
-import { setPongs } from "./mock.state";
+import { setPongs } from "./mock.state.js";
 
 let nPongs = 0;
 

@@ -3,7 +3,7 @@ import {
   CreateTopicResponse,
   PublishResponse,
   ListTopicsResponse,
-} from "aws-sdk/clients/sns.d";
+} from "aws-sdk/clients/sns.d.js";
 
 export type IDebug = (msg: any, stack?: any) => void;
 

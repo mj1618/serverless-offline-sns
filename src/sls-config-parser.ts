@@ -1,7 +1,7 @@
-import * as fs from "fs";
-import * as path from "path";
-import * as Serverless from "serverless";
-import * as findConfigPath from 'serverless/lib/cli/resolve-configuration-path';
+import fs from "fs";
+import path from "path";
+import Serverless from "serverless";
+import findConfigPath from 'serverless/lib/cli/resolve-configuration-path.js';
 
 export async function loadServerlessConfig(cwd = process.cwd(), debug) {
   console.log("debug loadServerlessConfig", cwd);

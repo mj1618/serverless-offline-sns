@@ -1,4 +1,4 @@
-import { setEvent, setPongs, setResult } from "./mock.state";
+import { setEvent, setPongs, setResult } from "./mock.state.js";
 
 let nPongs = 0;
 
