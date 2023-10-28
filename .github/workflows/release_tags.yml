@@ -40,7 +40,3 @@ jobs:
 
       - name: git-tag-to-package-version
         run: npm version ${{ env.RELEASE_VERSION }} --no-git-tag-version
-
-      - uses: JS-DevTools/npm-publish@v3
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
