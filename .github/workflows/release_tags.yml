@@ -3,7 +3,7 @@ name: release_tags
 on:
   push:
       tags:     
-        - 'v*.*.*'  
+        - '*.*.*'  
 
 jobs:
   test:
