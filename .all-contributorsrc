@@ -424,6 +424,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "dsarlo",
+      "name": "Daniel Sarlo",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16106087?v=4",
+      "profile": "https://github.com/dsarlo",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "repoType": "github",
