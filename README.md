@@ -247,6 +247,7 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/jhackshaw"><img src="https://avatars.githubusercontent.com/u/36460150?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jeff Hackshaw</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=jhackshaw" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/dsarlo"><img src="https://avatars.githubusercontent.com/u/16106087?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Sarlo</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=dsarlo" title="Code">💻</a></td>
   </tr>
 </table>
 
