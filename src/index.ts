@@ -15,6 +15,7 @@ import lodashfp from 'lodash/fp.js';
 const { get, has } = lodashfp;
 
 import { loadServerlessConfig } from "./sls-config-parser.js";
+import url from 'url';
 
 class ServerlessOfflineSns {
   private config: any;
@@ -509,7 +510,7 @@ class ServerlessOfflineSns {
     const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
     const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
     const fullHandlerPath = resolve(location, handlerPath);
-    const handlers = await import(`${fullHandlerPath}.js`);
+    const handlers = await import(`${url.pathToFileURL(fullHandlerPath)}.js`);
     return handlers[handlerFnName];
   }
 
