@@ -43,17 +43,6 @@ describe("test", () => {
       `arn:aws:sns:us-east-1:${accountId}:test-topic`,
       "{}"
     );
-    await new Promise((res) => setTimeout(res, 500));
-    expect(state.getPongs()).to.eq(2);
-  });
-
-  it('should send event to topic ARN', async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId));
-    const snsAdapter = await plugin.start();
-    await snsAdapter.publish(
-      `arn:aws:sns:us-east-1:${accountId}:test-topic`,
-      "{}"
-    );
     await new Promise((res) => setTimeout(res, 100));
     expect(state.getPongs()).to.eq(2);
   });
@@ -237,11 +226,20 @@ describe("test", () => {
     await new Promise((res) => setTimeout(res, 100));
     expect(state.getPongs()).to.eq(1);
   });
+
+  it('should support commonjs/default handlers', async () => {
+    plugin = new ServerlessOfflineSns(createServerless(accountId, "defaultExportHandler"));
+    const snsAdapter = await plugin.start();
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:test-topic`,
+      "{}"
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    expect(state.getPongs()).to.eq(2);
+  });
   
   it('should support async handlers with no callback', async () => {
-    plugin = new ServerlessOfflineSns(createServerless(accountId, "asyncHandler"), {
-      skipCacheInvalidation: true,
-    });
+    plugin = new ServerlessOfflineSns(createServerless(accountId, "asyncHandler"));
     const snsAdapter = await plugin.start();
     await snsAdapter.publish(
       `arn:aws:sns:us-east-1:${accountId}:test-topic-async`,
@@ -536,51 +534,6 @@ const createServerless = (
           },
         },
       },
-    },
-    cli: {
-      log: (data) => {
-        if (process.env.DEBUG) {
-          console.log(data);
-        }
-      },
-    },
-  };
-};
-
-const createServerlessCacheInvalidation = (
-  accountId: number,
-  handlerName: string = "pongHandler",
-  host = null
-) => {
-  return {
-    config: {},
-    service: {
-      custom: {
-        "serverless-offline-sns": {
-          debug: true,
-          port: 4002,
-          accountId,
-          host,
-          invalidateCache: true,
-        },
-      },
-      provider: {
-        region: "us-east-1",
-        environment: {
-          MY_VAR: "MY_VAL",
-        },
-      },
-      functions: {
-        pong: {
-          handler: "test/mock/handler." + handlerName,
-          events: [
-            {
-              sns: `arn:aws:sns:us-west-2:${accountId}:test-topic`,
-            },
-          ],
-        },
-      },
-      resources: {},
     },
     cli: {
       log: (data) => {

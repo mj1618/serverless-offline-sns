@@ -511,7 +511,7 @@ class ServerlessOfflineSns {
     const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
     const fullHandlerPath = resolve(location, handlerPath);
     const handlers = await import(`${url.pathToFileURL(fullHandlerPath)}.js`);
-    return handlers[handlerFnName];
+    return handlers[handlerFnName] || handlers.default[handlerFnName];
   }
 
   public log(msg, prefix = "INFO[serverless-offline-sns]: ") {
