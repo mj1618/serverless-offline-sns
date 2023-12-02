@@ -2,7 +2,6 @@ import ServerlessOfflineSns from "../../src/index.js";
 import { expect } from "chai";
 import * as handler from "../mock/handler.js";
 import * as state from "../mock/mock.state.js";
-import sinon from "sinon";
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import { mockClient } from 'aws-sdk-client-mock';
 
