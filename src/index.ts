@@ -8,14 +8,12 @@ import { ISNSAdapter } from "./types.js";
 import { SNSServer } from "./sns-server.js";
 import _ from "lodash";
 import AWS from "aws-sdk";
-import { resolve } from "path";
 import { topicNameFromArn } from "./helpers.js";
-import { spawn } from "child_process";
+
 import lodashfp from 'lodash/fp.js';
 const { get, has } = lodashfp;
 
 import { loadServerlessConfig } from "./sls-config-parser.js";
-import url from 'url';
 
 class ServerlessOfflineSns {
   private config: any;
@@ -145,6 +143,7 @@ class ServerlessOfflineSns {
       this.accountId
     );
   }
+  
   private getFunctionName(name) {
     let result;
     Object.entries(this.serverless.service.functions).forEach(
@@ -300,10 +299,8 @@ class ServerlessOfflineSns {
     );
     this.debug("topic: " + JSON.stringify(data));
     const fn = this.serverless.service.functions[subscription.fnName];
-    const handler = await this.createHandler(subscription.fnName, fn, location);
     await this.snsAdapter.subscribe(
-      fn,
-      handler,
+      fn, location,
       data.TopicArn,
       subscription.options
     );
@@ -355,10 +352,8 @@ class ServerlessOfflineSns {
     this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
     const data = await this.snsAdapter.createTopic(topicName);
     this.debug("topic: " + JSON.stringify(data));
-    const handler = await this.createHandler(fnName, fn, lambdasLocation);
     await this.snsAdapter.subscribe(
-      fn,
-      handler,
+      fn, lambdasLocation,
       data.TopicArn,
       snsConfig
     );
@@ -394,124 +389,6 @@ class ServerlessOfflineSns {
     const data = await this.snsAdapter.createTopic(topicName);
     this.debug("topic: " + JSON.stringify(data));
     await this.snsAdapter.subscribeQueue(queueUrl, data.TopicArn, snsConfig);
-  }
-
-  public async createHandler(fnName, fn, location) {
-    if (!fn.runtime || fn.runtime.startsWith("nodejs")) {
-      return await this.createJavascriptHandler(fn, location);
-    } else {
-      return async () => await this.createProxyHandler(fnName, fn, location);
-    }
-  }
-
-  public async createProxyHandler(funName, funOptions, location) {
-    const options = this.options;
-    return (event, context) => {
-      const args = ["invoke", "local", "-f", funName];
-      const stage = options.s || options.stage;
-
-      if (stage) {
-        args.push("-s", stage);
-      }
-
-      // Use path to binary if provided, otherwise assume globally-installed
-      const binPath = options.b || options.binPath;
-      const cmd = binPath || "sls";
-
-      const process = spawn(cmd, args, {
-        cwd: location,
-        shell: true,
-        stdio: ["pipe", "pipe", "pipe"],
-      });
-
-      process.stdin.write(`${JSON.stringify(event)}\n`);
-      process.stdin.end();
-
-      const results = [];
-      let error = false;
-
-      process.stdout.on("data", (data) => {
-        if (data) {
-          const str = data.toString();
-          if (str) {
-            // should we check the debug flag & only log if debug is true?
-            console.log(str);
-            results.push(data.toString());
-          }
-        }
-      });
-
-      process.stderr.on("data", (data) => {
-        error = true;
-        console.warn("error", data);
-        context.fail(data);
-      });
-
-      process.on("close", (code) => {
-        if (!error) {
-          // try to parse to json
-          // valid result should be a json array | object
-          // technically a string is valid json
-          // but everything comes back as a string
-          // so we can't reliably detect json primitives with this method
-          let response = null;
-          // we go end to start because the one we want should be last
-          // or next to last
-          for (let i = results.length - 1; i >= 0; i--) {
-            // now we need to find the min | max [] or {} within the string
-            // if both exist then we need the outer one.
-            // { "something": [] } is valid,
-            // [{"something": "valid"}] is also valid
-            // *NOTE* Doesn't currently support 2 separate valid json bundles
-            // within a single result.
-            // this can happen if you use a python logger
-            // and then do log.warn(json.dumps({'stuff': 'here'}))
-            const item = results[i];
-            const firstCurly = item.indexOf("{");
-            const firstSquare = item.indexOf("[");
-            let start = 0;
-            let end = item.length;
-            if (firstCurly === -1 && firstSquare === -1) {
-              // no json found
-              continue;
-            }
-            if (firstSquare === -1 || firstCurly < firstSquare) {
-              // found an object
-              start = firstCurly;
-              end = item.lastIndexOf("}") + 1;
-            } else if (firstCurly === -1 || firstSquare < firstCurly) {
-              // found an array
-              start = firstSquare;
-              end = item.lastIndexOf("]") + 1;
-            }
-
-            try {
-              response = JSON.parse(item.substring(start, end));
-              break;
-            } catch (err) {
-              // not json, check the next one
-              continue;
-            }
-          }
-          if (response !== null) {
-            context.succeed(response);
-          } else {
-            context.succeed(results.join("\n"));
-          }
-        }
-      });
-    };
-  }
-
-  public async createJavascriptHandler(fn, location) {
-    // Options are passed from the command line in the options parameter
-    this.debug(process.cwd());
-    const handlerFnNameIndex = fn.handler.lastIndexOf('.');
-    const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
-    const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
-    const fullHandlerPath = resolve(location, handlerPath);
-    const handlers = await import(`${url.pathToFileURL(fullHandlerPath)}.js`);
-    return handlers[handlerFnName] || handlers.default[handlerFnName];
   }
 
   public log(msg, prefix = "INFO[serverless-offline-sns]: ") {

@@ -6,6 +6,10 @@ import _ from "lodash";
 import fetch from "node-fetch";
 import { createMessageId, createSnsLambdaEvent } from "./helpers.js";
 import { IDebug, ISNSAdapter } from "./types.js";
+import { resolve } from "path";
+import url from 'url';
+import { spawn } from "child_process";
+import { createRequire } from 'module';
 
 export class SNSAdapter implements ISNSAdapter {
   private sns: AWS.SNS;
@@ -123,15 +127,137 @@ export class SNSAdapter implements ISNSAdapter {
     );
   }
 
+  public async createHandler(fnName, fn, location) {
+    if (!fn.runtime || fn.runtime.startsWith("nodejs")) {
+      return await this.createJavascriptHandler(fn, location);
+    } else {
+      return async () => await this.createProxyHandler(fnName, fn, location);
+    }
+  }
+
+  public async createProxyHandler(funName, funOptions, location) {
+    const options = null; // this.options;
+    return (event, context) => {
+      const args = ["invoke", "local", "-f", funName];
+      const stage = options.s || options.stage;
+
+      if (stage) {
+        args.push("-s", stage);
+      }
+
+      // Use path to binary if provided, otherwise assume globally-installed
+      const binPath = options.b || options.binPath;
+      const cmd = binPath || "sls";
+
+      const process = spawn(cmd, args, {
+        cwd: location,
+        shell: true,
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+
+      process.stdin.write(`${JSON.stringify(event)}\n`);
+      process.stdin.end();
+
+      const results = [];
+      let error = false;
+
+      process.stdout.on("data", (data) => {
+        if (data) {
+          const str = data.toString();
+          if (str) {
+            // should we check the debug flag & only log if debug is true?
+            console.log(str);
+            results.push(data.toString());
+          }
+        }
+      });
+
+      process.stderr.on("data", (data) => {
+        error = true;
+        console.warn("error", data);
+        context.fail(data);
+      });
+
+      process.on("close", (code) => {
+        if (!error) {
+          // try to parse to json
+          // valid result should be a json array | object
+          // technically a string is valid json
+          // but everything comes back as a string
+          // so we can't reliably detect json primitives with this method
+          let response = null;
+          // we go end to start because the one we want should be last
+          // or next to last
+          for (let i = results.length - 1; i >= 0; i--) {
+            // now we need to find the min | max [] or {} within the string
+            // if both exist then we need the outer one.
+            // { "something": [] } is valid,
+            // [{"something": "valid"}] is also valid
+            // *NOTE* Doesn't currently support 2 separate valid json bundles
+            // within a single result.
+            // this can happen if you use a python logger
+            // and then do log.warn(json.dumps({'stuff': 'here'}))
+            const item = results[i];
+            const firstCurly = item.indexOf("{");
+            const firstSquare = item.indexOf("[");
+            let start = 0;
+            let end = item.length;
+            if (firstCurly === -1 && firstSquare === -1) {
+              // no json found
+              continue;
+            }
+            if (firstSquare === -1 || firstCurly < firstSquare) {
+              // found an object
+              start = firstCurly;
+              end = item.lastIndexOf("}") + 1;
+            } else if (firstCurly === -1 || firstSquare < firstCurly) {
+              // found an array
+              start = firstSquare;
+              end = item.lastIndexOf("]") + 1;
+            }
+
+            try {
+              response = JSON.parse(item.substring(start, end));
+              break;
+            } catch (err) {
+              // not json, check the next one
+              continue;
+            }
+          }
+          if (response !== null) {
+            context.succeed(response);
+          } else {
+            context.succeed(results.join("\n"));
+          }
+        }
+      });
+    };
+  }
+
+  public async createJavascriptHandler(fn, location) {
+    // Options are passed from the command line in the options parameter
+    this.debug(process.cwd());
+    const handlerFnNameIndex = fn.handler.lastIndexOf('.');
+    const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
+    const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
+    const fullHandlerPath = resolve(location, handlerPath);
+    const require = createRequire(import.meta.url)
+    delete require.cache[`${url.pathToFileURL(fullHandlerPath)}.js`];
+    const handlers = require(`${url.pathToFileURL(fullHandlerPath)}.js`)
+    return handlers[handlerFnName] || handlers.default[handlerFnName];
+  }
+
   private sent: (data) => void;
   public Deferred = new Promise((res) => (this.sent = res));
 
-  public async subscribe(fn, getHandler, arn, snsConfig) {
+  public async subscribe(fn, location, arn, snsConfig) {
     arn = this.convertPseudoParams(arn);
     const subscribeEndpoint = this.baseSubscribeEndpoint + "/" + fn.name;
     this.debug("subscribe: " + fn.name + " " + arn);
     this.debug("subscribeEndpoint: " + subscribeEndpoint);
-    this.app.post("/" + fn.name, (req, res) => {
+    this.app.post("/" + fn.name, async (req, res) => {
+      const handler = await this.createHandler(fn.name, fn, location);
+      
       this.debug("calling fn: " + fn.name + " 1");
       const oldEnv = _.extend({}, process.env);
       process.env = _.extend({}, process.env, fn.environment);
@@ -170,7 +296,7 @@ export class SNSAdapter implements ISNSAdapter {
           this.sent(response);
         }
       };
-      const maybePromise = getHandler(
+      const maybePromise = handler(
         event,
         this.createLambdaContext(fn, sendIt),
         sendIt
