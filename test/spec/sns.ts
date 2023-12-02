@@ -235,7 +235,7 @@ describe("test", () => {
     await new Promise((res) => setTimeout(res, 100));
     expect(state.getPongs()).to.eq(2);
   });
-  
+
   it('should support async handlers with no callback', async () => {
     plugin = new ServerlessOfflineSns(createServerless(accountId, "asyncHandler"));
     const snsAdapter = await plugin.start();
@@ -363,20 +363,14 @@ describe("test", () => {
       "{}"
     );
     await new Promise((res) => setTimeout(res, 100));
-    console.log(sqsMock.callsFake(input => input));
-    sqsMock.callsFakeOnce(input => expect(input).to.be.equal({
-      QueueUrl: "h",
+    const sqsSendArgs = sqsMock.send.args;
+    expect(sqsMock.send.calledOnce).to.be.true;
+    expect(sqsSendArgs[0][0].input).to.be.deep.equals({
+      QueueUrl: "http://127.0.0.1:4002/undefined",
       MessageBody: "{}",
       MessageAttributes: {},
-    }));
-    // sinon.assert.calledOnce(spySendMessage);
-    // sinon.assert.calledWith(spySendMessage, {
-    //   QueueUrl: "http://127.0.0.1:4002/undefined",
-    //   MessageBody: "{}",
-    //   MessageAttributes: {},
-    // });
+    });
     sqsMock.restore();
-
   });
 
   it("should handle empty resource definition", async () => {
@@ -387,8 +381,7 @@ describe("test", () => {
   });
 
   it("should handle messageGroupId", async () => {
-    const sqsClient = new SQSClient({});
-    const spySendMessage = sinon.spy(sqsClient, 'send');
+    const sqsMock = mockClient(SQSClient);
     plugin = new ServerlessOfflineSns(
       createServerless(accountId, "envHandler")
     );
@@ -403,14 +396,15 @@ describe("test", () => {
       "messageGroupId-here"
     );
     await new Promise((res) => setTimeout(res, 100));
-    sinon.assert.calledOnce(spySendMessage);
-    // sinon.assert.calledWith(spySendMessage, {
-    //   QueueUrl: "http://127.0.0.1:4002/undefined",
-    //   MessageBody: "{}",
-    //   MessageAttributes: {},
-    //   MessageGroupId: "messageGroupId-here",
-    // });
-    spySendMessage.restore();
+    const sqsSendArgs = sqsMock.send.args;
+    expect(sqsMock.send.calledOnce).to.be.true;
+    expect(sqsSendArgs[0][0].input).to.be.deep.equals({
+      QueueUrl: "http://127.0.0.1:4002/undefined",
+      MessageBody: "{}",
+      MessageAttributes: {},
+      MessageGroupId: "messageGroupId-here",
+    });
+    sqsMock.restore();
   });
 });
 
