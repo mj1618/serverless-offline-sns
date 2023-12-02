@@ -23,7 +23,6 @@ export interface ISNSAdapter {
   subscribeQueue(queueUrl: string, arn: string, snsConfig: any): Promise<void>;
   publish(
     topicArn: string,
-    type: string,
     message: string
   ): Promise<PublishResponse>;
 }

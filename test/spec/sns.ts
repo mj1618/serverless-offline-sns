@@ -1,10 +1,9 @@
 import ServerlessOfflineSns from "../../src/index.js";
-import AWSMock from 'aws-sdk-mock';
 import { expect } from "chai";
-import sinon from 'sinon';
 import * as handler from "../mock/handler.js";
 import * as state from "../mock/mock.state.js";
-import AWS from "aws-sdk";
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { mockClient } from 'aws-sdk-client-mock';
 
 let plugin;
 
@@ -104,9 +103,8 @@ describe("test", () => {
       "'a simple message'"
     );
     await new Promise((res) => setTimeout(res, 100));
-    expect(snsResponse).to.have.property("ResponseMetadata");
-    expect(snsResponse.ResponseMetadata).to.have.property("RequestId");
-    expect(snsResponse).to.have.property("MessageId");
+    expect(snsResponse).to.have.property("$metadata");
+    expect(snsResponse.$metadata).to.have.property("requestId");
   });
 
   it("should send a message to a E.164 phone number", async () => {
@@ -117,9 +115,8 @@ describe("test", () => {
       "{}"
     );
     await new Promise((res) => setTimeout(res, 100));
-    expect(snsResponse).to.have.property("ResponseMetadata");
-    expect(snsResponse.ResponseMetadata).to.have.property("RequestId");
-    expect(snsResponse).to.have.property("MessageId");
+    expect(snsResponse).to.have.property("$metadata");
+    expect(snsResponse.$metadata).to.have.property("requestId");
   });
 
   it("should error", async () => {
@@ -237,7 +234,7 @@ describe("test", () => {
     await new Promise((res) => setTimeout(res, 100));
     expect(state.getPongs()).to.eq(2);
   });
-  
+
   it('should support async handlers with no callback', async () => {
     plugin = new ServerlessOfflineSns(createServerless(accountId, "asyncHandler"));
     const snsAdapter = await plugin.start();
@@ -354,9 +351,7 @@ describe("test", () => {
   });
 
   it("should subscribe", async () => {
-    const spySendMessage = sinon.spy();
-    AWSMock.setSDKInstance(AWS);
-    AWSMock.mock("SQS", "sendMessage", spySendMessage);
+    const sqsMock = mockClient(SQSClient);
     plugin = new ServerlessOfflineSns(
       createServerless(accountId, "envHandler")
     );
@@ -367,14 +362,14 @@ describe("test", () => {
       "{}"
     );
     await new Promise((res) => setTimeout(res, 100));
-    sinon.assert.calledOnce(spySendMessage);
-    sinon.assert.calledWith(spySendMessage, {
+    const sqsSendArgs = sqsMock.send.args;
+    expect(sqsMock.send.calledOnce).to.be.true;
+    expect(sqsSendArgs[0][0].input).to.be.deep.equals({
       QueueUrl: "http://127.0.0.1:4002/undefined",
       MessageBody: "{}",
       MessageAttributes: {},
     });
-    AWSMock.restore("SQS", "sendMessage");
-
+    sqsMock.restore();
   });
 
   it("should handle empty resource definition", async () => {
@@ -385,9 +380,7 @@ describe("test", () => {
   });
 
   it("should handle messageGroupId", async () => {
-    const spySendMessage = sinon.spy();
-    AWSMock.setSDKInstance(AWS);
-    AWSMock.mock("SQS", "sendMessage", spySendMessage);
+    const sqsMock = mockClient(SQSClient);
     plugin = new ServerlessOfflineSns(
       createServerless(accountId, "envHandler")
     );
@@ -402,14 +395,15 @@ describe("test", () => {
       "messageGroupId-here"
     );
     await new Promise((res) => setTimeout(res, 100));
-    sinon.assert.calledOnce(spySendMessage);
-    sinon.assert.calledWith(spySendMessage, {
+    const sqsSendArgs = sqsMock.send.args;
+    expect(sqsMock.send.calledOnce).to.be.true;
+    expect(sqsSendArgs[0][0].input).to.be.deep.equals({
       QueueUrl: "http://127.0.0.1:4002/undefined",
       MessageBody: "{}",
       MessageAttributes: {},
       MessageGroupId: "messageGroupId-here",
     });
-    AWSMock.restore("SQS", "sendMessage");
+    sqsMock.restore();
   });
 });
 

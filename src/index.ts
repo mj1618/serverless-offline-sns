@@ -7,7 +7,6 @@ import bodyParser from "body-parser";
 import { ISNSAdapter } from "./types.js";
 import { SNSServer } from "./sns-server.js";
 import _ from "lodash";
-import AWS from "aws-sdk";
 import { resolve } from "path";
 import { topicNameFromArn } from "./helpers.js";
 import { spawn } from "child_process";
@@ -113,11 +112,6 @@ class ServerlessOfflineSns {
       this.region = "us-east-1";
     }
     this.autoSubscribe = this.config.autoSubscribe === undefined ? true : this.config.autoSubscribe;
-    // Congure SNS client to be able to find us.
-    AWS.config.sns = {
-      endpoint: "http://127.0.0.1:" + this.localPort,
-      region: this.region,
-    };
   }
 
   public async start() {
