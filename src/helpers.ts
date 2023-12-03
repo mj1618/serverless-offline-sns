@@ -139,7 +139,7 @@ export function createMessageId() {
 
 const phoneNumberValidator = /^\++?[1-9]\d{1,14}$/;
 
-export function validatePhoneNumber(phoneNumber) {
+export function validatePhoneNumber(phoneNumber: string): string {
   if (!phoneNumberValidator.test(phoneNumber)) {
     throw new Error(`PhoneNumber ${phoneNumber} is not valid to publish`);
   }

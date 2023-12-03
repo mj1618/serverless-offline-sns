@@ -200,7 +200,7 @@ export class SNSServer implements ISNSServer {
     };
   }
 
-  public subscribe(endpoint, protocol, arn, body) {
+  public subscribe(endpoint: string, protocol, arn: string, body) {
     const attributes = parseAttributes(body);
     const filterPolicies =
       attributes["FilterPolicy"] && JSON.parse(attributes["FilterPolicy"]);
@@ -410,9 +410,9 @@ export class SNSServer implements ISNSServer {
     };
   }
 
-  public extractTarget(body) {
+  public extractTarget(body): string {
     if (!body.PhoneNumber) {
-      const target = body.TopicArn || body.TargetArn;
+      const target: string = body.TopicArn || body.TargetArn;
       if (!target) {
         throw new Error("TopicArn or TargetArn is missing");
       }
@@ -422,7 +422,7 @@ export class SNSServer implements ISNSServer {
     }
   }
 
-  public convertPseudoParams(topicArn) {
+  public convertPseudoParams(topicArn: string) {
     const awsRegex = /#{AWS::([a-zA-Z]+)}/g;
     return topicArn.replace(awsRegex, this.accountId);
   }
