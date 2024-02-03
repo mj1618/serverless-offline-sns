@@ -1,3 +1,5 @@
+Looking for a maintainer for this project, email me if you are interested.
+
 # serverless-offline-sns
 A serverless plugin to listen to offline SNS and call lambda fns with events.
 
@@ -50,7 +52,7 @@ custom:
     # sns-endpoint: http://127.0.0.1:4567 # Optional. Only if you want to use a custom SNS provider endpoint
     # sns-subscribe-endpoint: http://127.0.0.1:3000 # Optional. Only if you want to use a custom subscribe endpoint from SNS to send messages back to
     # accountId: 123456789012 # Optional
-    # location .build # Optional if the location of your handler.js is not in ./ (useful for typescript)
+    # location: .build # Optional if the location of your handler.js is not in ./ (useful for typescript)
 ```
 
 For example, if you would like to connect to AWS and have callbacks coming via ngrok, use:
@@ -136,7 +138,7 @@ custom:
     remotePort: ${env:SNS_SUBSCRIBE_REMOTE_PORT}
     host: 0.0.0.0
     sns-subscribe-endpoint: ${env:SNS_SUBSCRIBE_ENDPOINT}
-    sns-endpoint: ${env:SNS_ENDPOINT}```
+    sns-endpoint: ${env:SNS_ENDPOINT}
 ```
 
 If you want to unsubscribe when you stop your server, then call `sls offline-sns cleanup` when the script exits.
@@ -245,6 +247,7 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
   </tr>
   <tr>
     <td align="center"><a href="https://github.com/jhackshaw"><img src="https://avatars.githubusercontent.com/u/36460150?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jeff Hackshaw</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=jhackshaw" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/dsarlo"><img src="https://avatars.githubusercontent.com/u/16106087?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Sarlo</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=dsarlo" title="Code">💻</a></td>
   </tr>
 </table>
 

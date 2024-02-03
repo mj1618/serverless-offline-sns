@@ -1,4 +1,4 @@
-import { setEvent, setPongs, setResult } from "./mock.state";
+import { setEvent, setPongs, setResult } from "./mock.state.js";
 
 let nPongs = 0;
 
@@ -29,3 +29,12 @@ export const asyncHandler = async (evt, ctx) => {
   setResult(evt.Records[0].Sns.TopicArn);
   return "{}";
 };
+
+const defaultExportHandler = (evt, ctx, cb) => {
+  nPongs += 1;
+  setPongs(nPongs);
+  setEvent(evt);
+  cb(null, "{}");
+};
+
+export default { defaultExportHandler };

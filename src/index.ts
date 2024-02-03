@@ -1,19 +1,20 @@
 import * as shell from "shelljs";
 
-import { SNSAdapter } from "./sns-adapter";
-import * as express from "express";
-import * as cors from "cors";
-import * as bodyParser from "body-parser";
-import { ISNSAdapter } from "./types";
-import { SNSServer } from "./sns-server";
-import * as _ from "lodash";
-import * as AWS from "aws-sdk";
+import { SNSAdapter } from "./sns-adapter.js";
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import { ISNSAdapter } from "./types.js";
+import { SNSServer } from "./sns-server.js";
+import _ from "lodash";
 import { resolve } from "path";
-import { topicNameFromArn } from "./helpers";
+import { topicNameFromArn } from "./helpers.js";
 import { spawn } from "child_process";
-import { get, has } from "lodash/fp";
+import lodashfp from 'lodash/fp.js';
+const { get, has } = lodashfp;
 
-import { loadServerlessConfig } from "./sls-config-parser";
+import { loadServerlessConfig } from "./sls-config-parser.js";
+import url from 'url';
 
 class ServerlessOfflineSns {
   private config: any;
@@ -31,8 +32,9 @@ class ServerlessOfflineSns {
   private region: string;
   private accountId: string;
   private servicesDirectory: string;
+  private autoSubscribe: boolean;
 
-  constructor(serverless: any, options: any) {
+  constructor(serverless: any, options: any = {}) {
     this.app = express();
     this.app.use(cors());
     this.app.use((req, res, next) => {
@@ -85,8 +87,8 @@ class ServerlessOfflineSns {
   public init() {
     process.env = _.extend(
       {},
-      this.serverless.service.provider.environment,
-      process.env
+      process.env,
+      this.serverless.service.provider.environment
     );
     this.config =
       this.serverless.service.custom["serverless-offline-sns"] || {};
@@ -109,12 +111,7 @@ class ServerlessOfflineSns {
     } else {
       this.region = "us-east-1";
     }
-
-    // Congure SNS client to be able to find us.
-    AWS.config.sns = {
-      endpoint: "http://127.0.0.1:" + this.localPort,
-      region: this.region,
-    };
+    this.autoSubscribe = this.config.autoSubscribe === undefined ? true : this.config.autoSubscribe;
   }
 
   public async start() {
@@ -186,6 +183,16 @@ class ServerlessOfflineSns {
       const topicArn = get(["Properties", "TopicArn", "Ref"], value);
       const topicName = get(["Properties", "TopicName"], resources[topicArn]);
       const fnName = this.getFunctionName(resourceName);
+
+      if(!topicName){
+        this.log(`${fnName} does not have a topic name, skipping`);
+        return;
+      }
+
+      if(!fnName){
+        this.log(`${topicName} does not have a function, skipping`);
+        return;
+      }
       subscriptions.push({
         fnName,
         options: {
@@ -203,65 +210,71 @@ class ServerlessOfflineSns {
     await this.unsubscribeAll();
     this.debug("subscribing functions");
     const subscribePromises: Array<Promise<any>> = [];
-    if (this.servicesDirectory) {
-      shell.cd(this.servicesDirectory);
-      for (const directory of shell.ls("-d", "*/")) {
-        shell.cd(directory);
-        const service = directory.split("/")[0];
-        const serverless = await loadServerlessConfig(shell.pwd(), this.debug);
-        this.debug("Processing subscriptions for ", service);
-        this.debug("shell.pwd()", shell.pwd());
-        this.debug("serverless functions", serverless.service.functions);
-        const subscriptions = this.getResourceSubscriptions(serverless);
+    if (this.autoSubscribe) {
+      if (this.servicesDirectory) {
+        shell.cd(this.servicesDirectory);
+        for (const directory of shell.ls("-d", "*/")) {
+          shell.cd(directory);
+          const service = directory.split("/")[0];
+          const serverless = await loadServerlessConfig(shell.pwd().toString(), this.debug);
+          this.debug("Processing subscriptions for ", service);
+          this.debug("shell.pwd()", shell.pwd());
+          this.debug("serverless functions", JSON.stringify(serverless.service.functions));
+          const subscriptions = this.getResourceSubscriptions(serverless);
+          subscriptions.forEach((subscription) =>
+            subscribePromises.push(
+              this.subscribeFromResource(subscription, this.location)
+            )
+          );
+          Object.keys(serverless.service.functions).map((fnName) => {
+            const fn = serverless.service.functions[fnName];
+            subscribePromises.push(
+              Promise.all(
+                fn.events
+                  .filter((event) => event.sns != null)
+                  .map((event) => {
+                    return this.subscribe(
+                      serverless,
+                      fnName,
+                      event.sns,
+                      shell.pwd()
+                    );
+                  })
+              )
+            );
+          });
+          shell.cd("../");
+        }
+      } else {
+        const subscriptions = this.getResourceSubscriptions(this.serverless);
         subscriptions.forEach((subscription) =>
           subscribePromises.push(
             this.subscribeFromResource(subscription, this.location)
           )
         );
-        Object.keys(serverless.service.functions).map((fnName) => {
-          const fn = serverless.service.functions[fnName];
+        Object.keys(this.serverless.service.functions).map((fnName) => {
+          const fn = this.serverless.service.functions[fnName];
           subscribePromises.push(
             Promise.all(
               fn.events
                 .filter((event) => event.sns != null)
                 .map((event) => {
                   return this.subscribe(
-                    serverless,
+                    this.serverless,
                     fnName,
                     event.sns,
-                    shell.pwd()
+                    this.location
                   );
                 })
             )
           );
         });
-        shell.cd("../");
       }
-    } else {
-      const subscriptions = this.getResourceSubscriptions(this.serverless);
-      subscriptions.forEach((subscription) =>
-        subscribePromises.push(
-          this.subscribeFromResource(subscription, this.location)
-        )
-      );
-      Object.keys(this.serverless.service.functions).map((fnName) => {
-        const fn = this.serverless.service.functions[fnName];
-        subscribePromises.push(
-          Promise.all(
-            fn.events
-              .filter((event) => event.sns != null)
-              .map((event) => {
-                return this.subscribe(
-                  this.serverless,
-                  fnName,
-                  event.sns,
-                  this.location
-                );
-              })
-          )
-        );
-      });
     }
+    await this.subscribeAllQueues(subscribePromises);
+  }
+
+  private async subscribeAllQueues(subscribePromises) {
     await Promise.all(subscribePromises);
     this.debug("subscribing queues");
     await Promise.all(
@@ -270,6 +283,7 @@ class ServerlessOfflineSns {
       })
     );
   }
+
   private async subscribeFromResource(subscription, location) {
     this.debug("subscribe: " + subscription.fnName);
     this.log(
@@ -280,9 +294,10 @@ class ServerlessOfflineSns {
     );
     this.debug("topic: " + JSON.stringify(data));
     const fn = this.serverless.service.functions[subscription.fnName];
+    const handler = await this.createHandler(subscription.fnName, fn, location);
     await this.snsAdapter.subscribe(
       fn,
-      this.createHandler(subscription.fnName, fn, location),
+      handler,
       data.TopicArn,
       subscription.options
     );
@@ -334,9 +349,10 @@ class ServerlessOfflineSns {
     this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
     const data = await this.snsAdapter.createTopic(topicName);
     this.debug("topic: " + JSON.stringify(data));
+    const handler = await this.createHandler(fnName, fn, lambdasLocation);
     await this.snsAdapter.subscribe(
       fn,
-      this.createHandler(fnName, fn, lambdasLocation),
+      handler,
       data.TopicArn,
       snsConfig
     );
@@ -374,15 +390,15 @@ class ServerlessOfflineSns {
     await this.snsAdapter.subscribeQueue(queueUrl, data.TopicArn, snsConfig);
   }
 
-  public createHandler(fnName, fn, location) {
+  public async createHandler(fnName, fn, location) {
     if (!fn.runtime || fn.runtime.startsWith("nodejs")) {
-      return this.createJavascriptHandler(fn, location);
+      return await this.createJavascriptHandler(fn, location);
     } else {
-      return () => this.createProxyHandler(fnName, fn, location);
+      return async () => await this.createProxyHandler(fnName, fn, location);
     }
   }
 
-  public createProxyHandler(funName, funOptions, location) {
+  public async createProxyHandler(funName, funOptions, location) {
     const options = this.options;
     return (event, context) => {
       const args = ["invoke", "local", "-f", funName];
@@ -481,43 +497,15 @@ class ServerlessOfflineSns {
     };
   }
 
-  public createJavascriptHandler(fn, location) {
-    return () => {
-      // Options are passed from the command line in the options parameter
-      // ### OLD: use the main serverless config since this behavior is already supported there
-      if (
-        !this.options.skipCacheInvalidation ||
-        Array.isArray(this.options.skipCacheInvalidation)
-      ) {
-        for (const key in require.cache) {
-          // don't invalidate cached modules from node_modules ...
-          if (key.match(/node_modules/)) {
-            continue;
-          }
-
-          // if an array is provided to the serverless config, check the entries there too
-          if (
-            Array.isArray(this.options.skipCacheInvalidation) &&
-            this.options.skipCacheInvalidation.find((pattern) =>
-              new RegExp(pattern).test(key)
-            )
-          ) {
-            continue;
-          }
-
-          delete require.cache[key];
-        }
-      }
-
-      this.debug(process.cwd());
-      const handlerFnNameIndex = fn.handler.lastIndexOf(".");
-      const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
-      const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
-      const fullHandlerPath = resolve(location, handlerPath);
-      this.debug("require(" + fullHandlerPath + ")[" + handlerFnName + "]");
-      const handler = require(fullHandlerPath)[handlerFnName];
-      return handler;
-    };
+  public async createJavascriptHandler(fn, location) {
+    // Options are passed from the command line in the options parameter
+    this.debug(process.cwd());
+    const handlerFnNameIndex = fn.handler.lastIndexOf('.');
+    const handlerPath = fn.handler.substring(0, handlerFnNameIndex);
+    const handlerFnName = fn.handler.substring(handlerFnNameIndex + 1);
+    const fullHandlerPath = resolve(location, handlerPath);
+    const handlers = await import(`${url.pathToFileURL(fullHandlerPath)}.js`);
+    return handlers[handlerFnName] || handlers.default[handlerFnName];
   }
 
   public log(msg, prefix = "INFO[serverless-offline-sns]: ") {
@@ -578,4 +566,4 @@ class ServerlessOfflineSns {
   }
 }
 
-module.exports = ServerlessOfflineSns;
+export default ServerlessOfflineSns;

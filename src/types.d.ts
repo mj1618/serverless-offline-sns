@@ -3,7 +3,7 @@ import {
   CreateTopicResponse,
   PublishResponse,
   ListTopicsResponse,
-} from "aws-sdk/clients/sns.d";
+} from "aws-sdk/clients/sns.d.js";
 
 export type IDebug = (msg: any, stack?: any) => void;
 
@@ -23,26 +23,25 @@ export interface ISNSAdapter {
   subscribeQueue(queueUrl: string, arn: string, snsConfig: any): Promise<void>;
   publish(
     topicArn: string,
-    type: string,
     message: string
   ): Promise<PublishResponse>;
 }
-export interface ISNSAdapterConstructable {
-  new (
-    endpoint: string,
-    port: number,
-    region: string,
-    debug: IDebug
-  ): ISNSAdapter;
-}
+
+export type ISNSAdapterConstructable = new (
+  endpoint: string,
+  port: number,
+  region: string,
+  debug: IDebug
+) => ISNSAdapter;
 
 export interface ISNSServer {
   routes();
 }
 
-export type MessageAttributes = MessageAttribute[];
+export type MessageAttributes = IMessageAttribute[];
 
-export type MessageAttribute = {
+export interface IMessageAttribute {
   Type: string;
   Value: string;
-};
+}
+

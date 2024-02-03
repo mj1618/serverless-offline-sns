@@ -1,0 +1,20 @@
+name: pull_requests
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Test and Build
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - name: install, lint, test, build
+        run: |
+          DEBUG=true yarn install --frozen-lockfile
+          yarn run lint
+          yarn test
+          yarn build
