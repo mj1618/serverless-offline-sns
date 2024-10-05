@@ -151,7 +151,10 @@ export class SNSAdapter implements ISNSAdapter {
         this.debug("Visiting subscribe url: " + req.body.SubscribeURL);
         return fetch(req.body.SubscribeURL, {
           method: "GET"
-        }).then((fetchResponse) => this.debug("Subscribed: " + fetchResponse));
+        }).then((fetchResponse) => {
+          this.debug("Subscribed: " + fetchResponse)
+          res.status(200).send();
+        });
       }
 
       const sendIt = (err, response) => {
