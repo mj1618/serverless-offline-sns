@@ -346,8 +346,15 @@ class ServerlessOfflineSns {
       );
     }
 
-    this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
-    const data = await this.snsAdapter.createTopic(topicName);
+    const { Topics } = await this.snsAdapter.listTopics();
+
+    let data = Topics.find((sub) => sub.TopicArn.split(":").pop() === topicName);
+
+    if(!data || !data.TopicArn){
+        this.log(`Creating topic: "${topicName}" for fn "${fnName}"`);
+        data = await this.snsAdapter.createTopic(topicName);
+    }
+
     this.debug("topic: " + JSON.stringify(data));
     const handler = await this.createHandler(fnName, fn, lambdasLocation);
     await this.snsAdapter.subscribe(
