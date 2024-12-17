@@ -43,7 +43,7 @@ describe("test", () => {
       "{}"
     );
     await new Promise((res) => setTimeout(res, 100));
-    expect(state.getPongs()).to.eq(2);
+    expect(state.getPongs()).to.eq(1);
   });
 
   it("should send event to target ARN", async () => {
@@ -54,7 +54,7 @@ describe("test", () => {
       "{}"
     );
     await new Promise((res) => setTimeout(res, 100));
-    expect(state.getPongs()).to.eq(2);
+    expect(state.getPongs()).to.eq(1);
   });
 
   it("should send event with pseudo parameters", async () => {
@@ -65,7 +65,7 @@ describe("test", () => {
       "{}"
     );
     await new Promise((res) => setTimeout(res, 100));
-    expect(state.getPongs()).to.eq(2);
+    expect(state.getPongs()).to.eq(1);
   });
 
   it("should send event with MessageAttributes and subject", async () => {
@@ -184,7 +184,7 @@ describe("test", () => {
       `arn:aws:sns:us-east-1:${accountId}:test-topic`,
       "{}"
     );
-    expect(await state.getResult()).to.eq("MY_VAL");
+    expect(await state.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic`);
   });
 
   it("should read env variable for function", async () => {
@@ -196,7 +196,7 @@ describe("test", () => {
       `arn:aws:sns:us-east-1:${accountId}:test-topic-2`,
       "{}"
     );
-    expect(await state.getResult()).to.eq("TEST");
+    expect(await state.getResult()).to.eq(`arn:aws:sns:us-east-1:${accountId}:test-topic-2`);
   });
 
   it("should convert pseudo param on load", async () => {
@@ -232,7 +232,7 @@ describe("test", () => {
       "{}"
     );
     await new Promise((res) => setTimeout(res, 100));
-    expect(state.getPongs()).to.eq(2);
+    expect(state.getPongs()).to.eq(1);
   });
 
   it('should support async handlers with no callback', async () => {
@@ -428,7 +428,7 @@ const createServerless = (
       provider: {
         region: "us-east-1",
         environment: {
-          MY_VAR: "MY_VAL",
+          MY_VAR: `arn:aws:sns:us-east-1:${accountId}:test-topic`,
         },
       },
       functions: {
@@ -437,7 +437,7 @@ const createServerless = (
           handler: "test/mock/handler." + handlerName,
           events: [
             {
-              sns: `arn:aws:sns:us-east-1:${accountId}:test-topic`,
+              sns: `arn:aws:sns:us-east-1:${accountId}:test-topic-async`,
             },
           ],
         },
@@ -456,7 +456,7 @@ const createServerless = (
           name: "this-is-auto-created-when-using-serverless",
           handler: "test/mock/handler." + handlerName,
           environment: {
-            MY_VAR: "TEST",
+            MY_VAR: `arn:aws:sns:us-east-1:${accountId}:test-topic-2`,
           },
           events: [
             {
@@ -478,6 +478,9 @@ const createServerless = (
         },
         pong5: {
           handler: "test/mock/handler." + handlerName,
+          environment: {
+            MY_VAR: `arn:aws:sns:us-east-1:#{AWS::AccountId}:test-topic-async`,
+          },
           events: [
             {
               sns: {
@@ -558,7 +561,7 @@ const createServerlessMultiDot = (
       provider: {
         region: "us-east-1",
         environment: {
-          MY_VAR: "MY_VAL",
+          MY_VAR: `arn:aws:sns:us-west-2:${accountId}:multi-dot-topic`,
         },
       },
       functions: {
@@ -642,7 +645,7 @@ const createServerlessWithFilterPolicies = (
       provider: {
         region: "us-east-1",
         environment: {
-          MY_VAR: "MY_VAL",
+          MY_VAR: `arn:aws:sns:us-west-2:${accountId}:test-topic-policies`,
         },
       },
       functions: {
@@ -664,6 +667,9 @@ const createServerlessWithFilterPolicies = (
         pong2: {
           name: "some-name2",
           handler: "test/mock/handler." + handlerName,
+          environment: {
+            MY_VAR: `arn:aws:sns:us-west-2:${accountId}:test-topic-policies-multiple`,
+          },
           events: [
             {
               sns: {
