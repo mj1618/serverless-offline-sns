@@ -2,7 +2,7 @@ import ServerlessOfflineSns from "../../src/index.js";
 import { expect } from "chai";
 import * as handler from "../mock/handler.js";
 import * as state from "../mock/mock.state.js";
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { SQSClient, SendMessageCommand, GetQueueUrlCommand } from "@aws-sdk/client-sqs";
 import { mockClient } from 'aws-sdk-client-mock';
 
 let plugin;
@@ -146,9 +146,11 @@ describe("test", () => {
     const snsAdapter = await plugin.start();
     const response = await snsAdapter.listSubscriptions();
 
-    response.Subscriptions.forEach((sub) => {
-      expect(sub.Endpoint.startsWith("http://0.0.0.0:4002")).to.be.true;
-    });
+    response.Subscriptions
+      .filter((sub) => sub.Protocol === "http")
+      .forEach((sub) => {
+        expect(sub.Endpoint.startsWith("http://0.0.0.0:4002")).to.be.true;
+      });
   });
 
   it("should use the custom subscribe endpoint for subscription urls", async () => {
@@ -158,9 +160,11 @@ describe("test", () => {
     const snsAdapter = await plugin.start();
     const response = await snsAdapter.listSubscriptions();
 
-    response.Subscriptions.forEach((sub) => {
-      expect(sub.Endpoint.startsWith("http://anotherHost:4002")).to.be.true;
-    });
+    response.Subscriptions
+      .filter((sub) => sub.Protocol === "http")
+      .forEach((sub) => {
+        expect(sub.Endpoint.startsWith("http://anotherHost:4002")).to.be.true;
+      });
   });
 
   it("should unsubscribe", async () => {
@@ -352,6 +356,7 @@ describe("test", () => {
 
   it("should subscribe", async () => {
     const sqsMock = mockClient(SQSClient);
+    sqsMock.on(GetQueueUrlCommand).resolves({ QueueUrl: "http://127.0.0.1:4002/queue/pong6" });
     plugin = new ServerlessOfflineSns(
       createServerless(accountId, "envHandler")
     );
@@ -363,9 +368,12 @@ describe("test", () => {
     );
     await new Promise((res) => setTimeout(res, 100));
     const sqsSendArgs = sqsMock.send.args;
-    expect(sqsMock.send.calledOnce).to.be.true;
+    expect(sqsMock.send.calledTwice).to.be.true;
     expect(sqsSendArgs[0][0].input).to.be.deep.equals({
-      QueueUrl: "http://127.0.0.1:4002/undefined",
+      QueueName: "pong6",
+    });
+    expect(sqsSendArgs[1][0].input).to.be.deep.equals({
+      QueueUrl: "http://127.0.0.1:4002/queue/pong6",
       MessageBody: "{}",
       MessageAttributes: {},
     });
@@ -381,6 +389,7 @@ describe("test", () => {
 
   it("should handle messageGroupId", async () => {
     const sqsMock = mockClient(SQSClient);
+    sqsMock.on(GetQueueUrlCommand).resolves({ QueueUrl: "http://127.0.0.1:4002/queue/pong6" });
     plugin = new ServerlessOfflineSns(
       createServerless(accountId, "envHandler")
     );
@@ -396,9 +405,12 @@ describe("test", () => {
     );
     await new Promise((res) => setTimeout(res, 100));
     const sqsSendArgs = sqsMock.send.args;
-    expect(sqsMock.send.calledOnce).to.be.true;
+    expect(sqsMock.send.calledTwice).to.be.true;
     expect(sqsSendArgs[0][0].input).to.be.deep.equals({
-      QueueUrl: "http://127.0.0.1:4002/undefined",
+      QueueName: "pong6",
+    });
+    expect(sqsSendArgs[1][0].input).to.be.deep.equals({
+      QueueUrl: "http://127.0.0.1:4002/queue/pong6",
       MessageBody: "{}",
       MessageAttributes: {},
       MessageGroupId: "messageGroupId-here",

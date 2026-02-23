@@ -174,6 +174,7 @@ class ServerlessOfflineSns {
       if (attribute !== "Arn") return;
       if (type !== "AWS::SQS::Queue") return;
 
+      const queueName = get(["Properties", "QueueName"], resources[resourceName]);
       const filterPolicy = get(["Properties", "FilterPolicy"], value);
       const protocol = get(["Properties", "Protocol"], value);
       const rawMessageDelivery = get(
@@ -198,6 +199,7 @@ class ServerlessOfflineSns {
         options: {
           topicName,
           protocol,
+          queueName,
           rawMessageDelivery,
           filterPolicy,
         },
@@ -561,7 +563,8 @@ class ServerlessOfflineSns {
       this.serverless.service.provider.stage,
       this.accountId,
       this.config.host,
-      this.config["sns-subscribe-endpoint"]
+      this.config["sns-subscribe-endpoint"],
+      this.config["sqsEndpoint"]
     );
   }
 }
