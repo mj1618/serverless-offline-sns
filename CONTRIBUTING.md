@@ -94,6 +94,20 @@ ci: enforce semantic PR title via GitHub Actions (closes #226)
 3. Use the PR template — fill in what the PR does, why, and the issue it closes.
 4. Ensure the PR title matches your commit message (it becomes the squash-merge commit message).
 
+## Recognising contributors
+
+This project uses the [all-contributors](https://allcontributors.org) bot to credit all types of contribution — not just code.
+
+After a PR is merged, a maintainer can comment on it:
+
+```
+@all-contributors please add @username for code, doc
+```
+
+The bot will open a PR updating the contributors table in the README. Contribution types include `code`, `doc`, `bug`, `test`, `ci`, `review`, and [many more](https://allcontributors.org/docs/en/emoji-key).
+
+Bot PRs use `docs:` prefixed commit messages and `[skip ci]` so they do not trigger the full test suite or a new release.
+
 ## How releases work
 
 Releases are automated via [semantic-release](https://semantic-release.gitbook.io/).
