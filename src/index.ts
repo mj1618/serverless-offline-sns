@@ -547,7 +547,10 @@ class ServerlessOfflineSns {
     this.init();
     this.debug("stopping plugin");
     if (this.server) {
-      this.server.close();
+      await new Promise<void>((resolve) => {
+        this.server.closeAllConnections();
+        this.server.close(() => resolve());
+      });
     }
   }
 
