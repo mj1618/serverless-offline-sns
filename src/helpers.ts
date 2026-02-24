@@ -19,30 +19,30 @@ export function createMetadata() {
   };
 }
 
-export function arrayify(obj) {
+export function arrayify(obj: Record<string, unknown>) {
   return Object.keys(obj).map((key) => {
-    const x = {};
+    const x: Record<string, unknown> = {};
     x[key] = obj[key];
     return x;
   });
 }
 
-export function parseMessageAttributes(body) {
+export function parseMessageAttributes(body: Record<string, string>): MessageAttributes {
   if (body.MessageStructure === "json") {
     return {};
   }
 
   const entries = Object.keys(body)
     .filter((key) => key.startsWith("MessageAttributes.entry"))
-    .reduce((prev, key) => {
+    .reduce<string[]>((prev, key) => {
       const index = key
         .replace("MessageAttributes.entry.", "")
-        .match(/.*?(?=\.|$)/i)[0];
+        .match(/.*?(?=\.|$)/i)![0];
       return prev.includes(index) ? prev : [...prev, index];
     }, []);
   return entries
     .map((index) => `MessageAttributes.entry.${index}`)
-    .reduce(
+    .reduce<MessageAttributes>(
       (prev, baseKey) => ({
         ...prev,
         [`${body[`${baseKey}.Name`]}`]: {
@@ -56,16 +56,16 @@ export function parseMessageAttributes(body) {
     );
 }
 
-export function parseAttributes(body) {
+export function parseAttributes(body: Record<string, string>): Record<string, string> {
   const indices = Object.keys(body)
     .filter((key) => key.startsWith("Attributes.entry"))
-    .reduce((prev, key) => {
+    .reduce<string[]>((prev, key) => {
       const index = key
         .replace("Attributes.entry.", "")
-        .match(/.*?(?=\.|$)/i)[0];
+        .match(/.*?(?=\.|$)/i)![0];
       return prev.includes(index) ? prev : [...prev, index];
     }, []);
-  const attrs = {};
+  const attrs: Record<string, string> = {};
   for (const key of indices.map((index) => `Attributes.entry.${index}`)) {
     attrs[body[`${key}.key`]] = body[`${key}.value`];
   }
@@ -73,13 +73,13 @@ export function parseAttributes(body) {
 }
 
 export function createSnsLambdaEvent(
-  topicArn,
-  subscriptionArn,
-  subject,
-  message,
-  messageId,
-  messageAttributes?,
-  messageGroupId?
+  topicArn: string,
+  subscriptionArn: string,
+  subject: string,
+  message: string,
+  messageId: string,
+  messageAttributes?: MessageAttributes,
+  messageGroupId?: string
 ) {
   return {
     Records: [
@@ -107,14 +107,14 @@ export function createSnsLambdaEvent(
 }
 
 export function createSnsTopicEvent(
-  topicArn,
-  subscriptionArn,
-  subject,
-  message,
-  messageId,
-  messageStructure,
-  messageAttributes?,
-  messageGroupId?
+  topicArn: string,
+  subscriptionArn: string,
+  subject: string,
+  message: string,
+  messageId: string,
+  messageStructure: string,
+  messageAttributes?: MessageAttributes,
+  messageGroupId?: string
 ) {
   return {
     SignatureVersion: "1",
@@ -139,7 +139,7 @@ export function createMessageId() {
 
 const phoneNumberValidator = /^\++?[1-9]\d{1,14}$/;
 
-export function validatePhoneNumber(phoneNumber) {
+export function validatePhoneNumber(phoneNumber: string) {
   if (!phoneNumberValidator.test(phoneNumber)) {
     throw new Error(`PhoneNumber ${phoneNumber} is not valid to publish`);
   }
@@ -148,18 +148,18 @@ export function validatePhoneNumber(phoneNumber) {
 
 // the topics name is that last part of the ARN:
 // arn:aws:sns:<REGION>:<ACCOUNT_ID>:<TOPIC_NAME>
-export const topicNameFromArn = (arn) => {
+export const topicNameFromArn = (arn: string) => {
   const arnParts = arn.split(":");
   return arnParts[arnParts.length - 1];
 };
 
-export const topicArnFromName = (name, region, accountId) =>
+export const topicArnFromName = (name: string, region: string, accountId: string) =>
   `arn:aws:sns:${region}:${accountId}:${name}`;
 
 export const formatMessageAttributes = (
   messageAttributes: MessageAttributes
 ) => {
-  const newMessageAttributes = {};
+  const newMessageAttributes: Record<string, { DataType: string; StringValue: string }> = {};
   for (const [key, value] of Object.entries(messageAttributes)) {
     newMessageAttributes[key] = {
       DataType: value.Type,
