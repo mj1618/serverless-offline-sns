@@ -1,7 +1,7 @@
-import { TopicsList, Subscription } from "aws-sdk/clients/sns.js";
+import type { Application } from "express";
 import fetch from "node-fetch";
 import { URL } from "url";
-import { IDebug, ISNSServer } from "./types.js";
+import { IDebug, ISNSServer, MessageAttributes } from "./types.js";
 import bodyParser from "body-parser";
 import _ from "lodash";
 import xml from "xml";
@@ -19,17 +19,28 @@ import {
 } from "./helpers.js";
 import { SQSClient, SendMessageCommand, GetQueueUrlCommand } from "@aws-sdk/client-sqs";
 
+type Topic = { TopicArn: string };
+
+type Subscription = {
+  SubscriptionArn: string;
+  Protocol: string;
+  TopicArn: string;
+  Endpoint: string;
+  Owner: string;
+  Attributes: Record<string, string>;
+  Policies: Record<string, unknown[]> | undefined;
+  queueName?: string;
+};
+
 export class SNSServer implements ISNSServer {
-  private topics: TopicsList;
+  private topics: Topic[];
   private subscriptions: Subscription[];
   private pluginDebug: IDebug;
-  private port: number;
-  private server: any;
-  private app: any;
+  private app: Application;
   private region: string;
   private accountId: string;
 
-  constructor(debug, app, region, accountId) {
+  constructor(debug: IDebug, app: Application, region: string, accountId: string) {
     this.pluginDebug = debug;
     this.topics = [];
     this.subscriptions = [];
@@ -166,7 +177,7 @@ export class SNSServer implements ISNSServer {
     };
   }
 
-  public unsubscribe(arn) {
+  public unsubscribe(arn: string) {
     this.debug(JSON.stringify(this.subscriptions));
     this.debug("unsubscribing: " + arn);
     this.subscriptions = this.subscriptions.filter(
@@ -177,7 +188,7 @@ export class SNSServer implements ISNSServer {
     };
   }
 
-  public createTopic(topicName) {
+  public createTopic(topicName: string) {
     const topicArn = topicArnFromName(topicName, this.region, this.accountId);
     const topic = {
       TopicArn: topicArn,
@@ -200,10 +211,11 @@ export class SNSServer implements ISNSServer {
     };
   }
 
-  public subscribe(endpoint, protocol, arn, body) {
+  public subscribe(endpoint: string, protocol: string, arn: string, body: Record<string, string>) {
     const attributes = parseAttributes(body);
-    const filterPolicies =
-      attributes["FilterPolicy"] && JSON.parse(attributes["FilterPolicy"]);
+    const filterPolicies = attributes["FilterPolicy"]
+      ? (JSON.parse(attributes["FilterPolicy"]) as Record<string, unknown[]>)
+      : undefined;
     arn = this.convertPseudoParams(arn);
     const existingSubscription = this.subscriptions.find((subscription) => {
       if (protocol === "sqs") {
@@ -219,7 +231,7 @@ export class SNSServer implements ISNSServer {
     });
     let subscriptionArn;
     if (!existingSubscription) {
-      const sub = {
+      const sub: Subscription = {
         SubscriptionArn: arn + ":" + Math.floor(Math.random() * (1000000 - 1)),
         Protocol: protocol,
         TopicArn: arn,
@@ -249,7 +261,7 @@ export class SNSServer implements ISNSServer {
     };
   }
 
-  private evaluatePolicies(policies: any, messageAttrs: any): boolean {
+  private evaluatePolicies(policies: Record<string, unknown[]>, messageAttrs: MessageAttributes): boolean {
     let shouldSend: boolean = false;
     for (const [k, v] of Object.entries(policies)) {
       if (!messageAttrs[k]) {
@@ -287,7 +299,7 @@ export class SNSServer implements ISNSServer {
     return shouldSend;
   }
 
-  private publishHttp(event, sub, raw) {
+  private publishHttp(event: string, sub: Subscription, raw: boolean) {
     return fetch(sub.Endpoint, {
       method: "POST",
       body: event,
@@ -301,7 +313,7 @@ export class SNSServer implements ISNSServer {
       .catch((ex) => this.debug(ex));
   }
 
-  private async publishSqs(event, sub, messageAttributes, messageGroupId) {
+  private async publishSqs(event: string, sub: Subscription, messageAttributes: MessageAttributes, messageGroupId: string | undefined) {
     const subEndpointUrl = new URL(sub.Endpoint);
     const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
     const sqs = new SQSClient({ endpoint: sqsEndpoint, region: this.region });
@@ -311,12 +323,12 @@ export class SNSServer implements ISNSServer {
       const getQueueUrlResult = await sqs.send(
         new GetQueueUrlCommand({ QueueName: sub.queueName })
       );
-      QueueUrl = getQueueUrlResult.QueueUrl;
+      QueueUrl = getQueueUrlResult.QueueUrl ?? sub.Endpoint;
     } else {
       QueueUrl = sub.Endpoint;
     }
 
-    if (sub["Attributes"]["RawMessageDelivery"] === "true") {
+    if (sub.Attributes["RawMessageDelivery"] === "true") {
       const sendMsgReq = new SendMessageCommand({
         QueueUrl,
         MessageBody: event,
@@ -330,11 +342,11 @@ export class SNSServer implements ISNSServer {
           });
       });
     } else {
-      const records = JSON.parse(event).Records ?? [];
+      const records = (JSON.parse(event) as { Records?: unknown[] }).Records ?? [];
       const messagePromises = records.map((record) => {
         const sendMsgReq = new SendMessageCommand({
           QueueUrl,
-          MessageBody: JSON.stringify(record.Sns),
+          MessageBody: JSON.stringify((record as { Sns: unknown }).Sns),
           MessageAttributes: formatMessageAttributes(messageAttributes),
           ...(messageGroupId && { MessageGroupId: messageGroupId }),
         });
@@ -352,22 +364,22 @@ export class SNSServer implements ISNSServer {
   }
 
   public publish(
-    topicArn,
-    subject,
-    message,
-    messageStructure,
-    messageAttributes,
-    messageGroupId
+    topicArn: string,
+    subject: string,
+    message: string,
+    messageStructure: string,
+    messageAttributes: MessageAttributes,
+    messageGroupId: string | undefined
   ) {
     const messageId = createMessageId();
     Promise.all(
       this.subscriptions
         .filter((sub) => sub.TopicArn === topicArn)
         .map((sub) => {
-          const isRaw = sub["Attributes"]["RawMessageDelivery"] === "true";
+          const isRaw = sub.Attributes["RawMessageDelivery"] === "true";
           if (
-            sub["Policies"] &&
-            !this.evaluatePolicies(sub["Policies"], messageAttributes)
+            sub.Policies &&
+            !this.evaluatePolicies(sub.Policies, messageAttributes)
           ) {
             this.debug(
               "Filter policies failed. Skipping subscription: " + sub.Endpoint
@@ -428,7 +440,7 @@ export class SNSServer implements ISNSServer {
     };
   }
 
-  public extractTarget(body) {
+  public extractTarget(body: Record<string, string>): string {
     if (!body.PhoneNumber) {
       const target = body.TopicArn || body.TargetArn;
       if (!target) {
@@ -440,12 +452,12 @@ export class SNSServer implements ISNSServer {
     }
   }
 
-  public convertPseudoParams(topicArn) {
+  public convertPseudoParams(topicArn: string): string {
     const awsRegex = /#{AWS::([a-zA-Z]+)}/g;
     return topicArn.replace(awsRegex, this.accountId);
   }
 
-  public debug(msg) {
+  public debug(msg: unknown) {
     if (msg instanceof Object) {
       try {
         msg = JSON.stringify(msg);

@@ -2,8 +2,9 @@ import fs from "fs";
 import path from "path";
 import Serverless from "serverless";
 import findConfigPath from 'serverless/lib/cli/resolve-configuration-path.js';
+import { IDebug, IServerless } from "./types.js";
 
-export async function loadServerlessConfig(cwd = process.cwd(), debug) {
+export async function loadServerlessConfig(cwd = process.cwd(), debug: IDebug): Promise<IServerless> {
   console.log("debug loadServerlessConfig", cwd);
   const stat = fs.statSync(cwd);
   if (!stat.isDirectory()) {
@@ -13,5 +14,5 @@ export async function loadServerlessConfig(cwd = process.cwd(), debug) {
   const configurationPath = await findConfigPath({cwd});
   const serverless = new Serverless({configurationPath});
   await serverless.init();
-  return serverless;
+  return serverless as IServerless;
 }
