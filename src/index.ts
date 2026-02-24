@@ -144,8 +144,7 @@ class ServerlessOfflineSns {
     Object.entries(this.serverless.service.functions).forEach(
       ([funcName, funcValue]) => {
         const events = get(["events"], funcValue);
-        events &&
-          events.forEach((event) => {
+        if (events) events.forEach((event) => {
             const attribute = get(["sqs", "arn"], event);
             if (!has("Fn::GetAtt", attribute)) return;
             const [resourceName, value] = attribute["Fn::GetAtt"];

@@ -342,7 +342,7 @@ export class SNSAdapter implements ISNSAdapter {
     const functionName = `${this.serviceName}-${this.stage}-${fun.name}`;
     const endTime =
       new Date().getTime() + (fun.timeout ? fun.timeout * 1000 : 6000);
-    const done = typeof cb === "function" ? cb : (x, y) => x || y; // eslint-disable-line no-extra-parens
+    const done = typeof cb === "function" ? cb : (x, y) => x || y;
 
     return {
       /* Methods */
