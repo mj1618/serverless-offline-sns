@@ -16,8 +16,8 @@ describe("test", () => {
     state.resetResult();
   });
 
-  afterEach(() => {
-    plugin.stop();
+  afterEach(async () => {
+    await plugin.stop();
   });
 
   it("should start on offline start", async () => {
