@@ -16,6 +16,8 @@ export class SNSAdapter implements ISNSAdapter {
   private adapterEndpoint: string;
   private baseSubscribeEndpoint: string;
   private accountId: string;
+  private sqsEndpoint: string;
+  private region: string;
 
   constructor(
     localPort,
@@ -28,7 +30,8 @@ export class SNSAdapter implements ISNSAdapter {
     stage,
     accountId,
     host,
-    subscribeEndpoint
+    subscribeEndpoint,
+    sqsEndpoint
   ) {
     this.pluginDebug = debug;
     this.app = app;
@@ -39,6 +42,8 @@ export class SNSAdapter implements ISNSAdapter {
       ? `http://${subscribeEndpoint}:${remotePort}`
       : this.adapterEndpoint;
     this.endpoint = snsEndpoint || `http://127.0.0.1:${localPort}`;
+    this.sqsEndpoint = sqsEndpoint || `http://127.0.0.1:${localPort}`;
+    this.region = region;
     this.debug("using endpoint: " + this.endpoint);
     this.accountId = accountId;
     this.sns = new SNSClient({
@@ -122,7 +127,9 @@ export class SNSAdapter implements ISNSAdapter {
 
   public async subscribe(fn, getHandler, arn, snsConfig) {
     arn = this.convertPseudoParams(arn);
-    const subscribeEndpoint = this.baseSubscribeEndpoint + "/" + fn.name;
+    const subscribeEndpoint = snsConfig.queueName
+      ? this.sqsEndpoint
+      : this.baseSubscribeEndpoint + "/" + fn.name;
     this.debug("subscribe: " + fn.name + " " + arn);
     this.debug("subscribeEndpoint: " + subscribeEndpoint);
     this.app.post("/" + fn.name, (req, res) => {
@@ -192,6 +199,9 @@ export class SNSAdapter implements ISNSAdapter {
       params.Attributes["FilterPolicy"] = JSON.stringify(
         snsConfig.filterPolicy
       );
+    }
+    if (snsConfig.queueName) {
+      params.Attributes["QueueName"] = snsConfig.queueName;
     }
 
     const subscribeRequest = new SubscribeCommand(params);

@@ -17,7 +17,7 @@ import {
   topicArnFromName,
   formatMessageAttributes,
 } from "./helpers.js";
-import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
+import { SQSClient, SendMessageCommand, GetQueueUrlCommand } from "@aws-sdk/client-sqs";
 
 export class SNSServer implements ISNSServer {
   private topics: TopicsList;
@@ -206,6 +206,13 @@ export class SNSServer implements ISNSServer {
       attributes["FilterPolicy"] && JSON.parse(attributes["FilterPolicy"]);
     arn = this.convertPseudoParams(arn);
     const existingSubscription = this.subscriptions.find((subscription) => {
+      if (protocol === "sqs") {
+        return (
+          attributes["QueueName"] === subscription["Attributes"]["QueueName"] &&
+          subscription.Endpoint === endpoint &&
+          subscription.TopicArn === arn
+        );
+      }
       return (
         subscription.Endpoint === endpoint && subscription.TopicArn === arn
       );
@@ -217,6 +224,7 @@ export class SNSServer implements ISNSServer {
         Protocol: protocol,
         TopicArn: arn,
         Endpoint: endpoint,
+        queueName: attributes["QueueName"],
         Owner: "",
         Attributes: attributes,
         Policies: filterPolicies,
@@ -293,14 +301,24 @@ export class SNSServer implements ISNSServer {
       .catch((ex) => this.debug(ex));
   }
 
-  private publishSqs(event, sub, messageAttributes, messageGroupId) {
+  private async publishSqs(event, sub, messageAttributes, messageGroupId) {
     const subEndpointUrl = new URL(sub.Endpoint);
     const sqsEndpoint = `${subEndpointUrl.protocol}//${subEndpointUrl.host}/`;
     const sqs = new SQSClient({ endpoint: sqsEndpoint, region: this.region });
 
+    let QueueUrl: string;
+    if (sub.queueName) {
+      const getQueueUrlResult = await sqs.send(
+        new GetQueueUrlCommand({ QueueName: sub.queueName })
+      );
+      QueueUrl = getQueueUrlResult.QueueUrl;
+    } else {
+      QueueUrl = sub.Endpoint;
+    }
+
     if (sub["Attributes"]["RawMessageDelivery"] === "true") {
       const sendMsgReq = new SendMessageCommand({
-        QueueUrl: sub.Endpoint,
+        QueueUrl,
         MessageBody: event,
         MessageAttributes: formatMessageAttributes(messageAttributes),
         ...(messageGroupId && { MessageGroupId: messageGroupId }),
@@ -315,7 +333,7 @@ export class SNSServer implements ISNSServer {
       const records = JSON.parse(event).Records ?? [];
       const messagePromises = records.map((record) => {
         const sendMsgReq = new SendMessageCommand({
-          QueueUrl: sub.Endpoint,
+          QueueUrl,
           MessageBody: JSON.stringify(record.Sns),
           MessageAttributes: formatMessageAttributes(messageAttributes),
           ...(messageGroupId && { MessageGroupId: messageGroupId }),
