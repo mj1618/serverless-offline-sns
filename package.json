@@ -1,6 +1,6 @@
 {
   "name": "serverless-offline-sns",
-  "version": "0.0.0-development",
+  "version": "0.78.1",
   "description": "Serverless plugin to run a local SNS server and call lambdas with events notifications.",
   "exports": "./dist/index.js",
   "type": "module",
