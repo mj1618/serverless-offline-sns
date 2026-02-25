@@ -1,6 +1,10 @@
 name: pull_requests
 
-on: [pull_request]
+on:
+  pull_request:
+    paths-ignore:
+      - 'README.md'
+      - '.all-contributorsrc'
 
 jobs:
   test:
