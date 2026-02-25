@@ -1,0 +1,9 @@
+{
+  "name": "sls-offline-sns-integration",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "ioredis": "5.6.1",
+    "serverless-offline": "13.9.0"
+  }
+}

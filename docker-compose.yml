@@ -1,0 +1,9 @@
+services:
+  localstack:
+    image: localstack/localstack:3
+    network_mode: host
+    environment:
+      SERVICES: sns,sqs
+  redis:
+    image: redis:7-alpine
+    network_mode: host

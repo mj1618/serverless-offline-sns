@@ -2,12 +2,14 @@
   "name": "serverless-offline-sns",
   "version": "0.78.2",
   "description": "Serverless plugin to run a local SNS server and call lambdas with events notifications.",
+  "main": "dist/index.js",
   "exports": "./dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc -p src",
     "watch": "tsc -p src -w",
-    "test": "nyc ts-mocha -r ts-node/register --loader=ts-node/esm --no-warnings=ExperimentalWarning --experimental-specifier-resolution=node \"test/**/*.ts\" -p test/tsconfig.json",
+    "test": "nyc ts-mocha -r ts-node/register --loader=ts-node/esm --no-warnings=ExperimentalWarning --experimental-specifier-resolution=node \"test/spec/**/*.ts\" -p test/tsconfig.json",
+    "test:integration": "yarn --cwd test/integration install --ignore-engines && yarn build && ts-mocha -r ts-node/register --loader=ts-node/esm --no-warnings=ExperimentalWarning --experimental-specifier-resolution=node 'test/sns.integration.ts' -p test/integration/tsconfig.json",
     "lint": "eslint src",
     "prepare": "yarn run lint && yarn test && yarn build",
     "prettier": "npx prettier --write src test",
@@ -42,7 +44,7 @@
     "express": "^4.18.2",
     "lodash": "^4.17.21",
     "node-fetch": "^3.3.2",
-    "serverless": "^3.38.0",
+    "serverless": "3.38.0",
     "shelljs": "^0.8.5",
     "uuid": "^9.0.1",
     "xml": "^1.0.1"
@@ -70,6 +72,7 @@
     "all-contributors-cli": "^6.26.1",
     "aws-sdk-client-mock": "^3.0.0",
     "chai": "^4.3.10",
+    "ioredis": "5.6.1",
     "mocha": "^10.2.0",
     "nyc": "^15.1.0",
     "prettier": "3.1.0",
@@ -79,6 +82,12 @@
     "eslint": "^9.39.3",
     "typescript": "^5.3.2",
     "typescript-eslint": "~8.55.0"
+  },
+  "resolutions": {
+    "@aws-sdk/client-lambda": "3.967.0",
+    "@aws-sdk/client-sns": "3.967.0",
+    "@aws-sdk/client-sqs": "3.967.0",
+    "**/@aws-sdk/core": "3.967.0"
   },
   "nyc": {
     "extension": [

@@ -442,7 +442,10 @@ class ServerlessOfflineSns {
           const result = response.Payload ? JSON.parse(new TextDecoder().decode(response.Payload)) : null;
           cb(null, result);
         })
-        .catch((err: Error) => cb(err));
+        .catch((err: Error) => {
+          this.log(`ERROR invoking ${functionName}: ${err.message}`, "ERROR[serverless-offline-sns]: ");
+          cb(err);
+        });
     };
   }
 
