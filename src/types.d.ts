@@ -98,6 +98,7 @@ export interface ServerlessOfflineSnsConfig {
   "sns-endpoint"?: string;
   "sns-subscribe-endpoint"?: string;
   "sqsEndpoint"?: string;
+  lambdaPort?: number;
   subscriptions?: Array<{ queue: string; topic: string }>;
 }
 
