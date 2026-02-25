@@ -1,15 +1,13 @@
-Looking for a maintainer for this project, email me if you are interested.
-
 # serverless-offline-sns
 A serverless plugin to listen to offline SNS and call lambda fns with events.
 
-[![serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
-![build status](https://github.com/mj1618/serverless-offline-sns/actions/workflows/build.yml/badge.svg)
+![build status](https://github.com/BANCS-Norway/serverless-offline-sns/actions/workflows/pull_requests.yml/badge.svg)
 [![npm version](https://badge.fury.io/js/serverless-offline-sns.svg)](https://badge.fury.io/js/serverless-offline-sns)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
-[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![All Contributors](https://img.shields.io/badge/all_contributors-33-orange.svg?style=flat-square)](#contributors)
+
+Originally created and maintained for nearly 10 years by [Matthew James](https://github.com/mj1618).
 
 ## Docs
 - [Prerequisites](#prerequisites)
@@ -183,7 +181,7 @@ const subscription = await sns.subscribe({
 
 ## Contributors
 
-Happy to accept contributions, [feature requests](https://github.com/mj1618/serverless-offline-sns/issues) and [issues](https://github.com/mj1618/serverless-offline-sns/issues).
+Happy to accept contributions, [feature requests](https://github.com/BANCS-Norway/serverless-offline-sns/issues) and [issues](https://github.com/BANCS-Norway/serverless-offline-sns/issues).
 
 Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
 
