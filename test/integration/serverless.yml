@@ -1,0 +1,35 @@
+service: sls-offline-sns-integration
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: local
+
+plugins:
+  - ../../
+  - serverless-offline
+
+custom:
+  serverless-offline-sns:
+    port: 4002
+    accountId: "000000000000"
+    sns-endpoint: http://127.0.0.1:4566
+    sns-subscribe-endpoint: 127.0.0.1
+    sqsEndpoint: http://127.0.0.1:4566
+    lambdaPort: 3002
+    subscriptions:
+      - topic: integration-sqs-topic
+        queue: arn:aws:sqs:us-east-1:000000000000:integration-queue
+  serverless-offline:
+    lambdaPort: 3002
+    host: "127.0.0.1"
+
+functions:
+  snsHandler:
+    handler: handler.snsHandler
+    events:
+      - sns: arn:aws:sns:us-east-1:000000000000:integration-topic
+  snsHandler2:
+    handler: handler.snsHandler2
+    events:
+      - sns: arn:aws:sns:us-east-1:000000000000:integration-topic

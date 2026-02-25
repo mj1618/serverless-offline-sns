@@ -1,4 +1,4 @@
-import { ListTopicsCommandOutput, ListSubscriptionsCommandOutput, CreateTopicCommandOutput, PublishCommandOutput, MessageAttributeValue, SNSClient, ListTopicsCommand, ListSubscriptionsCommand, UnsubscribeCommand, CreateTopicCommand, SubscribeCommand, PublishCommand } from "@aws-sdk/client-sns";
+import { ListTopicsCommandOutput, ListSubscriptionsCommandOutput, CreateTopicCommandOutput, PublishCommandOutput, MessageAttributeValue, SNSClient, SNSClientConfig, ListTopicsCommand, ListSubscriptionsCommand, UnsubscribeCommand, CreateTopicCommand, SubscribeCommand, PublishCommand } from "@aws-sdk/client-sns";
 import type { Application } from "express";
 import _ from "lodash";
 import fetch from "node-fetch";
@@ -52,7 +52,7 @@ export class SNSAdapter implements ISNSAdapter {
       },
       endpoint: this.endpoint,
       region,
-    });
+    } as SNSClientConfig);
   }
 
   public async listTopics(): Promise<ListTopicsCommandOutput> {
