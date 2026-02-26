@@ -1,5 +1,3 @@
-import * as shell from "shelljs";
-
 import { SNSAdapter } from "./sns-adapter.js";
 import express, { type Application } from "express";
 import type { Server } from "http";
@@ -12,8 +10,6 @@ import { topicNameFromArn } from "./helpers.js";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 import lodashfp from 'lodash/fp.js';
 const { get, has } = lodashfp;
-
-import { loadServerlessConfig } from "./sls-config-parser.js";
 
 interface ResourceSubscription {
   fnName: string | undefined;
@@ -41,7 +37,6 @@ class ServerlessOfflineSns {
   private location: string = "";
   private region: string = "";
   private accountId: string = "123456789012";
-  private servicesDirectory: string = "";
   private autoSubscribe: boolean = true;
 
   private get adapter(): ISNSAdapter {
@@ -114,7 +109,6 @@ class ServerlessOfflineSns {
     this.accountId = this.config.accountId || "123456789012";
     const offlineConfig =
       (this.serverless.service.custom["serverless-offline"] || {}) as { location?: string };
-    this.servicesDirectory = this.config.servicesDirectory || "";
     this.location = process.cwd();
     const locationRelativeToCwd =
       this.options.location || this.config.location || offlineConfig.location;
@@ -237,65 +231,29 @@ class ServerlessOfflineSns {
     this.debug("subscribing functions");
     const subscribePromises: Array<Promise<unknown>> = [];
     if (this.autoSubscribe) {
-      if (this.servicesDirectory) {
-        shell.cd(this.servicesDirectory);
-        for (const directory of shell.ls("-d", "*/")) {
-          shell.cd(directory);
-          const service = directory.split("/")[0];
-          const serverless = await loadServerlessConfig(shell.pwd().toString(), (msg, ctx) => this.debug(msg, ctx));
-          this.debug("Processing subscriptions for ", service);
-          this.debug("shell.pwd()", shell.pwd());
-          this.debug("serverless functions", JSON.stringify(serverless.service.functions));
-          const subscriptions = this.getResourceSubscriptions(serverless);
-          subscriptions.forEach((subscription) =>
-            subscribePromises.push(
-              this.subscribeFromResource(subscription, this.location)
-            )
-          );
-          Object.keys(serverless.service.functions).map((fnName) => {
-            const fn = serverless.service.functions[fnName];
-            subscribePromises.push(
-              Promise.all(
-                fn.events
-                  .filter((event): event is { sns: SnsEventConfig } => event.sns != null)
-                  .map((event) => {
-                    return this.subscribe(
-                      serverless,
-                      fnName,
-                      event.sns,
-                      shell.pwd()
-                    );
-                  })
-              )
-            );
-          });
-          shell.cd("../");
-        }
-      } else {
-        const subscriptions = this.getResourceSubscriptions(this.serverless);
-        subscriptions.forEach((subscription) =>
-          subscribePromises.push(
-            this.subscribeFromResource(subscription, this.location)
+      const subscriptions = this.getResourceSubscriptions(this.serverless);
+      subscriptions.forEach((subscription) =>
+        subscribePromises.push(
+          this.subscribeFromResource(subscription, this.location)
+        )
+      );
+      Object.keys(this.serverless.service.functions).map((fnName) => {
+        const fn = this.serverless.service.functions[fnName];
+        subscribePromises.push(
+          Promise.all(
+            fn.events
+              .filter((event): event is { sns: SnsEventConfig } => event.sns != null)
+              .map((event) => {
+                return this.subscribe(
+                  this.serverless,
+                  fnName,
+                  event.sns,
+                  this.location
+                );
+              })
           )
         );
-        Object.keys(this.serverless.service.functions).map((fnName) => {
-          const fn = this.serverless.service.functions[fnName];
-          subscribePromises.push(
-            Promise.all(
-              fn.events
-                .filter((event): event is { sns: SnsEventConfig } => event.sns != null)
-                .map((event) => {
-                  return this.subscribe(
-                    this.serverless,
-                    fnName,
-                    event.sns,
-                    this.location
-                  );
-                })
-            )
-          );
-        });
-      }
+      });
     }
     await this.subscribeAllQueues(subscribePromises);
   }
