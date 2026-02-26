@@ -63,6 +63,7 @@
     "@types/chai": "^5.2.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/lodash": "^4.17.24",
     "@types/mocha": "^10.0.10",
     "@types/node": "^25.3.1",
     "@types/node-fetch": "^2.6.13",
