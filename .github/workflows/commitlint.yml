@@ -15,11 +15,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 18.x
-      - name: Install commitlint
-        run: npm install --no-save @commitlint/cli @commitlint/config-conventional
+          cache: yarn
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --ignore-scripts
       - name: Lint commits
         run: |
-          npx commitlint \
+          yarn commitlint \
             --from ${{ github.event.pull_request.base.sha }} \
             --to ${{ github.event.pull_request.head.sha }} \
             --verbose
