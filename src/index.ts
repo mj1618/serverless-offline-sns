@@ -78,7 +78,7 @@ class ServerlessOfflineSns {
       "before:offline:start:init": () => this.start(),
       "after:offline:start:end": () => this.stop(),
       "offline-sns:start:init": () => {
-        this.start();
+        void this.start();
         return this.waitForSigint();
       },
       "offline-sns:cleanup:init": async () => {
@@ -122,7 +122,7 @@ class ServerlessOfflineSns {
   public async start() {
     this.init();
     await this.listen();
-    await this.serve();
+    this.serve();
     await this.subscribeAll();
     return this.adapter;
   }
@@ -136,7 +136,7 @@ class ServerlessOfflineSns {
     });
   }
 
-  public async serve() {
+  public serve() {
     new SNSServer(
       (msg, ctx) => this.debug(msg, ctx),
       this.app,
@@ -151,10 +151,10 @@ class ServerlessOfflineSns {
     let result: string | undefined;
     Object.entries(this.serverless.service.functions).forEach(
       ([funcName, funcValue]) => {
-        const events = get(["events"], funcValue);
-        if (events) events.forEach((event: Record<string, unknown>) => {
-            const attribute = get(["sqs", "arn"], event);
-            if (!has("Fn::GetAtt", attribute)) return;
+        const events = get(["events"], funcValue) as Record<string, unknown>[] | undefined;
+        if (events) events.forEach((event) => {
+            const attribute = get(["sqs", "arn"], event) as { "Fn::GetAtt"?: [string, string] } | undefined;
+            if (!attribute?.["Fn::GetAtt"]) return;
             const [resourceName, value] = attribute["Fn::GetAtt"];
             if (value !== "Arn") return;
             if (name !== resourceName) return;
@@ -170,14 +170,14 @@ class ServerlessOfflineSns {
     const subscriptions: ResourceSubscription[] = [];
     if (!resources) return subscriptions;
     new Map(Object.entries(resources)).forEach((value, key) => {
-      let type = get(["Type"], value);
+      let type = get(["Type"], value) as string | undefined;
       if (type !== "AWS::SNS::Subscription") return;
 
-      const endPoint = get(["Properties", "Endpoint"], value);
-      if (!has("Fn::GetAtt", endPoint)) return;
+      const endPoint = get(["Properties", "Endpoint"], value) as { "Fn::GetAtt"?: [string, string] } | undefined;
+      if (!endPoint?.["Fn::GetAtt"]) return;
 
       const [resourceName, attribute] = endPoint["Fn::GetAtt"];
-      type = get(["Type"], resources[resourceName]);
+      type = get(["Type"], resources[resourceName]) as string | undefined;
       if (attribute !== "Arn") return;
       if (type !== "AWS::SQS::Queue") return;
 
@@ -191,7 +191,7 @@ class ServerlessOfflineSns {
       ) as string;
       const topicArn = get(["Properties", "TopicArn", "Ref"], value) as string;
       const topicName = get(["Properties", "TopicName"], resources[topicArn]) as string;
-      const fnName = this.getFunctionName(resourceName as string);
+      const fnName = this.getFunctionName(resourceName);
 
       if(!topicName){
         this.log(`${key} does not have a topic name, skipping`);
@@ -283,7 +283,7 @@ class ServerlessOfflineSns {
       await this.adapter.subscribeQueue(queueUrl, data.TopicArn, subscription.options);
     } else {
       const fn = this.serverless.service.functions[subscription.fnName!];
-      const handler = await this.createHandler(subscription.fnName!, fn, location);
+      const handler = this.createHandler(subscription.fnName!, fn, location);
       await this.adapter.subscribe(fn, handler, data.TopicArn, subscription.options);
     }
   }
@@ -339,7 +339,7 @@ class ServerlessOfflineSns {
     if (!data.TopicArn) {
       throw new Error(`createTopic did not return a TopicArn for "${topicName}"`);
     }
-    const handler = await this.createHandler(fnName, fn, lambdasLocation);
+    const handler = this.createHandler(fnName, fn, lambdasLocation);
     await this.adapter.subscribe(
       fn,
       handler,
@@ -383,7 +383,7 @@ class ServerlessOfflineSns {
     await this.adapter.subscribeQueue(queueUrl, data.TopicArn, snsConfig);
   }
 
-  public async createHandler(fnName: string, fn: IServerlessFunction, _location: string): Promise<SLSHandler> {
+  public createHandler(fnName: string, fn: IServerlessFunction, _location: string): SLSHandler {
     return this.createInvokeCommandHandler(fnName);
   }
 
@@ -402,7 +402,7 @@ class ServerlessOfflineSns {
       const payload = new TextEncoder().encode(JSON.stringify(event));
       client.send(new InvokeCommand({ FunctionName: functionName, Payload: payload }))
         .then((response) => {
-          const result = response.Payload ? JSON.parse(new TextDecoder().decode(response.Payload)) : null;
+          const result: unknown = response.Payload ? JSON.parse(new TextDecoder().decode(response.Payload)) as unknown : null;
           cb(null, result);
         })
         .catch((err: Error) => {
@@ -419,7 +419,8 @@ class ServerlessOfflineSns {
   public debug(msg: unknown, context?: unknown) {
     if (this.config.debug) {
       if (context) {
-        this.log(String(msg), `DEBUG[serverless-offline-sns][${context}]: `);
+        const ctxStr = String(context as string | number | boolean);
+        this.log(String(msg), `DEBUG[serverless-offline-sns][${ctxStr}]: `);
       } else {
         this.log(String(msg), "DEBUG[serverless-offline-sns]: ");
       }

@@ -63,8 +63,8 @@ export class SNSAdapter implements ISNSAdapter {
     return await new Promise<ListTopicsCommandOutput>((res, rej) => {
       this.sns.send(req, (err, topics) => {
         if (err) {
-          this.debug(err, err.stack);
-          rej(err);
+          this.debug(err, (err as Error).stack);
+          rej(err instanceof Error ? err : new Error(String(err)));
         } else {
           this.debug(JSON.stringify(topics));
           res(topics!);
@@ -81,8 +81,8 @@ export class SNSAdapter implements ISNSAdapter {
     return await new Promise<ListSubscriptionsCommandOutput>((res, rej) => {
       this.sns.send(req, (err, subs) => {
         if (err) {
-          this.debug(err, err.stack);
-          rej(err);
+          this.debug(err, (err as Error).stack);
+          rej(err instanceof Error ? err : new Error(String(err)));
         } else {
           this.debug(JSON.stringify(subs));
           res(subs!);
@@ -99,7 +99,7 @@ export class SNSAdapter implements ISNSAdapter {
         unsubscribeReq,
         (err, data) => {
           if (err) {
-            this.debug(err, err.stack);
+            this.debug(err, (err as Error).stack);
           } else {
             this.debug("unsubscribed: " + JSON.stringify(data));
           }
@@ -114,8 +114,8 @@ export class SNSAdapter implements ISNSAdapter {
     return new Promise<CreateTopicCommandOutput>((res, rej) =>
       this.sns.send(createTopicReq, (err, data) => {
         if (err) {
-          this.debug(err, err.stack);
-          rej(err);
+          this.debug(err, (err as Error).stack);
+          rej(err instanceof Error ? err : new Error(String(err)));
         } else {
           this.debug("arn: " + JSON.stringify(data));
           res(data!);
@@ -156,7 +156,7 @@ export class SNSAdapter implements ISNSAdapter {
       if (req.is("text/plain") && req.get("x-amz-sns-rawdelivery") !== "true") {
         const msg =
           body.MessageStructure === "json"
-            ? JSON.parse(body.Message ?? "{}").default
+            ? (JSON.parse(body.Message ?? "{}") as { default: string }).default
             : body.Message ?? "";
         event = createSnsLambdaEvent(
           body.TopicArn ?? "",
@@ -174,7 +174,7 @@ export class SNSAdapter implements ISNSAdapter {
         return fetch(body.SubscribeURL, {
           method: "GET"
         }).then((fetchResponse) => {
-          this.debug("Subscribed: " + fetchResponse)
+          this.debug("Subscribed: " + fetchResponse.status)
           res.status(200).send();
         });
       }
@@ -231,7 +231,7 @@ export class SNSAdapter implements ISNSAdapter {
     await new Promise((res) => {
       this.sns.send(subscribeRequest, (err, data) => {
         if (err) {
-          this.debug(err, err.stack);
+          this.debug(err, (err as Error).stack);
         } else {
           this.debug(
             `successfully subscribed fn "${fnName}" to topic: "${arn}"`
@@ -273,7 +273,7 @@ export class SNSAdapter implements ISNSAdapter {
     await new Promise((res) => {
       this.sns.send(subscribeRequest, (err, data) => {
         if (err) {
-          this.debug(err, err.stack);
+          this.debug(err, (err as Error).stack);
         } else {
           this.debug(
             `successfully subscribed queue "${queueUrl}" to topic: "${arn}"`
@@ -309,8 +309,8 @@ export class SNSAdapter implements ISNSAdapter {
     return await new Promise<PublishCommandOutput>((resolve, reject) =>
       this.sns.send(publishReq, (err, result) => {
         if (err) {
-          this.debug(err, err.stack);
-          reject(err);
+          this.debug(err, (err as Error).stack);
+          reject(err instanceof Error ? err : new Error(String(err)));
         } else {
           resolve(result!);
         }
@@ -336,8 +336,8 @@ export class SNSAdapter implements ISNSAdapter {
     return await new Promise<PublishCommandOutput>((resolve, reject) =>
       this.sns.send(publishReq, (err, result) => {
         if (err) {
-          this.debug(err, err.stack);
-          reject(err);
+          this.debug(err, (err as Error).stack);
+          reject(err instanceof Error ? err : new Error(String(err)));
         } else {
           resolve(result!);
         }
@@ -362,8 +362,8 @@ export class SNSAdapter implements ISNSAdapter {
     return await new Promise<PublishCommandOutput>((resolve, reject) =>
       this.sns.send(publishReq, (err, result) => {
         if (err) {
-          this.debug(err, err.stack);
-          reject(err);
+          this.debug(err, (err as Error).stack);
+          reject(err instanceof Error ? err : new Error(String(err)));
         } else {
           resolve(result!);
         }
