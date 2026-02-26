@@ -220,6 +220,9 @@ export class SNSAdapter implements ISNSAdapter {
         snsConfig.filterPolicy
       );
     }
+    if (typeof snsConfig === "object" && snsConfig.filterPolicyScope) {
+      params.Attributes["FilterPolicyScope"] = snsConfig.filterPolicyScope;
+    }
     if (typeof snsConfig === "object" && snsConfig.queueName) {
       params.Attributes["QueueName"] = snsConfig.queueName;
     }
@@ -261,6 +264,9 @@ export class SNSAdapter implements ISNSAdapter {
       params.Attributes["FilterPolicy"] = JSON.stringify(
         snsConfig.filterPolicy
       );
+    }
+    if (typeof snsConfig === "object" && snsConfig.filterPolicyScope) {
+      params.Attributes["FilterPolicyScope"] = snsConfig.filterPolicyScope;
     }
 
     const subscribeRequest = new SubscribeCommand(params);

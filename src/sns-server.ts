@@ -29,6 +29,7 @@ type Subscription = {
   Owner: string;
   Attributes: Record<string, string>;
   Policies: Record<string, unknown[]> | undefined;
+  filterPolicyScope?: string;
   queueName?: string;
 };
 
@@ -244,6 +245,7 @@ export class SNSServer implements ISNSServer {
         Owner: "",
         Attributes: attributes,
         Policies: filterPolicies,
+        filterPolicyScope: attributes["FilterPolicyScope"],
       };
       this.subscriptions.push(sub);
       subscriptionArn = sub.SubscriptionArn;
@@ -265,7 +267,14 @@ export class SNSServer implements ISNSServer {
     };
   }
 
-  private evaluatePolicies(policies: Record<string, unknown[]>, messageAttrs: MessageAttributes): boolean {
+  private evaluatePolicies(policies: Record<string, unknown[]>, messageAttrs: MessageAttributes, message: string, filterPolicyScope?: string): boolean {
+    if (filterPolicyScope === "MessageBody") {
+      return this.evaluatePoliciesOnBody(policies, message);
+    }
+    return this.evaluatePoliciesOnAttributes(policies, messageAttrs);
+  }
+
+  private evaluatePoliciesOnAttributes(policies: Record<string, unknown[]>, messageAttrs: MessageAttributes): boolean {
     let shouldSend: boolean = false;
     for (const [k, v] of Object.entries(policies)) {
       if (!messageAttrs[k]) {
@@ -279,12 +288,7 @@ export class SNSServer implements ISNSServer {
         attrs = [messageAttrs[k].Value];
       }
       if (_.intersection(v as unknown[], attrs).length > 0) {
-        this.debug(
-          "filterPolicy Passed: " +
-          v +
-          " matched message attrs: " +
-          JSON.stringify(attrs)
-        );
+        this.debug("filterPolicy Passed: " + v + " matched message attrs: " + JSON.stringify(attrs));
         shouldSend = true;
       } else {
         shouldSend = false;
@@ -292,15 +296,32 @@ export class SNSServer implements ISNSServer {
       }
     }
     if (!shouldSend) {
-      this.debug(
-        "filterPolicy Failed: " +
-        JSON.stringify(policies) +
-        " did not match message attrs: " +
-        JSON.stringify(messageAttrs)
-      );
+      this.debug("filterPolicy Failed: " + JSON.stringify(policies) + " did not match message attrs: " + JSON.stringify(messageAttrs));
     }
-
     return shouldSend;
+  }
+
+  private evaluatePoliciesOnBody(policies: Record<string, unknown[]>, message: string): boolean {
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(message) as Record<string, unknown>;
+    } catch {
+      this.debug("filterPolicy (MessageBody) Failed: message is not valid JSON");
+      return false;
+    }
+    for (const [k, v] of Object.entries(policies)) {
+      const bodyValue = body[k];
+      if (bodyValue === undefined) {
+        this.debug("filterPolicy (MessageBody) Failed: key " + k + " not found in message body");
+        return false;
+      }
+      if (_.intersection(v as unknown[], [bodyValue]).length === 0) {
+        this.debug("filterPolicy (MessageBody) Failed: " + JSON.stringify(v) + " did not match body value: " + JSON.stringify(bodyValue));
+        return false;
+      }
+    }
+    this.debug("filterPolicy (MessageBody) Passed: " + JSON.stringify(policies));
+    return true;
   }
 
   private async publishHttp(event: string, sub: Subscription, raw: boolean) {
@@ -373,7 +394,7 @@ export class SNSServer implements ISNSServer {
           const isRaw = sub.Attributes["RawMessageDelivery"] === "true";
           if (
             sub.Policies &&
-            !this.evaluatePolicies(sub.Policies, messageAttributes)
+            !this.evaluatePolicies(sub.Policies, messageAttributes, message, sub.filterPolicyScope)
           ) {
             this.debug(
               "Filter policies failed. Skipping subscription: " + sub.Endpoint
