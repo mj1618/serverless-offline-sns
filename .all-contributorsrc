@@ -433,6 +433,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "huangjimmy",
+      "name": "Jimmy Huang",
+      "avatar_url": "https://avatars.githubusercontent.com/u/569851?v=4",
+      "profile": "https://github.com/huangjimmy",
+      "contributions": [
+        "bug",
+        "code"
+      ]
     }
   ],
   "repoType": "github",

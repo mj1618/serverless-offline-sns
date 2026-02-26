@@ -6,7 +6,7 @@ A serverless plugin to listen to offline SNS and call lambda fns with events.
 [![node version](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![All Contributors](https://img.shields.io/badge/all_contributors-33-orange.svg?style=flat-square)](#contributors)
+[![All Contributors](https://img.shields.io/badge/all_contributors-34-orange.svg?style=flat-square)](#contributors)
 
 Originally created and maintained for nearly 10 years by [Matthew James](https://github.com/mj1618).
 
@@ -304,6 +304,7 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
   <tr>
     <td align="center"><a href="https://github.com/jhackshaw"><img src="https://avatars.githubusercontent.com/u/36460150?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jeff Hackshaw</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=jhackshaw" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/dsarlo"><img src="https://avatars.githubusercontent.com/u/16106087?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Daniel Sarlo</b></sub></a><br /><a href="https://github.com/mj1618/serverless-offline-sns/commits?author=dsarlo" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/huangjimmy"><img src="https://avatars.githubusercontent.com/u/569851?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jimmy Huang</b></sub></a><br /><a href="https://github.com/BANCS-Norway/serverless-offline-sns/issues?q=author%3Ahuangjimmy" title="Bug reports">🐛</a> <a href="https://github.com/BANCS-Norway/serverless-offline-sns/pulls?q=author%3Ahuangjimmy" title="Code">💻</a></td>
   </tr>
 </table>
 
