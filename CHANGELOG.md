@@ -1,3 +1,10 @@
+# [0.79.0](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v0.78.2...v0.79.0) (2026-02-26)
+
+
+### Features
+
+* use LambdaClient InvokeCommand to invoke handlers (closes [#210](https://github.com/BANCS-Norway/serverless-offline-sns/issues/210)) ([c4220e7](https://github.com/BANCS-Norway/serverless-offline-sns/commit/c4220e7c705c3eb130c6e6215ed0264bcd72520a))
+
 ## [0.78.2](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v0.78.1...v0.78.2) (2026-02-25)
 
 
