@@ -13,6 +13,7 @@ Originally created and maintained for nearly 10 years by [Matthew James](https:/
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configure](#configure)
+- [HTTP delivery retry](#http-delivery-retry)
 - [Usage](#usage)
 - [Contributors](#contributors)
 
@@ -151,6 +152,20 @@ custom:
 ```
 
 The root directory must contain directories with serverless.yaml files inside.
+
+## HTTP delivery retry
+
+By default, failed HTTP deliveries (connection errors or non-2xx responses) are not retried. You can configure retries to better simulate AWS SNS's delivery policy:
+
+```YAML
+custom:
+  serverless-offline-sns:
+    port: 4002
+    retry: 3           # number of retry attempts after the initial failure (default: 0)
+    retry-interval: 1000 # delay in milliseconds between retries (default: 0)
+```
+
+With `retry: 3`, a failing endpoint will be attempted up to 4 times in total (1 initial + 3 retries). Both network errors and HTTP error responses (4xx/5xx) trigger a retry.
 
 ## Usage
 
