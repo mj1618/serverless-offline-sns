@@ -1,8 +1,7 @@
-import type { Application } from "express";
+import express, { type Application } from "express";
 import fetch from "node-fetch";
 import { URL } from "url";
 import { IDebug, ISNSServer, MessageAttributes } from "./types.js";
-import bodyParser from "body-parser";
 import _ from "lodash";
 import xml from "xml";
 import {
@@ -57,8 +56,8 @@ export class SNSServer implements ISNSServer {
 
   public routes() {
     this.debug("configuring route");
-    this.app.use(bodyParser.json({ limit: "10mb" })); // for parsing application/json
-    this.app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" })); // for parsing application/x-www-form-urlencoded
+    this.app.use(express.json({ limit: "10mb" }));
+    this.app.use(express.urlencoded({ extended: true, limit: "10mb" }));
     this.app.use((req, res, next) => {
       res.header("Access-Control-Allow-Origin", "*");
       res.header(
@@ -71,6 +70,10 @@ export class SNSServer implements ISNSServer {
       this.debug("hello request");
       this.debug(JSON.stringify(req.body));
       this.debug(JSON.stringify(this.subscriptions));
+      if (!req.body) {
+        res.status(200).send();
+        return;
+      }
       if (req.body.Action === "ListSubscriptions") {
         this.debug(
           "sending: " + xml(this.listSubscriptions(), { indent: "\t" })
