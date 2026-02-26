@@ -468,6 +468,51 @@ describe("test", () => {
     sqsMock.restore();
   });
 
+  it("should not send event when MessageBody filter policy does not match", async () => {
+    plugin = createPlugin(createServerlessWithMessageBodyFilterPolicies(accountId));
+    const snsAdapter = await plugin.start();
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:test-topic-body-policies`,
+      JSON.stringify({ eventType: "order.deleted" })
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    expect(state.getPongs()).to.eq(0);
+  });
+
+  it("should send event when MessageBody filter policy matches", async () => {
+    plugin = createPlugin(createServerlessWithMessageBodyFilterPolicies(accountId));
+    const snsAdapter = await plugin.start();
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:test-topic-body-policies`,
+      JSON.stringify({ eventType: "order.created" })
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    const event = state.getEvent();
+    expect(event.Records[0].Sns.Message).to.include("order.created");
+  });
+
+  it("should not send event when MessageBody filter policy key is missing from body", async () => {
+    plugin = createPlugin(createServerlessWithMessageBodyFilterPolicies(accountId));
+    const snsAdapter = await plugin.start();
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:test-topic-body-policies`,
+      JSON.stringify({ otherKey: "order.created" })
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    expect(state.getPongs()).to.eq(0);
+  });
+
+  it("should not send event when message body is not valid JSON and MessageBody filter policy is set", async () => {
+    plugin = createPlugin(createServerlessWithMessageBodyFilterPolicies(accountId));
+    const snsAdapter = await plugin.start();
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:test-topic-body-policies`,
+      "not-json"
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    expect(state.getPongs()).to.eq(0);
+  });
+
   it("should deliver SNS envelope as MessageBody to SQS in non-raw mode", async () => {
     const sqsMock = mockClient(SQSClient);
     sqsMock.on(GetQueueUrlCommand).resolves({ QueueUrl: "http://127.0.0.1:4002/queue/pong6" });
@@ -741,6 +786,35 @@ const createServerlessBad = (accountId: number) => {
         }
       },
     },
+  };
+};
+
+const createServerlessWithMessageBodyFilterPolicies = (accountId: number) => {
+  return {
+    config: {},
+    service: {
+      custom: {
+        "serverless-offline-sns": { debug: true, port: 4002, accountId },
+      },
+      provider: { region: "us-east-1", environment: {} },
+      functions: {
+        pong: {
+          name: "body-policy-fn",
+          handler: "test/mock/handler.pongHandler",
+          events: [
+            {
+              sns: {
+                topicName: "test-topic-body-policies",
+                filterPolicyScope: "MessageBody",
+                filterPolicy: { eventType: ["order.created", "order.updated"] },
+              },
+            },
+          ],
+        },
+      },
+      resources: {},
+    },
+    cli: { log: (data) => { if (process.env.DEBUG) console.log(data); } },
   };
 };
 

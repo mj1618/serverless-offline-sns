@@ -14,6 +14,7 @@ Originally created and maintained for nearly 10 years by [Matthew James](https:/
 - [Installation](#installation)
 - [Configure](#configure)
 - [HTTP delivery retry](#http-delivery-retry)
+- [Subscription filter policies](#subscription-filter-policies)
 - [Usage](#usage)
 - [Contributors](#contributors)
 
@@ -166,6 +167,47 @@ custom:
 ```
 
 With `retry: 3`, a failing endpoint will be attempted up to 4 times in total (1 initial + 3 retries). Both network errors and HTTP error responses (4xx/5xx) trigger a retry.
+
+## Subscription filter policies
+
+Subscription filter policies are supported for both `MessageAttributes` (default) and `MessageBody` scopes, matching real AWS SNS behaviour.
+
+### Filtering on MessageAttributes (default)
+
+```YAML
+functions:
+  myFunction:
+    handler: handler.myFunction
+    events:
+      - sns:
+          topicName: my-topic
+          filterPolicy:
+            eventType:
+              - order.created
+              - order.updated
+```
+
+Only messages whose `MessageAttributes` include an `eventType` matching one of the listed values are delivered. Messages that do not satisfy all filter conditions are silently dropped.
+
+### Filtering on MessageBody
+
+Set `filterPolicyScope: MessageBody` to match filter policy keys against top-level fields in the JSON message body instead:
+
+```YAML
+functions:
+  myFunction:
+    handler: handler.myFunction
+    events:
+      - sns:
+          topicName: my-topic
+          filterPolicyScope: MessageBody
+          filterPolicy:
+            eventType:
+              - order.created
+              - order.updated
+```
+
+The message body must be valid JSON, and the filter policy keys must match top-level fields. If the message body is not valid JSON or a required key is absent, the message is dropped.
 
 ## Usage
 

@@ -38,6 +38,7 @@ export type SnsEventConfig =
       arn?: string;
       rawMessageDelivery?: string;
       filterPolicy?: Record<string, unknown[]>;
+      filterPolicyScope?: string;
       protocol?: string;
       queueName?: string;
     };

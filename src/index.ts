@@ -22,6 +22,7 @@ interface ResourceSubscription {
     protocol: string;
     rawMessageDelivery: string;
     filterPolicy: Record<string, unknown[]> | undefined;
+    filterPolicyScope?: string;
     queueName?: string;
   };
 }
@@ -194,6 +195,7 @@ class ServerlessOfflineSns {
 
       const queueName = get(["Properties", "QueueName"], resources[resourceName]) as string | undefined;
       const filterPolicy = get(["Properties", "FilterPolicy"], value) as Record<string, unknown[]> | undefined;
+      const filterPolicyScope = get(["Properties", "FilterPolicyScope"], value) as string | undefined;
       const protocol = get(["Properties", "Protocol"], value) as string;
       const rawMessageDelivery = get(
         ["Properties", "RawMessageDelivery"],
@@ -220,6 +222,7 @@ class ServerlessOfflineSns {
           queueName,
           rawMessageDelivery,
           filterPolicy,
+          filterPolicyScope,
         },
       });
     });
