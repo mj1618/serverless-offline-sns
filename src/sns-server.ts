@@ -92,6 +92,8 @@ export class SNSServer implements ISNSServer {
             )
           )
         );
+      } else if (req.body.Action === "PublishBatch") {
+        res.send(xml(this.publishBatch(req.body)));
       } else if (req.body.Action === "Publish") {
         const target = this.extractTarget(req.body);
         if (req.body.MessageStructure === "json") {
@@ -376,6 +378,57 @@ export class SNSServer implements ISNSServer {
     return new Promise<void>((resolve) => {
       sqs.send(sendMsgReq).then(() => resolve());
     });
+  }
+
+  public publishBatch(body: Record<string, string>) {
+    const topicArn = body.TopicArn;
+    const prefix = "PublishBatchRequestEntries.member.";
+
+    const indices = Object.keys(body)
+      .filter((key) => key.startsWith(prefix))
+      .reduce<string[]>((prev, key) => {
+        const idx = key.replace(prefix, "").match(/.*?(?=\.|$)/i)![0];
+        return prev.includes(idx) ? prev : [...prev, idx];
+      }, []);
+
+    const successful: Array<{ Id: string; MessageId: string }> = [];
+    const failed: Array<{ Id: string; Code: string; SenderFault: string; Message: string }> = [];
+
+    for (const idx of indices) {
+      const ep = `${prefix}${idx}.`;
+      const id = body[`${ep}Id`];
+      const message = body[`${ep}Message`] || "";
+      const subject = body[`${ep}Subject`] || "";
+      const messageStructure = body[`${ep}MessageStructure`] || "";
+      const messageGroupId = body[`${ep}MessageGroupId`];
+
+      const entryBody: Record<string, string> = { MessageStructure: messageStructure };
+      Object.keys(body)
+        .filter((key) => key.startsWith(`${ep}MessageAttributes.`))
+        .forEach((key) => { entryBody[key.replace(ep, "")] = body[key]; });
+      const messageAttributes = parseMessageAttributes(entryBody);
+
+      try {
+        const result = this.publish(topicArn, subject, message, messageStructure, messageAttributes, messageGroupId);
+        const messageId = (result.PublishResponse[1] as { PublishResult: [{ MessageId: string }] }).PublishResult[0].MessageId;
+        successful.push({ Id: id, MessageId: messageId });
+      } catch (err) {
+        failed.push({ Id: id, Code: "InternalError", SenderFault: "false", Message: String(err) });
+      }
+    }
+
+    return {
+      PublishBatchResponse: [
+        createAttr(),
+        {
+          PublishBatchResult: [
+            { Successful: successful.map(({ Id, MessageId }) => ({ member: [{ Id }, { MessageId }] })) },
+            { Failed: failed.map(({ Id, Code, SenderFault, Message }) => ({ member: [{ Id }, { Code }, { SenderFault }, { Message }] })) },
+          ],
+        },
+        createMetadata(),
+      ],
+    };
   }
 
   public publish(

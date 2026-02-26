@@ -5,7 +5,7 @@ import * as multiDotHandler from "../mock/multi.dot.handler.js";
 import * as state from "../mock/mock.state.js";
 import { SQSClient, SendMessageCommand, GetQueueUrlCommand } from "@aws-sdk/client-sqs";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
-import { SNSClient, SubscribeCommand } from "@aws-sdk/client-sns";
+import { SNSClient, SubscribeCommand, PublishBatchCommand } from "@aws-sdk/client-sns";
 import { mockClient } from 'aws-sdk-client-mock';
 import http from "http";
 import type { AddressInfo } from "net";
@@ -555,6 +555,33 @@ describe("test", () => {
     serverless.service.resources = undefined;
     plugin = createPlugin(serverless);
     await plugin.start();
+  });
+
+  it("should deliver all entries via PublishBatch to subscribers", async () => {
+    const sqsMock = mockClient(SQSClient);
+    plugin = createPlugin(createServerless(accountId, "envHandler"));
+    const snsAdapter = await plugin.start();
+    await plugin.subscribeAll();
+
+    const snsClient = new SNSClient({
+      credentials: { accessKeyId: "AKID", secretAccessKey: "SECRET" },
+      endpoint: "http://127.0.0.1:4002",
+      region: "us-east-1",
+    });
+
+    await snsClient.send(
+      new PublishBatchCommand({
+        TopicArn: `arn:aws:sns:us-east-1:${accountId}:topic-pinging`,
+        PublishBatchRequestEntries: [
+          { Id: "1", Message: "hello" },
+          { Id: "2", Message: "world" },
+        ],
+      })
+    );
+
+    await new Promise((res) => setTimeout(res, 100));
+    expect(sqsMock.send.callCount).to.equal(2);
+    sqsMock.restore();
   });
 
   it("should handle messageGroupId", async () => {
