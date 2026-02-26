@@ -1,8 +1,8 @@
 # serverless-offline-sns
 A serverless plugin to listen to offline SNS and call lambda fns with events.
 
-![build status](https://github.com/BANCS-Norway/serverless-offline-sns/actions/workflows/pull_requests.yml/badge.svg)
-[![npm version](https://badge.fury.io/js/serverless-offline-sns.svg)](https://badge.fury.io/js/serverless-offline-sns)
+![build status](https://github.com/BANCS-Norway/serverless-offline-sns/actions/workflows/release.yml/badge.svg)
+[![npm version](https://img.shields.io/npm/v/serverless-offline-sns.svg)](https://www.npmjs.com/package/serverless-offline-sns)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![All Contributors](https://img.shields.io/badge/all_contributors-33-orange.svg?style=flat-square)](#contributors)
