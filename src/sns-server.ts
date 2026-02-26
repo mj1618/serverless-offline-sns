@@ -409,7 +409,7 @@ export class SNSServer implements ISNSServer {
             sub.Protocol = "http";
           }
           const protocol = sub.Protocol.toLowerCase();
-          if (protocol === "http") {
+          if (protocol === "http" || protocol === "lambda") {
             return this.publishHttp(event, sub, isRaw);
           }
           if (protocol === "sqs") {
