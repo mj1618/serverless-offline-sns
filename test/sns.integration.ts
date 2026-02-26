@@ -66,13 +66,14 @@ describe("SNS integration tests", function () {
     slsProcess = spawn(
       process.execPath,
       [
-        path.join(__dirname, "..", "node_modules", "serverless", "scripts", "serverless.js"),
+        path.join(__dirname, "integration", "node_modules", "serverless", "run.js"),
         "offline",
         "--config", SLS_CONFIG,
       ],
       {
         cwd: SLS_CWD,
         stdio: "pipe",
+        detached: true,
         env: {
           ...process.env,
           NODE_OPTIONS: "",
@@ -96,8 +97,8 @@ describe("SNS integration tests", function () {
   });
 
   after(async function () {
-    if (slsProcess && !slsProcess.killed) {
-      slsProcess.kill("SIGTERM");
+    if (slsProcess && slsProcess.pid && !slsProcess.killed) {
+      process.kill(-slsProcess.pid, "SIGKILL");
     }
     await redis.quit();
   });

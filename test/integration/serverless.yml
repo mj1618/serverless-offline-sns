@@ -1,7 +1,7 @@
 service: sls-offline-sns-integration
 provider:
   name: aws
-  runtime: nodejs18.x
+  runtime: nodejs22.x
   region: us-east-1
   stage: local
 

@@ -2,7 +2,6 @@ import { SNSAdapter } from "./sns-adapter.js";
 import express, { type Application } from "express";
 import type { Server } from "http";
 import cors from "cors";
-import bodyParser from "body-parser";
 import { ISNSAdapter, IServerless, IServerlessFunction, IServerlessOptions, ServerlessOfflineSnsConfig, SLSHandler, SnsEventConfig } from "./types.js";
 import { SNSServer } from "./sns-server.js";
 import _ from "lodash";
@@ -54,12 +53,7 @@ class ServerlessOfflineSns {
       req.headers["content-type"] = req.headers["content-type"] || "text/plain";
       next();
     });
-    this.app.use(
-      bodyParser.json({
-        type: ["application/json", "text/plain"],
-        limit: "10mb",
-      })
-    );
+    this.app.use(express.json({ type: ["application/json", "text/plain"], limit: "10mb" }));
     this.options = options;
     this.serverless = serverless;
 
