@@ -91,7 +91,6 @@ export interface ServerlessOfflineSnsConfig {
   localPort?: number;
   remotePort?: number;
   accountId?: string;
-  servicesDirectory?: string;
   location?: string;
   host?: string;
   debug?: boolean;
