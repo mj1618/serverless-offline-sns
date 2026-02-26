@@ -328,39 +328,15 @@ export class SNSServer implements ISNSServer {
       QueueUrl = sub.Endpoint;
     }
 
-    if (sub.Attributes["RawMessageDelivery"] === "true") {
-      const sendMsgReq = new SendMessageCommand({
-        QueueUrl,
-        MessageBody: event,
-        MessageAttributes: formatMessageAttributes(messageAttributes),
-        ...(messageGroupId && { MessageGroupId: messageGroupId }),
-      });
-      return new Promise<void>((resolve, reject) => {
-        sqs
-          .send(sendMsgReq).then(() => {
-            resolve();
-          });
-      });
-    } else {
-      const records = (JSON.parse(event) as { Records?: unknown[] }).Records ?? [];
-      const messagePromises = records.map((record) => {
-        const sendMsgReq = new SendMessageCommand({
-          QueueUrl,
-          MessageBody: JSON.stringify((record as { Sns: unknown }).Sns),
-          MessageAttributes: formatMessageAttributes(messageAttributes),
-          ...(messageGroupId && { MessageGroupId: messageGroupId }),
-        });
-        return new Promise<void>((resolve, reject) => {
-          sqs
-            .send(sendMsgReq).then(() => {
-              resolve();
-            });
-        });
-      });
-      return new Promise<void>((resolve, reject) => {
-        Promise.all(messagePromises).then(() => resolve());
-      });
-    }
+    const sendMsgReq = new SendMessageCommand({
+      QueueUrl,
+      MessageBody: event,
+      MessageAttributes: formatMessageAttributes(messageAttributes),
+      ...(messageGroupId && { MessageGroupId: messageGroupId }),
+    });
+    return new Promise<void>((resolve) => {
+      sqs.send(sendMsgReq).then(() => resolve());
+    });
   }
 
   public publish(
