@@ -100,6 +100,8 @@ export interface ServerlessOfflineSnsConfig {
   "sqsEndpoint"?: string;
   lambdaPort?: number;
   subscriptions?: Array<{ queue: string; topic: string }>;
+  retry?: number;
+  "retry-interval"?: number;
 }
 
 export interface ISNSAdapter {

@@ -39,8 +39,10 @@ export class SNSServer implements ISNSServer {
   private app: Application;
   private region: string;
   private accountId: string;
+  private retry: number;
+  private retryInterval: number;
 
-  constructor(debug: IDebug, app: Application, region: string, accountId: string) {
+  constructor(debug: IDebug, app: Application, region: string, accountId: string, retry = 0, retryInterval = 0) {
     this.pluginDebug = debug;
     this.topics = [];
     this.subscriptions = [];
@@ -48,6 +50,8 @@ export class SNSServer implements ISNSServer {
     this.region = region;
     this.routes();
     this.accountId = accountId;
+    this.retry = retry;
+    this.retryInterval = retryInterval;
   }
 
   public routes() {
@@ -299,8 +303,8 @@ export class SNSServer implements ISNSServer {
     return shouldSend;
   }
 
-  private publishHttp(event: string, sub: Subscription, raw: boolean) {
-    return fetch(sub.Endpoint, {
+  private async publishHttp(event: string, sub: Subscription, raw: boolean) {
+    const doFetch = () => fetch(sub.Endpoint, {
       method: "POST",
       body: event,
       headers: {
@@ -308,9 +312,23 @@ export class SNSServer implements ISNSServer {
         "Content-Type": "text/plain; charset=UTF-8",
         "Content-Length": Buffer.byteLength(event).toString(),
       },
-    })
-      .then((res) => this.debug(res))
-      .catch((ex) => this.debug(ex));
+    });
+
+    for (let attempt = 0; attempt <= this.retry; attempt++) {
+      try {
+        const res = await doFetch();
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        this.debug(res);
+        return;
+      } catch (ex) {
+        this.debug(`HTTP delivery failed (attempt ${attempt + 1}/${this.retry + 1}): ${ex}`);
+        if (attempt < this.retry && this.retryInterval > 0) {
+          await new Promise((res) => setTimeout(res, this.retryInterval));
+        }
+      }
+    }
   }
 
   private async publishSqs(event: string, sub: Subscription, messageAttributes: MessageAttributes, messageGroupId: string | undefined) {

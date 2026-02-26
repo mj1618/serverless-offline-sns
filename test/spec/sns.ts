@@ -5,7 +5,10 @@ import * as multiDotHandler from "../mock/multi.dot.handler.js";
 import * as state from "../mock/mock.state.js";
 import { SQSClient, SendMessageCommand, GetQueueUrlCommand } from "@aws-sdk/client-sqs";
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
+import { SNSClient, SubscribeCommand } from "@aws-sdk/client-sns";
 import { mockClient } from 'aws-sdk-client-mock';
+import http from "http";
+import type { AddressInfo } from "net";
 
 let plugin;
 
@@ -212,6 +215,50 @@ describe("test", () => {
     );
     await new Promise((res) => setTimeout(res, 100));
     expect(state.getPongs()).to.eq(0);
+  });
+
+  it("should retry HTTP delivery on failure and eventually succeed", async () => {
+    let requestCount = 0;
+    const testServer = http.createServer((req, res) => {
+      requestCount++;
+      let body = "";
+      req.on("data", (chunk) => (body += chunk));
+      req.on("end", () => {
+        if (requestCount <= 2) {
+          res.writeHead(503);
+          res.end("fail");
+        } else {
+          res.writeHead(200);
+          res.end("ok");
+        }
+      });
+    });
+    await new Promise<void>((resolve) => testServer.listen(0, "127.0.0.1", resolve));
+    const port = (testServer.address() as AddressInfo).port;
+
+    const sl = createServerless(accountId);
+    const snsConfig = sl.service.custom["serverless-offline-sns"] as Record<string, unknown>;
+    snsConfig.retry = 2;
+    snsConfig["retry-interval"] = 0;
+    plugin = createPlugin(sl);
+    const snsAdapter = await plugin.start();
+
+    const snsClient = new SNSClient({
+      endpoint: "http://127.0.0.1:4002",
+      region: "us-east-1",
+      credentials: { accessKeyId: "local", secretAccessKey: "local" },
+    });
+    await snsClient.send(new SubscribeCommand({
+      TopicArn: `arn:aws:sns:us-east-1:${accountId}:test-topic`,
+      Protocol: "http",
+      Endpoint: `http://127.0.0.1:${port}/`,
+    }));
+
+    await snsAdapter.publish(`arn:aws:sns:us-east-1:${accountId}:test-topic`, "retry-test");
+    await new Promise((res) => setTimeout(res, 500));
+
+    await new Promise<void>((resolve) => testServer.close(() => resolve()));
+    expect(requestCount).to.equal(3);
   });
 
   it("should read env variable", async () => {

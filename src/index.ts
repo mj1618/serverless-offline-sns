@@ -152,7 +152,9 @@ class ServerlessOfflineSns {
       (msg, ctx) => this.debug(msg, ctx),
       this.app,
       this.region,
-      this.accountId
+      this.accountId,
+      this.config.retry ?? 0,
+      this.config["retry-interval"] ?? 0
     );
   }
 
