@@ -16,7 +16,7 @@ const { get, has } = lodashfp;
 import { loadServerlessConfig } from "./sls-config-parser.js";
 
 interface ResourceSubscription {
-  fnName: string;
+  fnName: string | undefined;
   options: {
     topicName: string;
     protocol: string;
@@ -206,11 +206,13 @@ class ServerlessOfflineSns {
       const fnName = this.getFunctionName(resourceName as string);
 
       if(!topicName){
-        this.log(`${fnName} does not have a topic name, skipping`);
+        this.log(`${key} does not have a topic name, skipping`);
         return;
       }
 
-      if(!fnName){
+      // SQS-protocol subscriptions don't require a direct Lambda function —
+      // the Lambda is triggered by SQS separately.
+      if(protocol?.toLowerCase() !== "sqs" && !fnName){
         this.log(`${topicName} does not have a function, skipping`);
         return;
       }
@@ -311,7 +313,7 @@ class ServerlessOfflineSns {
   private async subscribeFromResource(subscription: ResourceSubscription, location: string) {
     this.debug("subscribe: " + subscription.fnName);
     this.log(
-      `Creating topic: "${subscription.options.topicName}" for fn "${subscription.fnName}"`
+      `Creating topic: "${subscription.options.topicName}" for fn "${subscription.fnName ?? "(sqs)"}"`
     );
     const data = await this.adapter.createTopic(
       subscription.options.topicName
@@ -320,14 +322,18 @@ class ServerlessOfflineSns {
     if (!data.TopicArn) {
       throw new Error(`createTopic did not return a TopicArn for "${subscription.options.topicName}"`);
     }
-    const fn = this.serverless.service.functions[subscription.fnName];
-    const handler = await this.createHandler(subscription.fnName, fn, location);
-    await this.adapter.subscribe(
-      fn,
-      handler,
-      data.TopicArn,
-      subscription.options
-    );
+
+    if (subscription.options.protocol?.toLowerCase() === "sqs") {
+      const sqsBase = this.config["sqsEndpoint"] || `http://127.0.0.1:${this.localPort}`;
+      const queueUrl = subscription.options.queueName
+        ? `${sqsBase}/queue/${subscription.options.queueName}`
+        : sqsBase;
+      await this.adapter.subscribeQueue(queueUrl, data.TopicArn, subscription.options);
+    } else {
+      const fn = this.serverless.service.functions[subscription.fnName!];
+      const handler = await this.createHandler(subscription.fnName!, fn, location);
+      await this.adapter.subscribe(fn, handler, data.TopicArn, subscription.options);
+    }
   }
 
   public async unsubscribeAll() {
