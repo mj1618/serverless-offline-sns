@@ -421,6 +421,29 @@ describe("test", () => {
     sqsMock.restore();
   });
 
+  it("should deliver SNS envelope as MessageBody to SQS in non-raw mode", async () => {
+    const sqsMock = mockClient(SQSClient);
+    sqsMock.on(GetQueueUrlCommand).resolves({ QueueUrl: "http://127.0.0.1:4002/queue/pong6" });
+    plugin = createPlugin(
+      createServerlessWithNonRawSqsSubscription(accountId)
+    );
+    const snsAdapter = await plugin.start();
+    await plugin.subscribeAll();
+    const message = "hello-non-raw";
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:topic-non-raw`,
+      message
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    const sqsSendArgs = sqsMock.send.args;
+    expect(sqsMock.send.calledTwice).to.be.true;
+    const sentBody = JSON.parse((sqsSendArgs[1][0].input as { MessageBody: string }).MessageBody);
+    expect(sentBody).to.have.property("Message", message);
+    expect(sentBody).to.have.property("Type", "Notification");
+    expect(sentBody).to.have.property("TopicArn").that.includes("topic-non-raw");
+    sqsMock.restore();
+  });
+
   it("should handle empty resource definition", async () => {
     const serverless = createServerless(accountId);
     serverless.service.resources = undefined;
@@ -671,6 +694,49 @@ const createServerlessBad = (accountId: number) => {
         }
       },
     },
+  };
+};
+
+const createServerlessWithNonRawSqsSubscription = (accountId: number) => {
+  return {
+    config: {},
+    service: {
+      custom: {
+        "serverless-offline-sns": {
+          debug: true,
+          port: 4002,
+          accountId,
+        },
+      },
+      provider: { region: "us-east-1", environment: {} },
+      functions: {
+        pong6: {
+          handler: "test/mock/handler.pongHandler",
+          events: [{ sqs: { arn: { "Fn::GetAtt": ["pong6", "Arn"] } } }],
+        },
+      },
+      resources: {
+        Resources: {
+          pong6QueueSubscription: {
+            Type: "AWS::SNS::Subscription",
+            Properties: {
+              Protocol: "sqs",
+              Endpoint: { "Fn::GetAtt": ["pong6", "Arn"] },
+              TopicArn: { Ref: "nonRawTopic" },
+            },
+          },
+          pong6: {
+            Type: "AWS::SQS::Queue",
+            Properties: { QueueName: "pong6" },
+          },
+          nonRawTopic: {
+            Type: "AWS::SNS::Topic",
+            Properties: { TopicName: "topic-non-raw" },
+          },
+        },
+      },
+    },
+    cli: { log: (data) => { if (process.env.DEBUG) console.log(data); } },
   };
 };
 
