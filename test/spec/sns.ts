@@ -444,7 +444,6 @@ describe("test", () => {
 
   it("should subscribe", async () => {
     const sqsMock = mockClient(SQSClient);
-    sqsMock.on(GetQueueUrlCommand).resolves({ QueueUrl: "http://127.0.0.1:4002/queue/pong6" });
     plugin = createPlugin(
       createServerless(accountId, "envHandler")
     );
@@ -456,15 +455,30 @@ describe("test", () => {
     );
     await new Promise((res) => setTimeout(res, 100));
     const sqsSendArgs = sqsMock.send.args;
-    expect(sqsMock.send.calledTwice).to.be.true;
+    expect(sqsMock.send.calledOnce).to.be.true;
     expect(sqsSendArgs[0][0].input).to.be.deep.equals({
-      QueueName: "pong6",
-    });
-    expect(sqsSendArgs[1][0].input).to.be.deep.equals({
       QueueUrl: "http://127.0.0.1:4002/queue/pong6",
       MessageBody: "{}",
       MessageAttributes: {},
     });
+    sqsMock.restore();
+  });
+
+  it("should route CloudFormation Protocol:sqs subscription through subscribeQueue without requiring a Lambda function", async () => {
+    const sqsMock = mockClient(SQSClient);
+    plugin = createPlugin(createServerlessWithStandaloneSqsSubscription(accountId));
+    const snsAdapter = await plugin.start();
+    await plugin.subscribeAll();
+    await snsAdapter.publish(
+      `arn:aws:sns:us-east-1:${accountId}:topic-standalone`,
+      "sqs-only-message"
+    );
+    await new Promise((res) => setTimeout(res, 100));
+    const sqsSendArgs = sqsMock.send.args;
+    expect(sqsMock.send.calledOnce).to.be.true;
+    const sentBody = JSON.parse((sqsSendArgs[0][0].input as { MessageBody: string }).MessageBody);
+    expect(sentBody).to.have.property("Message", "sqs-only-message");
+    expect(sentBody).to.have.property("Type", "Notification");
     sqsMock.restore();
   });
 
@@ -528,8 +542,8 @@ describe("test", () => {
     );
     await new Promise((res) => setTimeout(res, 100));
     const sqsSendArgs = sqsMock.send.args;
-    expect(sqsMock.send.calledTwice).to.be.true;
-    const sentBody = JSON.parse((sqsSendArgs[1][0].input as { MessageBody: string }).MessageBody);
+    expect(sqsMock.send.calledOnce).to.be.true;
+    const sentBody = JSON.parse((sqsSendArgs[0][0].input as { MessageBody: string }).MessageBody);
     expect(sentBody).to.have.property("Message", message);
     expect(sentBody).to.have.property("Type", "Notification");
     expect(sentBody).to.have.property("TopicArn").that.includes("topic-non-raw");
@@ -545,7 +559,6 @@ describe("test", () => {
 
   it("should handle messageGroupId", async () => {
     const sqsMock = mockClient(SQSClient);
-    sqsMock.on(GetQueueUrlCommand).resolves({ QueueUrl: "http://127.0.0.1:4002/queue/pong6" });
     plugin = createPlugin(
       createServerless(accountId, "envHandler")
     );
@@ -561,11 +574,8 @@ describe("test", () => {
     );
     await new Promise((res) => setTimeout(res, 100));
     const sqsSendArgs = sqsMock.send.args;
-    expect(sqsMock.send.calledTwice).to.be.true;
+    expect(sqsMock.send.calledOnce).to.be.true;
     expect(sqsSendArgs[0][0].input).to.be.deep.equals({
-      QueueName: "pong6",
-    });
-    expect(sqsSendArgs[1][0].input).to.be.deep.equals({
       QueueUrl: "http://127.0.0.1:4002/queue/pong6",
       MessageBody: "{}",
       MessageAttributes: {},
@@ -786,6 +796,41 @@ const createServerlessBad = (accountId: number) => {
         }
       },
     },
+  };
+};
+
+const createServerlessWithStandaloneSqsSubscription = (accountId: number) => {
+  return {
+    config: {},
+    service: {
+      custom: {
+        "serverless-offline-sns": { debug: true, port: 4002, accountId },
+      },
+      provider: { region: "us-east-1", environment: {} },
+      // No function is directly triggered by SNS — the Lambda is wired to SQS separately
+      functions: {},
+      resources: {
+        Resources: {
+          standaloneQueueSubscription: {
+            Type: "AWS::SNS::Subscription",
+            Properties: {
+              Protocol: "sqs",
+              Endpoint: { "Fn::GetAtt": ["standaloneQueue", "Arn"] },
+              TopicArn: { Ref: "standaloneTopic" },
+            },
+          },
+          standaloneQueue: {
+            Type: "AWS::SQS::Queue",
+            Properties: { QueueName: "standalone-queue" },
+          },
+          standaloneTopic: {
+            Type: "AWS::SNS::Topic",
+            Properties: { TopicName: "topic-standalone" },
+          },
+        },
+      },
+    },
+    cli: { log: (data) => { if (process.env.DEBUG) console.log(data); } },
   };
 };
 
