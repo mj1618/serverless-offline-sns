@@ -1,3 +1,10 @@
+# [0.80.0](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v0.79.0...v0.80.0) (2026-02-26)
+
+
+### Features
+
+* support lambda SNS subscription protocol (closes [#233](https://github.com/BANCS-Norway/serverless-offline-sns/issues/233)) ([d68de0c](https://github.com/BANCS-Norway/serverless-offline-sns/commit/d68de0cfa10ff9473d158733aa94f6c89a85e026))
+
 # [0.79.0](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v0.78.2...v0.79.0) (2026-02-26)
 
 
