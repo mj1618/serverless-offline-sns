@@ -9,6 +9,9 @@ jobs:
   integration:
     runs-on: ubuntu-latest
 
+    env:
+      SERVERLESS_LICENSE_KEY: ${{ secrets.SERVERLESS_LICENSE_KEY }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
