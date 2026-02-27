@@ -1,3 +1,42 @@
+# [1.0.0](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v0.81.0...v1.0.0) (2026-02-27)
+
+
+* feat!: drop Node 18/20, require Node 22+, support Serverless v4 ([36f274e](https://github.com/BANCS-Norway/serverless-offline-sns/commit/36f274ee3372028e6ee1bfbbb35cc58f57df86d3))
+* feat!: drop servicesDirectory multi-service autoSubscribe support ([5e58ce3](https://github.com/BANCS-Norway/serverless-offline-sns/commit/5e58ce3889e03eb1206a30768727e19c055ae86e))
+
+
+### Bug Fixes
+
+* use type import for Message and --no-config for integration tests ([2609c58](https://github.com/BANCS-Norway/serverless-offline-sns/commit/2609c582816bf45088e13fab3718f22655f6a788))
+
+
+### BREAKING CHANGES
+
+* Node.js 18 and 20 are no longer supported. Minimum
+required version is Node.js 22. Serverless Framework v4 is now the
+supported version.
+
+- Add engines: { node: ">=22" } to package.json
+- Add .nvmrc pointing to Node 22
+- Bump serverless dependency to ^4.0.0
+- Update CI to use Node 22.x
+- Replace body-parser with Express 5 built-in parsers
+- Upgrade all dependencies to latest versions (Express 5, AWS SDK
+  3.998.0, uuid 13, mocha 11, typescript 5.9, etc.)
+- Remove resolutions block (no longer needed on Node 22)
+- Fix integration test process cleanup using detached process group kill
+- Add guard for undefined req.body in SNS server route handler
+- Update integration test to use Node 22 runtime and Serverless v4
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+* The servicesDirectory config option and the ability to
+auto-subscribe functions from multiple service subdirectories has been
+removed. Use the Serverless Framework's built-in service configuration
+instead — the full serverless object is available to the plugin at
+startup. Also removes shelljs dependency.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+
 # [0.81.0](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v0.80.0...v0.81.0) (2026-02-26)
 
 
