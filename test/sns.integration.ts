@@ -4,7 +4,7 @@ import {
   CreateQueueCommand,
   PurgeQueueCommand,
   ReceiveMessageCommand,
-  Message,
+  type Message,
 } from "@aws-sdk/client-sqs";
 import { expect } from "chai";
 import { spawn, ChildProcess } from "child_process";

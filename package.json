@@ -9,7 +9,7 @@
     "build": "tsc -p src",
     "watch": "tsc -p src -w",
     "test": "TS_NODE_PROJECT=test/tsconfig.json c8 mocha",
-    "test:integration": "yarn --cwd test/integration install --ignore-engines && yarn build && TS_NODE_PROJECT=test/integration/tsconfig.json mocha --loader=ts-node/esm --no-warnings=ExperimentalWarning 'test/sns.integration.ts'",
+    "test:integration": "yarn --cwd test/integration install --ignore-engines && yarn build && TS_NODE_PROJECT=test/integration/tsconfig.json mocha --no-config --loader=ts-node/esm --no-warnings=ExperimentalWarning 'test/sns.integration.ts'",
     "lint": "eslint src",
     "prepare": "yarn run lint && yarn test && yarn build",
     "prettier": "npx prettier --write src test",
