@@ -8,8 +8,8 @@
   "scripts": {
     "build": "tsc -p src",
     "watch": "tsc -p src -w",
-    "test": "nyc ts-mocha -r ts-node/register --loader=ts-node/esm --no-warnings=ExperimentalWarning --experimental-specifier-resolution=node \"test/spec/**/*.ts\" -p test/tsconfig.json",
-    "test:integration": "yarn --cwd test/integration install --ignore-engines && yarn build && ts-mocha -r ts-node/register --loader=ts-node/esm --no-warnings=ExperimentalWarning --experimental-specifier-resolution=node 'test/sns.integration.ts' -p test/integration/tsconfig.json",
+    "test": "TS_NODE_PROJECT=test/tsconfig.json c8 mocha",
+    "test:integration": "yarn --cwd test/integration install --ignore-engines && yarn build && TS_NODE_PROJECT=test/integration/tsconfig.json mocha --loader=ts-node/esm --no-warnings=ExperimentalWarning 'test/sns.integration.ts'",
     "lint": "eslint src",
     "prepare": "yarn run lint && yarn test && yarn build",
     "prettier": "npx prettier --write src test",
@@ -72,33 +72,21 @@
     "@types/xml": "^1.0.11",
     "all-contributors-cli": "^6.26.1",
     "aws-sdk-client-mock": "^4.1.0",
+    "c8": "^11.0.0",
     "chai": "^6.2.2",
     "eslint": "^10.0.2",
     "ioredis": "5.9.3",
     "mocha": "^11.7.5",
-    "nyc": "^18.0.0",
     "prettier": "3.8.1",
     "semantic-release": "^25.0.3",
-    "ts-mocha": "^11.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "~8.56.1"
   },
-  "nyc": {
-    "extension": [
-      ".ts",
-      ".tsx"
-    ],
-    "exclude": [
-      "**/*.d.ts"
-    ],
-    "include": [
-      "src/"
-    ],
-    "reporter": [
-      "html",
-      "lcov"
-    ],
+  "c8": {
+    "include": ["src/"],
+    "exclude": ["**/*.d.ts"],
+    "reporter": ["html", "lcov"],
     "all": true
   }
 }
