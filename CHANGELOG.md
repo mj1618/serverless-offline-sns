@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v1.0.0...v1.0.1) (2026-03-12)
+
+
+### Bug Fixes
+
+* bump [@aws-sdk](https://github.com/aws-sdk) packages to 3.1007.0 to resolve fast-xml-parser vulnerability ([e8099ee](https://github.com/BANCS-Norway/serverless-offline-sns/commit/e8099ee0e659eb9764706db03d63b98ecb588e04))
+
 # [1.0.0](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v0.81.0...v1.0.0) (2026-02-27)
 
 
