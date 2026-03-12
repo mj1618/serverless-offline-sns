@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v1.0.2...v1.0.3) (2026-03-12)
+
+
+### Bug Fixes
+
+* replace fetch(SubscribeURL) with ConfirmSubscriptionCommand to resolve CodeQL SSRF alert ([fff0a52](https://github.com/BANCS-Norway/serverless-offline-sns/commit/fff0a52ddb49852942e6b1f9de0e9d86f11af787))
+
 ## [1.0.2](https://github.com/BANCS-Norway/serverless-offline-sns/compare/v1.0.1...v1.0.2) (2026-03-12)
 
 
