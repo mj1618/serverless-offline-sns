@@ -13,9 +13,9 @@ custom:
   serverless-offline-sns:
     port: 4002
     accountId: "000000000000"
-    sns-endpoint: http://127.0.0.1:4566
-    sns-subscribe-endpoint: 127.0.0.1
-    sqsEndpoint: http://127.0.0.1:4566
+    sns-endpoint: http://localhost.localstack.cloud:4566
+    sns-subscribe-endpoint: localhost.localstack.cloud
+    sqsEndpoint: http://localhost.localstack.cloud:4566
     lambdaPort: 3002
     subscriptions:
       - topic: integration-sqs-topic

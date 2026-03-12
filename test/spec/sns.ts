@@ -550,37 +550,48 @@ describe("test", () => {
     sqsMock.restore();
   });
 
-  it("should learn trusted SNS hostname from first SubscribeURL and reject subsequent mismatches", async () => {
-    plugin = createPlugin(createServerless(accountId));
+  it("should confirm subscription via SDK without fetching SubscribeURL", async () => {
+    let confirmedToken = "";
+    const snsServer = http.createServer((req, res) => {
+      // Handle all SNS API calls (createTopic, subscribe, confirmSubscription, etc.)
+      let body = "";
+      req.on("data", (chunk) => (body += chunk));
+      req.on("end", () => {
+        const action = new URLSearchParams(body).get("Action") ?? "";
+        const topicName = new URLSearchParams(body).get("Name") ?? "topic";
+        if (action === "ConfirmSubscription") {
+          confirmedToken = new URLSearchParams(body).get("Token") ?? "";
+        }
+        const xml = action === "CreateTopic"
+          ? `<CreateTopicResponse><CreateTopicResult><TopicArn>arn:aws:sns:us-east-1:${accountId}:${topicName}</TopicArn></CreateTopicResult></CreateTopicResponse>`
+          : action === "ConfirmSubscription"
+          ? `<ConfirmSubscriptionResponse><ConfirmSubscriptionResult><SubscriptionArn>arn:aws:sns:us-east-1:${accountId}:${topicName}:uuid</SubscriptionArn></ConfirmSubscriptionResult></ConfirmSubscriptionResponse>`
+          : `<${action}Response></${action}Response>`;
+        res.writeHead(200, { "Content-Type": "text/xml" });
+        res.end(xml);
+      });
+    });
+    await new Promise<void>((resolve) => snsServer.listen(0, "127.0.0.1", resolve));
+    const snsPort = (snsServer.address() as AddressInfo).port;
+
+    const sl = createServerless(accountId);
+    (sl.service.custom["serverless-offline-sns"] as Record<string, unknown>)["sns-endpoint"] = `http://127.0.0.1:${snsPort}`;
+    plugin = createPlugin(sl);
     await plugin.start();
 
-    let confirmCalled = false;
-    const confirmServer = http.createServer((_req, res) => {
-      confirmCalled = true;
-      res.writeHead(200);
-      res.end();
-    });
-    await new Promise<void>((resolve) => confirmServer.listen(0, "127.0.0.1", resolve));
-    const confirmPort = (confirmServer.address() as AddressInfo).port;
-
-    // First SubscribeURL — establishes the trusted hostname (127.0.0.1)
-    const firstResponse = await fetch("http://127.0.0.1:4002/queue-one", {
+    const response = await fetch("http://127.0.0.1:4002/queue-one", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ SubscribeURL: `http://127.0.0.1:${confirmPort}/confirm` }),
+      body: JSON.stringify({
+        SubscribeURL: "http://evil.com/confirm?token=abc123",
+        Token: "abc123",
+        TopicArn: `arn:aws:sns:us-east-1:${accountId}:topic-one`,
+      }),
     });
-    expect(firstResponse.status).to.equal(200);
-    expect(confirmCalled).to.be.true;
 
-    // Second SubscribeURL with a different hostname — rejected
-    const secondResponse = await fetch("http://127.0.0.1:4002/queue-one", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ SubscribeURL: "http://evil.com/malicious" }),
-    });
-    expect(secondResponse.status).to.equal(400);
-
-    await new Promise<void>((resolve) => confirmServer.close(() => resolve()));
+    await new Promise<void>((resolve) => snsServer.close(() => resolve()));
+    expect(response.status).to.equal(200);
+    expect(confirmedToken).to.equal("abc123");
   });
 
   it("should handle empty resource definition", async () => {
