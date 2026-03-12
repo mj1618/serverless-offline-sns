@@ -550,6 +550,39 @@ describe("test", () => {
     sqsMock.restore();
   });
 
+  it("should learn trusted SNS hostname from first SubscribeURL and reject subsequent mismatches", async () => {
+    plugin = createPlugin(createServerless(accountId));
+    await plugin.start();
+
+    let confirmCalled = false;
+    const confirmServer = http.createServer((_req, res) => {
+      confirmCalled = true;
+      res.writeHead(200);
+      res.end();
+    });
+    await new Promise<void>((resolve) => confirmServer.listen(0, "127.0.0.1", resolve));
+    const confirmPort = (confirmServer.address() as AddressInfo).port;
+
+    // First SubscribeURL — establishes the trusted hostname (127.0.0.1)
+    const firstResponse = await fetch("http://127.0.0.1:4002/queue-one", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ SubscribeURL: `http://127.0.0.1:${confirmPort}/confirm` }),
+    });
+    expect(firstResponse.status).to.equal(200);
+    expect(confirmCalled).to.be.true;
+
+    // Second SubscribeURL with a different hostname — rejected
+    const secondResponse = await fetch("http://127.0.0.1:4002/queue-one", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ SubscribeURL: "http://evil.com/malicious" }),
+    });
+    expect(secondResponse.status).to.equal(400);
+
+    await new Promise<void>((resolve) => confirmServer.close(() => resolve()));
+  });
+
   it("should handle empty resource definition", async () => {
     const serverless = createServerless(accountId);
     serverless.service.resources = undefined;

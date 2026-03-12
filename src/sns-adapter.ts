@@ -17,6 +17,7 @@ export class SNSAdapter implements ISNSAdapter {
   private accountId: string;
   private sqsEndpoint: string;
   private region: string;
+  private trustedSnsHostname: string | null = null;
 
   constructor(
     localPort: number,
@@ -170,6 +171,15 @@ export class SNSAdapter implements ISNSAdapter {
       }
 
       if (body.SubscribeURL) {
+        const subscribeUrl = new URL(body.SubscribeURL);
+        if (this.trustedSnsHostname === null) {
+          this.trustedSnsHostname = subscribeUrl.hostname;
+          this.debug("Learned trusted SNS hostname: " + this.trustedSnsHostname);
+        } else if (subscribeUrl.hostname !== this.trustedSnsHostname) {
+          this.debug("Rejecting SubscribeURL with unexpected hostname: " + body.SubscribeURL);
+          res.status(400).send();
+          return;
+        }
         this.debug("Visiting subscribe url: " + body.SubscribeURL);
         return fetch(body.SubscribeURL, {
           method: "GET"
