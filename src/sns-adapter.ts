@@ -1,7 +1,6 @@
-import { ListTopicsCommandOutput, ListSubscriptionsCommandOutput, CreateTopicCommandOutput, PublishCommandOutput, MessageAttributeValue, SNSClient, SNSClientConfig, ListTopicsCommand, ListSubscriptionsCommand, UnsubscribeCommand, CreateTopicCommand, SubscribeCommand, PublishCommand } from "@aws-sdk/client-sns";
+import { ListTopicsCommandOutput, ListSubscriptionsCommandOutput, CreateTopicCommandOutput, PublishCommandOutput, MessageAttributeValue, SNSClient, SNSClientConfig, ListTopicsCommand, ListSubscriptionsCommand, UnsubscribeCommand, CreateTopicCommand, SubscribeCommand, PublishCommand, ConfirmSubscriptionCommand } from "@aws-sdk/client-sns";
 import type { Application } from "express";
 import _ from "lodash";
-import fetch from "node-fetch";
 import { createMessageId, createSnsLambdaEvent } from "./helpers.js";
 import { IDebug, ILambdaContext, IServerlessFunction, ISNSAdapter, LambdaCallback, MessageAttributes, SLSHandler, SnsEventConfig } from "./types.js";
 
@@ -17,7 +16,6 @@ export class SNSAdapter implements ISNSAdapter {
   private accountId: string;
   private sqsEndpoint: string;
   private region: string;
-  private trustedSnsHostname: string | null = null;
 
   constructor(
     localPort: number,
@@ -143,6 +141,7 @@ export class SNSAdapter implements ISNSAdapter {
 
       type SnsNotificationBody = {
         TopicArn?: string;
+        Token?: string;
         Message?: string;
         MessageStructure?: string;
         MessageId?: string;
@@ -171,21 +170,17 @@ export class SNSAdapter implements ISNSAdapter {
       }
 
       if (body.SubscribeURL) {
-        const subscribeUrl = new URL(body.SubscribeURL);
-        if (this.trustedSnsHostname === null) {
-          this.trustedSnsHostname = subscribeUrl.hostname;
-          this.debug("Learned trusted SNS hostname: " + this.trustedSnsHostname);
-        } else if (subscribeUrl.hostname !== this.trustedSnsHostname) {
-          this.debug("Rejecting SubscribeURL with unexpected hostname: " + body.SubscribeURL);
-          res.status(400).send();
-          return;
-        }
-        this.debug("Visiting subscribe url: " + body.SubscribeURL);
-        return fetch(body.SubscribeURL, {
-          method: "GET"
-        }).then((fetchResponse) => {
-          this.debug("Subscribed: " + fetchResponse.status)
+        this.debug("Confirming subscription via SDK for topic: " + (body.TopicArn ?? ""));
+        const confirmReq = new ConfirmSubscriptionCommand({
+          TopicArn: body.TopicArn,
+          Token: body.Token,
+        });
+        return this.sns.send(confirmReq).then(() => {
+          this.debug("Subscription confirmed");
           res.status(200).send();
+        }).catch((err: unknown) => {
+          this.debug("Subscription confirmation failed: " + String(err));
+          res.status(500).send(String(err));
         });
       }
 
