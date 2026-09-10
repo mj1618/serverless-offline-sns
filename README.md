@@ -8,8 +8,6 @@ A serverless plugin to listen to offline SNS and call lambda fns with events.
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![All Contributors](https://img.shields.io/badge/all_contributors-34-orange.svg?style=flat-square)](#contributors)
 
-Originally created and maintained for nearly 10 years by [Matthew James](https://github.com/mj1618).
-
 ## Docs
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
